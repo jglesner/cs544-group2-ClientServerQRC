@@ -48,8 +48,13 @@ public class ClientController {
 			  serverSocketConn = new Socket(server , 5555);
 	          openChannel(serverSocketConn);
 	          
+	          //Print initial connect message
 			  System.out.println(br.readLine());
-			  pw.print("test");
+			  
+			  //Send test message
+			  pw.println("test");
+			  
+			  //Capture response and print
 	          System.out.println(br.readLine());
 
 	          

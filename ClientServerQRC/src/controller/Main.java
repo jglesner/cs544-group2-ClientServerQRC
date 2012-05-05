@@ -16,15 +16,24 @@ public class Main {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		if (args[0].equalsIgnoreCase("client"))
+		
+		try
 		{
-			ClientController cc = new ClientController();
-			cc.start();
+			if (args[0].equalsIgnoreCase("client"))
+			{
+				ClientController cc = new ClientController();
+				cc.start();
+			}
+			if (args[0].equalsIgnoreCase("server"))
+			{
+				ServerController sc = new ServerController();
+				sc.start();
+			}
 		}
-		if (args[0].equalsIgnoreCase("server"))
+		catch(Exception e)
 		{
-			ServerController sc = new ServerController();
-			sc.start();
+			System.out.println("Please pass in an argument of \"client\" or \"server\"");
+			
 		}
 	}
 
