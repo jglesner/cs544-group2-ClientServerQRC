@@ -56,7 +56,17 @@ public class ClientController {
 	
 	public void closeToServer() {
 		if (connected) {	
-			serverSocketConn.close();
+			try 
+			{
+				serverSocketConn.close();
+			}
+			catch (UnknownHostException ex) {
+				System.err.println(ex);
+			}
+			catch (IOException ex) {
+			  System.err.println(ex);
+			}
+			connected = true;				
 		}
 	}
 	
