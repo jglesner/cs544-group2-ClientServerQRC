@@ -133,7 +133,7 @@ public class ServerController implements Observer {
 	                    ServerController.this.clients.addElement(ServerController.this.ClientModel);
 	                    t.start();
 	                } catch (IOException ioe) {
-	                    //some error occured in ClientModel //
+	                    System.err.println("Error " + ioe);
 	                }
 	            }
 	        } catch (IOException ioe) {
