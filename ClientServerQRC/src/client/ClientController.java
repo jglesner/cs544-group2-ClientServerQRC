@@ -9,4 +9,10 @@ package client;
  */
 public class ClientController {
 
+	public void start()
+	{
+		System.out.println("Successful...");
+	}
+	
+	
 }
