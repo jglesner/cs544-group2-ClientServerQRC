@@ -66,7 +66,7 @@ public class ClientController {
 			catch (IOException ex) {
 			  System.err.println(ex);
 			}
-			connected = true;				
+			connected = false;				
 		}
 	}
 	
