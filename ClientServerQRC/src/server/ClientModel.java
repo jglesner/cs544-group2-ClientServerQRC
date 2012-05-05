@@ -1,10 +1,10 @@
 /**
  * 
  */
-package client;
+package server;
 
 /**
- * @author root
+ * @author Jeremy Glesner
  *
  */
 public class ClientModel {

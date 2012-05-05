@@ -4,7 +4,7 @@
 package client;
 
 /**
- * @author root
+ * @author Jeremy Glesner
  *
  */
 public class ClientController {
