@@ -16,11 +16,6 @@ import java.io.*;
  */
 public class ServerController implements Observer {
 
-	public void start()
-	{
-		System.out.println("Successful...");
-	}	
-	
 	private Socket socket;
 
 	/** This vector holds all connected clients.
@@ -40,8 +35,23 @@ public class ServerController implements Observer {
 
 	/** Port number of ServerController. */
 	private int port;
-	private boolean listening; //status for listening
-
+	private boolean listening; //status for listening	
+	
+	
+	public void start()
+	{
+		System.out.println("Starting Server...");	
+		try
+		{
+			startServerController();
+			System.out.println("Successful\n");	
+		}
+		catch(Exception e)
+		{
+			System.out.println("Error " + e);			
+		}	
+	}	
+	
 	public ServerController() {
 		this.clients = new Vector();
 	    this.port = 5555; //default port
