@@ -36,6 +36,27 @@ public class ClientController implements Runnable {
 		connected = false;
     }    
     
+    public boolean isConnected() {
+		return connected;
+    }
+
+
+    public int getPort(){
+            return port;
+        }
+
+    public void setPort(int port){
+            this.port = port;
+        }
+
+    public String getHostName(){
+            return hostName;
+        }
+
+    public void setHostName(String hostName){
+            this.hostName = hostName;
+        }   
+    
 	public void start()
 	{
 		System.out.println("Starting Client...");	
@@ -59,63 +80,6 @@ public class ClientController implements Runnable {
 			System.out.println("Error " + e);			
 		}	
 
-	}
-
-//	public void connectToServer() {
-//		if (!connected) {
-//			try 
-//			{
-//			  InetAddress server = InetAddress.getLocalHost();
-//			  serverSocketConn = new Socket(server , 5555);
-//	          openChannel(serverSocketConn);
-//	          
-//	          //Print initial connect message
-//			  System.out.println(br.readLine());
-//
-//			  //Send test message
-//			  pw.println("test");
-//			  
-//			  //Capture response and print
-//	          System.out.println(br.readLine());
-//
-//	          
-//			}
-//			catch (UnknownHostException ex) {
-//			  System.err.println(ex);
-//			}
-//			catch (IOException ex) {
-//			  System.err.println(ex);
-//			}
-//			connected = true;
-//	    }
-//	}	
-//	
-//    public void openChannel(Socket socket) throws IOException {
-//        this.serverSocketConn = socket;
-//        //get I/O from socket
-//        try {
-//            br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-//            pw = new PrintWriter(socket.getOutputStream(), true);
-//        }
-//        catch (IOException ioe) {
-//            throw ioe;
-//        }
-//    }	
-	
-	public void closeToServer() {
-		if (connected) {	
-			try 
-			{
-				serverSocketConn.close();
-			}
-			catch (UnknownHostException ex) {
-				System.err.println(ex);
-			}
-			catch (IOException ex) {
-			  System.err.println(ex);
-			}
-			connected = false;				
-		}
 	}
 	
     public void connect(String hostName, int port) throws IOException {
@@ -173,26 +137,62 @@ public class ClientController implements Runnable {
          catch(IOException ioe) { }
          finally { connected = false; }
     }
+    
+//	public void connectToServer() {
+//	if (!connected) {
+//		try 
+//		{
+//		  InetAddress server = InetAddress.getLocalHost();
+//		  serverSocketConn = new Socket(server , 5555);
+//          openChannel(serverSocketConn);
+//          
+//          //Print initial connect message
+//		  System.out.println(br.readLine());
+//
+//		  //Send test message
+//		  pw.println("test");
+//		  
+//		  //Capture response and print
+//          System.out.println(br.readLine());
+//
+//          
+//		}
+//		catch (UnknownHostException ex) {
+//		  System.err.println(ex);
+//		}
+//		catch (IOException ex) {
+//		  System.err.println(ex);
+//		}
+//		connected = true;
+//    }
+//}	
+//
+//public void openChannel(Socket socket) throws IOException {
+//    this.serverSocketConn = socket;
+//    //get I/O from socket
+//    try {
+//        br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+//        pw = new PrintWriter(socket.getOutputStream(), true);
+//    }
+//    catch (IOException ioe) {
+//        throw ioe;
+//    }
+//}	    
 
-    public boolean isConnected() {
-		return connected;
-    }
-
-
-    public int getPort(){
-            return port;
-        }
-
-    public void setPort(int port){
-            this.port = port;
-        }
-
-    public String getHostName(){
-            return hostName;
-        }
-
-    public void setHostName(String hostName){
-            this.hostName = hostName;
-        }
+//	public void closeToServer() {
+//	if (connected) {	
+//		try 
+//		{
+//			serverSocketConn.close();
+//		}
+//		catch (UnknownHostException ex) {
+//			System.err.println(ex);
+//		}
+//		catch (IOException ex) {
+//		  System.err.println(ex);
+//		}
+//		connected = false;				
+//	}
+//}
 	
 }
