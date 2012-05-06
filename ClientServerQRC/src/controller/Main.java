@@ -3,8 +3,9 @@
  */
 package controller;
 
-import client.ClientController;
-import server.ServerController;
+import client.*;
+import server.*;
+
 
 /**
  * @author Jeremy Glesner
@@ -24,11 +25,31 @@ public class Main {
 				ClientController cc = new ClientController();
 				cc.start();
 			}
-			if (args[0].equalsIgnoreCase("server"))
+			else if (args[0].equalsIgnoreCase("server"))
 			{
 				ServerController sc = new ServerController();
 				sc.start();
 			}
+			else if (args[0].equalsIgnoreCase("secureClient"))
+			{
+				SecureClientController scc = new SecureClientController();
+				scc.start();
+			}
+			else if (args[0].equalsIgnoreCase("secureServer"))
+			{
+				SecureServerController ssc = new SecureServerController();
+				ssc.start();
+			}
+			else if (args[0].equalsIgnoreCase("sslTestClient"))
+			{
+				SimpleSSLClient stc = new SimpleSSLClient();
+				stc.start();
+			}
+			else if (args[0].equalsIgnoreCase("sslTestServer"))
+			{
+				SimpleSSLServer sts = new SimpleSSLServer();
+				sts.start();
+			}				
 		}
 		catch(Exception e)
 		{
