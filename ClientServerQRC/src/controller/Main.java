@@ -43,12 +43,12 @@ public class Main {
 			else if (args[0].equalsIgnoreCase("sslTestClient"))
 			{
 				SimpleSSLClient stc = new SimpleSSLClient();
-				stc.start();
+				stc.begin();
 			}
 			else if (args[0].equalsIgnoreCase("sslTestServer"))
 			{
 				SimpleSSLServer sts = new SimpleSSLServer();
-				sts.start();
+				sts.begin();
 			}				
 		}
 		catch(Exception e)

@@ -23,7 +23,7 @@ public class SimpleSSLClient
   public SimpleSSLClient()
   {}
   
-  public void start()
+  public void begin()
   {
     SimpleSSLClient client=new SimpleSSLClient();
     client.runClient();
