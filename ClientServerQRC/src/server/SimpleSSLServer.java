@@ -37,14 +37,10 @@ public class SimpleSSLServer extends Thread
 
     try 
     {
-    	String jarFile = ClassLoader.getSystemResource("server/truststore-server.jks").toString();
-    	JarURLConnection juc = (JarURLConnection)ClassLoader.getSystemResource("server/truststore-server.jks").openConnection();
-    	System.out.println(jarFile.substring(9));
-    	
     	Properties systemProps = System.getProperties();
-    	systemProps.put("javax.net.ssl.trustStore", ClassLoader.getSystemResource("server/truststore-server.jks").toString().substring(9)); //"server/truststore-server.jks");
+    	systemProps.put("javax.net.ssl.trustStore", "./truststore-server.jks");
     	systemProps.put("javax.net.ssl.trustStorePassword", "password");
-    	systemProps.put("javax.net.ssl.keyStore", ClassLoader.getSystemResource("server/keystore-server.jks").toString().substring(9)); //"server/keystore-server.jks");
+    	systemProps.put("javax.net.ssl.keyStore", "./keystore-server.jks");
     	systemProps.put("javax.net.ssl.keyStorePassword", "password");    	
     	System.setProperties(systemProps);   
     	
