@@ -3,8 +3,6 @@
  */
 package client;
 
-import java.net.*;
-import java.util.Observable;
 import java.io.*;
 import java.security.*;
 import javax.net.ssl.KeyManager;
@@ -167,8 +165,7 @@ public class SecureClientController implements Runnable {
      * the SSLSocketFactory from there.
      * @return SSLSocketFactory SSLSocketFactory to use
      */
-    protected SSLSocketFactory getSSLSocketFactory()
-      throws IOException, GeneralSecurityException
+    protected SSLSocketFactory getSSLSocketFactory() throws IOException, GeneralSecurityException
     {
       // Call getTrustManagers to get suitable trust managers
       TrustManager[] tms=getTrustManagers();
@@ -193,12 +190,9 @@ public class SecureClientController implements Runnable {
      * examples can call it.
      * This method does the bulk of the work of setting up the custom
      * trust managers.
-     * @param trustStore the TrustStore to use. This should be in JKS format.
-     * @param password the password for this TrustStore.
      * @return an array of TrustManagers set up accordingly.
      */
-    protected TrustManager[] getTrustManagers()
-      throws IOException, GeneralSecurityException
+    protected TrustManager[] getTrustManagers() throws IOException, GeneralSecurityException
     {
       // First, get the default TrustManagerFactory.
       String alg=TrustManagerFactory.getDefaultAlgorithm();
@@ -206,15 +200,11 @@ public class SecureClientController implements Runnable {
       
       // Next, set up the TrustStore to use. We need to load the file into
       // a KeyStore instance.
-      //FileInputStream fis=new FileInputStream(trustStore);
       KeyStore ks=KeyStore.getInstance("jks");
       
       ClassLoader classLoader = getClass().getClassLoader();
       InputStream keystoreStream = classLoader.getResourceAsStream(trustStore); // note, not getSYSTEMResourceAsStream  
       ks.load(keystoreStream, trustStorePassword.toCharArray());
-      
-      //ks.load(fis, trustStorePassword.toCharArray());
-      //fis.close();
 
       // Now we initialise the TrustManagerFactory with this KeyStore
       tmFact.init(ks);
@@ -230,12 +220,9 @@ public class SecureClientController implements Runnable {
      * examples can call it.
      * This method does the bulk of the work of setting up the custom
      * trust managers.
-     * @param trustStore the KeyStore to use. This should be in JKS format.
-     * @param password the password for this KeyStore.
      * @return an array of KeyManagers set up accordingly.
      */
-    protected KeyManager[] getKeyManagers()
-      throws IOException, GeneralSecurityException
+    protected KeyManager[] getKeyManagers() throws IOException, GeneralSecurityException
     {
       // First, get the default KeyManagerFactory.
       String alg=KeyManagerFactory.getDefaultAlgorithm();
@@ -243,16 +230,11 @@ public class SecureClientController implements Runnable {
       
       // Next, set up the KeyStore to use. We need to load the file into
       // a KeyStore instance.
-       
-      //FileInputStream fis=new FileInputStream(keyStore);
       KeyStore ks=KeyStore.getInstance("jks");
 
       ClassLoader classLoader = getClass().getClassLoader();
       InputStream keystoreStream = classLoader.getResourceAsStream(keyStore); // note, not getSYSTEMResourceAsStream  
       ks.load(keystoreStream, keyStorePassword.toCharArray()); 
-      
-      //ks.load(fis, keyStorePassword.toCharArray());
-      //fis.close();
 
       // Now we initialise the KeyManagerFactory with this KeyStore
       kmFact.init(ks, keyStorePassword.toCharArray());
@@ -261,63 +243,5 @@ public class SecureClientController implements Runnable {
       KeyManager[] kms=kmFact.getKeyManagers();
       return kms;
     }  
-    
-    
-//	public void connectToServer() {
-//	if (!connected) {
-//		try 
-//		{
-//		  InetAddress server = InetAddress.getLocalHost();
-//		  serverSocketConn = new Socket(server , 5555);
-//          openChannel(serverSocketConn);
-//          
-//          //Print initial connect message
-//		  System.out.println(br.readLine());
-//
-//		  //Send test message
-//		  pw.println("test");
-//		  
-//		  //Capture response and print
-//          System.out.println(br.readLine());
-//
-//          
-//		}
-//		catch (UnknownHostException ex) {
-//		  System.err.println(ex);
-//		}
-//		catch (IOException ex) {
-//		  System.err.println(ex);
-//		}
-//		connected = true;
-//    }
-//}	
-//
-//public void openChannel(Socket socket) throws IOException {
-//    this.serverSocketConn = socket;
-//    //get I/O from socket
-//    try {
-//        br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-//        pw = new PrintWriter(socket.getOutputStream(), true);
-//    }
-//    catch (IOException ioe) {
-//        throw ioe;
-//    }
-//}	    
-
-//	public void closeToServer() {
-//	if (connected) {	
-//		try 
-//		{
-//			serverSocketConn.close();
-//		}
-//		catch (UnknownHostException ex) {
-//			System.err.println(ex);
-//		}
-//		catch (IOException ex) {
-//		  System.err.println(ex);
-//		}
-//		connected = false;				
-//	}
-//}
 	
 }

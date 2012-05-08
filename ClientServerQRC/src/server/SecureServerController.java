@@ -18,12 +18,12 @@
 
 package server;
 
+import java.util.Enumeration;
 import java.util.Observable;
 import java.util.Vector;
 import java.util.Observer;
 import java.io.*;
 import javax.net.ssl.*;
-import server.SecureServerController.SimpleHandshakeListener;
 import java.security.*;
 import java.security.cert.*;
 
@@ -43,27 +43,21 @@ public class SecureServerController implements Observer {
 	private String keyStore=DEFAULT_KEYSTORE;
 	private String keyStorePassword=DEFAULT_KEYSTORE_PASSWORD;  
 	
-	/** This vector holds all connected clients.
-	 * May be used for broadcasting, etc. */
-	private Vector clients;
+	/** This vector holds all connected clients. */
+	private Vector<ClientModel> clients;
 	
 	private SSLSocket socket;
 	private SSLServerSocket ssocket;  //ServerController Socket
 	
 	private StartSecureServerControllerThread sst; //inner class
 	private SSLServerSocketFactory ssf;
-	
-	/**
-	 * Represents each currently connected client.
-	 * @label initiates
-	 * @clientCardinality 1
-	 * @supplierCardinality 0..*
-	 */
 	private ClientModel ClientModel;
 
 	/** Port number of ServerController. */
 	private int port;
-	private boolean listening; //status for listening	
+	
+	/** status for listening */
+	private boolean listening;	
 	
 	
 	public void start()
@@ -81,7 +75,7 @@ public class SecureServerController implements Observer {
 	}	
 	
 	public SecureServerController() {
-		this.clients = new Vector();
+		this.clients = new Vector<ClientModel>();
 	    this.port = 5555; //default port
 	    this.listening = false;
 	}
@@ -99,7 +93,7 @@ public class SecureServerController implements Observer {
 	        this.sst.stopServerControllerThread();
 	        //close all connected clients//
 
-	        java.util.Enumeration e = this.clients.elements();
+	        Enumeration<ClientModel> e = this.clients.elements();
 	        while(e.hasMoreElements())
 	        {
 			  ClientModel ct = (ClientModel)e.nextElement();
@@ -186,7 +180,6 @@ public class SecureServerController implements Observer {
 	* An overloaded constructor is available for providing a 
 	* specific number, more or less, about connections. */
 
-//	        	SecureServerController.this.ssocket = new ServerSocket(SecureServerController.this.port);
 	        	SecureServerController.this.ssocket = (SSLServerSocket)SecureServerController.this.ssf.createServerSocket(SecureServerController.this.port);
 	        	ssocket.setNeedClientAuth(true);
 	        	
@@ -194,11 +187,8 @@ public class SecureServerController implements Observer {
 				//wait for client to connect//
 
 	            	SecureServerController.this.socket = (SSLSocket)SecureServerController.this.ssocket.accept();
-	        
-    	            // We add in a HandshakeCompletedListener, which allows us to
-    	            // peek at the certificate provided by the client.
 	            	String uniqueID = socket.getInetAddress() + ":" + socket.getPort();
-	            	
+	          
     	            HandshakeCompletedListener hcl=new SimpleHandshakeListener(uniqueID);
     	            SecureServerController.this.socket.addHandshakeCompletedListener(hcl);      
 	            	
@@ -270,12 +260,9 @@ public class SecureServerController implements Observer {
 	   * examples can call it.
 	   * This method does the bulk of the work of setting up the custom
 	   * trust managers.
-	   * @param trustStore the TrustStore to use. This should be in JKS format.
-	   * @param password the password for this TrustStore.
 	   * @return an array of TrustManagers set up accordingly.
 	   */
-	  protected TrustManager[] getTrustManagers()
-	    throws IOException, GeneralSecurityException
+	  protected TrustManager[] getTrustManagers() throws IOException, GeneralSecurityException
 	  {
 	    // First, get the default TrustManagerFactory.
 	    String alg=TrustManagerFactory.getDefaultAlgorithm();
@@ -283,17 +270,13 @@ public class SecureServerController implements Observer {
 	    
 	    // Next, set up the TrustStore to use. We need to load the file into
 	    // a KeyStore instance.
-	    //FileInputStream fis=new FileInputStream(trustStore);
 	    KeyStore ks=KeyStore.getInstance("jks");
 	    
 	    ClassLoader classLoader = getClass().getClassLoader();
 	    InputStream keystoreStream = classLoader.getResourceAsStream(trustStore); // note, not getSYSTEMResourceAsStream  
 	    ks.load(keystoreStream, trustStorePassword.toCharArray());
-	    
-	    //ks.load(fis, trustStorePassword.toCharArray());
-	    //fis.close();
 
-	    // Now we initialise the TrustManagerFactory with this KeyStore
+	    // Now we initialize the TrustManagerFactory with this KeyStore
 	    tmFact.init(ks);
 
 	    // And now get the TrustManagers
@@ -307,12 +290,9 @@ public class SecureServerController implements Observer {
 	   * examples can call it.
 	   * This method does the bulk of the work of setting up the custom
 	   * trust managers.
-	   * @param trustStore the KeyStore to use. This should be in JKS format.
-	   * @param password the password for this KeyStore.
 	   * @return an array of KeyManagers set up accordingly.
 	   */
-	  protected KeyManager[] getKeyManagers()
-	    throws IOException, GeneralSecurityException
+	  protected KeyManager[] getKeyManagers() throws IOException, GeneralSecurityException
 	  {
 	    // First, get the default KeyManagerFactory.
 	    String alg=KeyManagerFactory.getDefaultAlgorithm();
@@ -320,18 +300,13 @@ public class SecureServerController implements Observer {
 	    
 	    // Next, set up the KeyStore to use. We need to load the file into
 	    // a KeyStore instance.
-	     
-	    //FileInputStream fis=new FileInputStream(keyStore);
 	    KeyStore ks=KeyStore.getInstance("jks");
 
 	    ClassLoader classLoader = getClass().getClassLoader();
 	    InputStream keystoreStream = classLoader.getResourceAsStream(keyStore); // note, not getSYSTEMResourceAsStream  
 	    ks.load(keystoreStream, keyStorePassword.toCharArray()); 
-	    
-	    //ks.load(fis, keyStorePassword.toCharArray());
-	    //fis.close();
 
-	    // Now we initialise the KeyManagerFactory with this KeyStore
+	    // Now we initialize the KeyManagerFactory with this KeyStore
 	    kmFact.init(ks, keyStorePassword.toCharArray());
 
 	    // And now get the KeyManagers
