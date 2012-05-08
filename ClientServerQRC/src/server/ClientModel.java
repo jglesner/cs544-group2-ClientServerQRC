@@ -30,12 +30,12 @@ public class ClientModel extends Observable implements Runnable {
 
     private SSLSocket socket;
     private boolean running;
-    public InetAddress remoteIP;
+    public String uniqueID;
     
     
-    public ClientModel(SSLSocket socket, InetAddress uniqueID) throws IOException {
+    public ClientModel(SSLSocket socket) throws IOException {
         this.socket = socket;
-        this.remoteIP = uniqueID;
+        this.uniqueID = "" + socket.getInetAddress() + ":" + socket.getPort();
         
         running = false;
         //get I/O from socket
@@ -85,7 +85,7 @@ public class ClientModel extends Observable implements Runnable {
           //right now it is acting as an ECHO server//
 
               pw.println(msg); //echo msg back to client//
-              System.out.println("Client:" + msg);
+              System.out.println(uniqueID + " Client:" + msg);
           }
           running = false;
     }
@@ -96,7 +96,7 @@ public class ClientModel extends Observable implements Runnable {
     //it's time to close the socket
     try {
         this.socket.close();
-        System.out.println("Closing connection");
+        System.out.println("Closing " + uniqueID + " connection.");
     } catch (IOException ioe) { }
 
     //notify the observers for cleanup etc.

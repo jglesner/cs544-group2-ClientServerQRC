@@ -1,22 +1,31 @@
 /**
  * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ *  Two Resources: 
+ *  
+ *  http://docs.oracle.com/javase/7/docs/technotes/guides/security/jsse/JSSERefGuide.html
+ *  http://stackoverflow.com/questions/941754/how-to-get-a-path-to-a-resource-in-a-java-jar-file
+ *  http://www.ibm.com/developerworks/java/library/j-customssl/
+ *  http://www.developer.com/java/ent/article.php/10933_1356891_2/A-PatternFramework-for-ClientServer-Programming-in-Java.htm
+ *  http://publib.boulder.ibm.com/infocenter/dzichelp/v2r2/index.jsp?topic=%2Fcom.ibm.ims.soap.doc%2Fsgw_configmutualsslbasicauth.htm
+ *  
  */
+
+
 package server;
 
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.Observable;
 import java.util.Vector;
 import java.util.Observer;
 import java.io.*;
-import java.util.UUID;
 import javax.net.ssl.*;
-
-import server.SimpleSSLServer.SimpleHandshakeListener;
-
+import server.SecureServerController.SimpleHandshakeListener;
 import java.security.*;
 import java.security.cert.*;
-import java.net.InetAddress;
 
 /**
  * @author Jeremy Glesner
@@ -121,14 +130,14 @@ public class SecureServerController implements Observer {
 	   */
 	  class SimpleHandshakeListener implements HandshakeCompletedListener
 	  {
-	    InetAddress ident;
+	    String ident;
 
 	    /**
 	     * Constructs a SimpleHandshakeListener with the given
 	     * identifier.
 	     * @param ident Used to identify output from this Listener.
 	     */
-	    public SimpleHandshakeListener(InetAddress ident)
+	    public SimpleHandshakeListener(String ident)
 	    {
 	      this.ident=ident;
 	    }
@@ -140,10 +149,10 @@ public class SecureServerController implements Observer {
 	      try {
 	        X509Certificate cert=(X509Certificate)event.getPeerCertificates()[0];
 	        String peer=cert.getSubjectDN().getName();
-	        System.out.println(ident+": Request from "+peer);
+	        System.out.println(ident+": Request from "+peer+"\n");
 	      }
 	      catch (SSLPeerUnverifiedException pue) {
-	        System.out.println(ident+": Peer unverified");
+	        System.out.println(ident+": Peer unverified\n");
 	      }
 	    }	
 	  }
@@ -185,24 +194,25 @@ public class SecureServerController implements Observer {
 				//wait for client to connect//
 
 	            	SecureServerController.this.socket = (SSLSocket)SecureServerController.this.ssocket.accept();
+	        
+    	            // We add in a HandshakeCompletedListener, which allows us to
+    	            // peek at the certificate provided by the client.
+	            	String uniqueID = socket.getInetAddress() + ":" + socket.getPort();
 	            	
-	            	
-	            	
-    	            HandshakeCompletedListener hcl=new SimpleHandshakeListener(socket.getInetAddress());
+    	            HandshakeCompletedListener hcl=new SimpleHandshakeListener(uniqueID);
     	            SecureServerController.this.socket.addHandshakeCompletedListener(hcl);      
 	            	
-	            	System.out.println("Client connected");
+	            	System.out.print("Client " + uniqueID + " connected using ");
 	                try 
 	                {
-   	
-	                	SecureServerController.this.ClientModel = new ClientModel(SecureServerController.this.socket, socket.getInetAddress());
+	                	SSLSession clientSession = socket.getSession();
+	                	System.out.print("protocol: " + clientSession.getProtocol() + ", ");
+	                	System.out.println("cipher: " + clientSession.getCipherSuite() + "\n");
+	                	
+	                	SecureServerController.this.ClientModel = new ClientModel(SecureServerController.this.socket);
 	                    Thread t = new Thread(SecureServerController.this.ClientModel);
 	                    SecureServerController.this.ClientModel.addObserver(SecureServerController.this);
 	                    SecureServerController.this.clients.addElement(SecureServerController.this.ClientModel);
-	                    
-	    	            // We add in a HandshakeCompletedListener, which allows us to
-	    	            // peek at the certificate provided by the client.
-
 	    	            
 	                    t.start();
 	                } catch (IOException ioe) {
@@ -246,7 +256,7 @@ public class SecureServerController implements Observer {
 
 		    // Next construct and initialize a SSLContext with the KeyStore and
 		    // the TrustStore. We use the default SecureRandom.
-		    SSLContext context=SSLContext.getInstance("SSL");
+		    SSLContext context=SSLContext.getInstance("TLS");
 		    context.init(kms, tms, null);
 
 		    // Finally, we get a SocketFactory, and pass it to SimpleSSLClient.

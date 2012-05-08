@@ -177,9 +177,9 @@ public class SecureClientController implements Runnable {
       // key managers
       KeyManager[] kms=getKeyManagers();
 
-      // Next construct and initialise a SSLContext with the KeyStore and
+      // Next construct and initialize a SSLContext with the KeyStore and
       // the TrustStore. We use the default SecureRandom.
-      SSLContext context=SSLContext.getInstance("SSL");
+      SSLContext context=SSLContext.getInstance("TLS");
       context.init(kms, tms, null);
 
       // Finally, we get a SocketFactory, and pass it to SimpleSSLClient.
