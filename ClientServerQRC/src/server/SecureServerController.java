@@ -16,7 +16,7 @@ import server.SimpleSSLServer.SimpleHandshakeListener;
 
 import java.security.*;
 import java.security.cert.*;
-import java.io.*;
+import java.net.InetAddress;
 
 /**
  * @author Jeremy Glesner
@@ -114,7 +114,39 @@ public class SecureServerController implements Observer {
 	    this.port = port;
 	}
 
-	  
+	 
+	  /**
+	   * Utility HandshakeCompletedListener which simply displays the
+	   * certificate presented by the connecting peer.
+	   */
+	  class SimpleHandshakeListener implements HandshakeCompletedListener
+	  {
+	    InetAddress ident;
+
+	    /**
+	     * Constructs a SimpleHandshakeListener with the given
+	     * identifier.
+	     * @param ident Used to identify output from this Listener.
+	     */
+	    public SimpleHandshakeListener(InetAddress ident)
+	    {
+	      this.ident=ident;
+	    }
+
+	    /** Invoked upon SSL handshake completion. */
+	    public void handshakeCompleted(HandshakeCompletedEvent event)
+	    {
+	      // Display the peer specified in the certificate.
+	      try {
+	        X509Certificate cert=(X509Certificate)event.getPeerCertificates()[0];
+	        String peer=cert.getSubjectDN().getName();
+	        System.out.println(ident+": Request from "+peer);
+	      }
+	      catch (SSLPeerUnverifiedException pue) {
+	        System.out.println(ident+": Peer unverified");
+	      }
+	    }	
+	  }
 
 	/** This inner class will keep listening to incoming connections,
 	 *  and initiating a ClientModel object for each connection. */
@@ -147,26 +179,30 @@ public class SecureServerController implements Observer {
 
 //	        	SecureServerController.this.ssocket = new ServerSocket(SecureServerController.this.port);
 	        	SecureServerController.this.ssocket = (SSLServerSocket)SecureServerController.this.ssf.createServerSocket(SecureServerController.this.port);
-
-
+	        	ssocket.setNeedClientAuth(true);
 	        	
 	            while (this.listen) {
 				//wait for client to connect//
 
 	            	SecureServerController.this.socket = (SSLSocket)SecureServerController.this.ssocket.accept();
-	                System.out.println("Client connected");
+	            	
+	            	
+	            	
+    	            HandshakeCompletedListener hcl=new SimpleHandshakeListener(socket.getInetAddress());
+    	            SecureServerController.this.socket.addHandshakeCompletedListener(hcl);      
+	            	
+	            	System.out.println("Client connected");
 	                try 
 	                {
    	
-	                	SecureServerController.this.ClientModel = new ClientModel(SecureServerController.this.socket);
+	                	SecureServerController.this.ClientModel = new ClientModel(SecureServerController.this.socket, socket.getInetAddress());
 	                    Thread t = new Thread(SecureServerController.this.ClientModel);
 	                    SecureServerController.this.ClientModel.addObserver(SecureServerController.this);
 	                    SecureServerController.this.clients.addElement(SecureServerController.this.ClientModel);
 	                    
 	    	            // We add in a HandshakeCompletedListener, which allows us to
 	    	            // peek at the certificate provided by the client.
-	    	            HandshakeCompletedListener hcl=new SimpleHandshakeListener(SecureServerController.this.ClientModel.uniqueID);
-	    	            socket.addHandshakeCompletedListener(hcl); 
+
 	    	            
 	                    t.start();
 	                } catch (IOException ioe) {
@@ -294,38 +330,8 @@ public class SecureServerController implements Observer {
 	  }
 	}
 	
-	  /**
-	   * Utility HandshakeCompletedListener which simply displays the
-	   * certificate presented by the connecting peer.
-	   */
-	  class SimpleHandshakeListener implements HandshakeCompletedListener
-	  {
-	    UUID ident;
 
-	    /**
-	     * Constructs a SimpleHandshakeListener with the given
-	     * identifier.
-	     * @param ident Used to identify output from this Listener.
-	     */
-	    public SimpleHandshakeListener(UUID ident)
-	    {
-	      this.ident=ident;
-	    }
 
-	    /** Invoked upon SSL handshake completion. */
-	    public void handshakeCompleted(HandshakeCompletedEvent event)
-	    {
-	      // Display the peer specified in the certificate.
-	      try {
-	        X509Certificate cert=(X509Certificate)event.getPeerCertificates()[0];
-	        String peer=cert.getSubjectDN().getName();
-	        System.out.println(ident+": Request from "+peer);
-	      }
-	      catch (SSLPeerUnverifiedException pue) {
-	        System.out.println(ident+": Peer unverified");
-	      }
-	    }
-	  }
 }
 
 

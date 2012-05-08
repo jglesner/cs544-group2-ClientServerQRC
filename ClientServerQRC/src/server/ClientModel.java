@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.Observable;
 import javax.net.ssl.SSLSocket;
 import java.util.UUID;
+import java.net.InetAddress;
 
 /**
  * @author Jeremy Glesner
@@ -29,12 +30,12 @@ public class ClientModel extends Observable implements Runnable {
 
     private SSLSocket socket;
     private boolean running;
-    public UUID uniqueID;
+    public InetAddress remoteIP;
     
     
-    public ClientModel(SSLSocket socket) throws IOException {
+    public ClientModel(SSLSocket socket, InetAddress uniqueID) throws IOException {
         this.socket = socket;
-        this.uniqueID =  UUID.randomUUID();
+        this.remoteIP = uniqueID;
         
         running = false;
         //get I/O from socket
