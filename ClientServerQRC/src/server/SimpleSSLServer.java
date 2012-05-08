@@ -1,6 +1,7 @@
 package server;
 
 import javax.net.ssl.*;
+import java.security.*;
 import java.security.cert.*;
 import java.io.*;
 import java.util.Properties;
@@ -17,6 +18,16 @@ import java.net.URL;
  */
 public class SimpleSSLServer extends Thread
 {
+  private final String DEFAULT_TRUSTSTORE="server/truststore-server.jks";
+  private final String DEFAULT_TRUSTSTORE_PASSWORD="password";
+  private String trustStore=DEFAULT_TRUSTSTORE;
+  private String trustStorePassword=DEFAULT_TRUSTSTORE_PASSWORD;	
+  
+  private final String DEFAULT_KEYSTORE="server/keystore-server.jks";
+  private final String DEFAULT_KEYSTORE_PASSWORD="password";
+  private String keyStore=DEFAULT_KEYSTORE;
+  private String keyStorePassword=DEFAULT_KEYSTORE_PASSWORD;  
+  
   private static final int DEFAULT_PORT=49152;
 
   private SSLServerSocketFactory serverSocketFactory;
@@ -37,14 +48,15 @@ public class SimpleSSLServer extends Thread
 
     try 
     {
-    	Properties systemProps = System.getProperties();
-    	systemProps.put("javax.net.ssl.trustStore", "./truststore-server.jks");
-    	systemProps.put("javax.net.ssl.trustStorePassword", "password");
-    	systemProps.put("javax.net.ssl.keyStore", "./keystore-server.jks");
-    	systemProps.put("javax.net.ssl.keyStorePassword", "password");    	
-    	System.setProperties(systemProps);   
+//    	Properties systemProps = System.getProperties();
+//    	systemProps.put("javax.net.ssl.trustStore", "./truststore-server.jks");
+//    	systemProps.put("javax.net.ssl.trustStorePassword", "password");
+//    	systemProps.put("javax.net.ssl.keyStore", "./keystore-server.jks");
+//    	systemProps.put("javax.net.ssl.keyStorePassword", "password");    	
+//    	System.setProperties(systemProps);   
     	
-      SSLServerSocketFactory ssf= (SSLServerSocketFactory)SSLServerSocketFactory.getDefault();
+      //SSLServerSocketFactory ssf= (SSLServerSocketFactory)SSLServerSocketFactory.getDefault();
+    	SSLServerSocketFactory ssf= getSSLServerSocketFactory();
       SimpleSSLServer server=new SimpleSSLServer(ssf, port);
       server.start();
     }
@@ -86,8 +98,7 @@ public class SimpleSSLServer extends Thread
     try {
       // First, create the server socket on which we'll accept
       // connection requests. We require client authentication.
-      SSLServerSocket serverSocket=
-        (SSLServerSocket)serverSocketFactory.createServerSocket(port);
+      SSLServerSocket serverSocket= (SSLServerSocket)serverSocketFactory.createServerSocket(port);
 
       serverSocket.setNeedClientAuth(true);
 
@@ -238,4 +249,110 @@ public class SimpleSSLServer extends Thread
       System.out.println(ident+"> "+text);
     }
   }
+  
+  /**
+   * Provides a SSLSocketFactory which ignores JSSE's choice of truststore,
+   * and instead uses either the hard-coded filename and password, or those
+   * passed in on the command-line.
+   * This method calls out to getTrustManagers() to do most of the
+   * grunt-work. It actally just needs to set up a SSLContext and obtain
+   * the SSLSocketFactory from there.
+   * @return SSLSocketFactory SSLSocketFactory to use
+   */
+  protected SSLServerSocketFactory getSSLServerSocketFactory()
+    throws IOException, GeneralSecurityException
+  {
+    // Call getTrustManagers to get suitable trust managers
+    TrustManager[] tms=getTrustManagers();
+    
+    // Call getKeyManagers (from CustomKeyStoreClient) to get suitable
+    // key managers
+    KeyManager[] kms=getKeyManagers();
+
+    // Next construct and initialise a SSLContext with the KeyStore and
+    // the TrustStore. We use the default SecureRandom.
+    SSLContext context=SSLContext.getInstance("SSL");
+    context.init(kms, tms, null);
+
+    // Finally, we get a SocketFactory, and pass it to SimpleSSLClient.
+    SSLServerSocketFactory ssf=context.getServerSocketFactory(); //.getSocketFactory();
+    return ssf;
+  }
+
+  /**
+   * Returns an array of TrustManagers, set up to use the required
+   * trustStore. This is pulled out separately so that later  
+   * examples can call it.
+   * This method does the bulk of the work of setting up the custom
+   * trust managers.
+   * @param trustStore the TrustStore to use. This should be in JKS format.
+   * @param password the password for this TrustStore.
+   * @return an array of TrustManagers set up accordingly.
+   */
+  protected TrustManager[] getTrustManagers()
+    throws IOException, GeneralSecurityException
+  {
+    // First, get the default TrustManagerFactory.
+    String alg=TrustManagerFactory.getDefaultAlgorithm();
+    TrustManagerFactory tmFact=TrustManagerFactory.getInstance(alg);
+    
+    // Next, set up the TrustStore to use. We need to load the file into
+    // a KeyStore instance.
+    //FileInputStream fis=new FileInputStream(trustStore);
+    KeyStore ks=KeyStore.getInstance("jks");
+    
+    ClassLoader classLoader = getClass().getClassLoader();
+    InputStream keystoreStream = classLoader.getResourceAsStream(trustStore); // note, not getSYSTEMResourceAsStream  
+    ks.load(keystoreStream, trustStorePassword.toCharArray());
+    
+    //ks.load(fis, trustStorePassword.toCharArray());
+    //fis.close();
+
+    // Now we initialise the TrustManagerFactory with this KeyStore
+    tmFact.init(ks);
+
+    // And now get the TrustManagers
+    TrustManager[] tms=tmFact.getTrustManagers();
+    return tms;
+  }  
+
+  /**
+   * Returns an array of KeyManagers, set up to use the required
+   * keyStore. This is pulled out separately so that later  
+   * examples can call it.
+   * This method does the bulk of the work of setting up the custom
+   * trust managers.
+   * @param trustStore the KeyStore to use. This should be in JKS format.
+   * @param password the password for this KeyStore.
+   * @return an array of KeyManagers set up accordingly.
+   */
+  protected KeyManager[] getKeyManagers()
+    throws IOException, GeneralSecurityException
+  {
+    // First, get the default KeyManagerFactory.
+    String alg=KeyManagerFactory.getDefaultAlgorithm();
+    KeyManagerFactory kmFact=KeyManagerFactory.getInstance(alg);
+    
+    // Next, set up the KeyStore to use. We need to load the file into
+    // a KeyStore instance.
+     
+    //FileInputStream fis=new FileInputStream(keyStore);
+    KeyStore ks=KeyStore.getInstance("jks");
+
+    ClassLoader classLoader = getClass().getClassLoader();
+    InputStream keystoreStream = classLoader.getResourceAsStream(keyStore); // note, not getSYSTEMResourceAsStream  
+    ks.load(keystoreStream, keyStorePassword.toCharArray()); 
+    
+    //ks.load(fis, keyStorePassword.toCharArray());
+    //fis.close();
+
+    // Now we initialise the KeyManagerFactory with this KeyStore
+    kmFact.init(ks, keyStorePassword.toCharArray());
+
+    // And now get the KeyManagers
+    KeyManager[] kms=kmFact.getKeyManagers();
+    return kms;
+  }
+  
+  
 }
