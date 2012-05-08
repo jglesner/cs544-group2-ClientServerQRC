@@ -10,6 +10,8 @@ import java.io.InputStreamReader;
 //import java.io.OutputStream;
 import java.io.IOException;
 import java.util.Observable;
+import javax.net.ssl.SSLSocket;
+import java.util.UUID;
 
 /**
  * @author Jeremy Glesner
@@ -25,11 +27,15 @@ public class ClientModel extends Observable implements Runnable {
 
     /** Socket object representing client connection */
 
-    private Socket socket;
+    private SSLSocket socket;
     private boolean running;
-
-    public ClientModel(Socket socket) throws IOException {
+    public UUID uniqueID;
+    
+    
+    public ClientModel(SSLSocket socket) throws IOException {
         this.socket = socket;
+        this.uniqueID =  UUID.randomUUID();
+        
         running = false;
         //get I/O from socket
         try {
@@ -78,6 +84,7 @@ public class ClientModel extends Observable implements Runnable {
           //right now it is acting as an ECHO server//
 
               pw.println(msg); //echo msg back to client//
+              System.out.println("Client:" + msg);
           }
           running = false;
     }

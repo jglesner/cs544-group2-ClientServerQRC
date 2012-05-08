@@ -255,7 +255,7 @@ public class SimpleSSLServer extends Thread
    * and instead uses either the hard-coded filename and password, or those
    * passed in on the command-line.
    * This method calls out to getTrustManagers() to do most of the
-   * grunt-work. It actally just needs to set up a SSLContext and obtain
+   * grunt-work. It actually just needs to set up a SSLContext and obtain
    * the SSLSocketFactory from there.
    * @return SSLSocketFactory SSLSocketFactory to use
    */
@@ -269,7 +269,7 @@ public class SimpleSSLServer extends Thread
     // key managers
     KeyManager[] kms=getKeyManagers();
 
-    // Next construct and initialise a SSLContext with the KeyStore and
+    // Next construct and initialize a SSLContext with the KeyStore and
     // the TrustStore. We use the default SecureRandom.
     SSLContext context=SSLContext.getInstance("SSL");
     context.init(kms, tms, null);
