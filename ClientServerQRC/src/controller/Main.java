@@ -20,9 +20,11 @@ public class Main {
 		
 		try
 		{
+			final XmlParser xmlParser = new XmlParser();
+			
 			if (args[0].equalsIgnoreCase("client"))
 			{
-				ClientController cc = new ClientController();
+				ClientController cc = new ClientController(xmlParser);
 				cc.start();
 			}
 			else if (args[0].equalsIgnoreCase("server"))
@@ -37,7 +39,7 @@ public class Main {
 			}
 			else if (args[0].equalsIgnoreCase("secureServer"))
 			{
-				SecureServerController ssc = new SecureServerController();
+				SecureServerController ssc = new SecureServerController(xmlParser);
 				ssc.start();
 			}
 			else if (args[0].equalsIgnoreCase("sslTestClient"))

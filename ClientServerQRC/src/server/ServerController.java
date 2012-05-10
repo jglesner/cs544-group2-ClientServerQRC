@@ -122,7 +122,6 @@ public class ServerController implements Observer {
 
 	            while (this.listen) {
 				//wait for client to connect//
-
 	            	ServerController.this.socket = ServerController.this.ssocket.accept();
 	                System.out.println("Client connected");
 	                try 

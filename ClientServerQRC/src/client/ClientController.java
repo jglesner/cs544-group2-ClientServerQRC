@@ -6,6 +6,7 @@ package client;
 import java.net.*;
 import java.util.Observable;
 import java.io.*;
+import controller.XmlParser;
 
 
 /**
@@ -21,19 +22,21 @@ public class ClientController implements Runnable {
 
     /** For writing output to socket. */
     private PrintWriter pw;	
-	
-    /**
-     * Port number of server
-     */
-     private int port=5555; //default port
+    
+    /* Port number of server */
+     private int port=0; //default port
 
-    /**
-     * Host Name or IP address in String form
-     */
-    private String hostName="localhost";//default host name
+    /* Host Name or IP address in String form */
+    private String hostName=null;//default host name
+    
+    /* XmlParser to get configuration information */
+    private final XmlParser xmlParser;
 
-    public ClientController() {
+    public ClientController(XmlParser xmlParser) {
+    	this.xmlParser = xmlParser;
 		connected = false;
+		this.port = Integer.parseInt(this.xmlParser.getClientTagValue("PORT_NUMBER"));
+		this.hostName = this.xmlParser.getClientTagValue("HOSTNAME");
     }    
     
     public boolean isConnected() {
@@ -63,8 +66,8 @@ public class ClientController implements Runnable {
 		try
 		{
 			//connectToServer();
-	        ClientController c = new ClientController();
-	        c.connect("localhost",5555);
+	        ClientController c = new ClientController(this.xmlParser);
+	        c.connect(this.getHostName(),this.getPort());
 	        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 	        String msg = "";
 	        while(!msg.equalsIgnoreCase("quit"))

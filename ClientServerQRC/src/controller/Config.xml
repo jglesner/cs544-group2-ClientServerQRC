@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<config>
+	<ServerConfig>
+		<DEFAULT_TRUSTSTORE>server/truststore-server.jks</DEFAULT_TRUSTSTORE>
+		<DEFAULT_TRUSTSTORE_PASSWORD>password</DEFAULT_TRUSTSTORE_PASSWORD>
+		<DEFAULT_KEYSTORE>server/keystore-server.jks</DEFAULT_KEYSTORE>
+		<DEFAULT_KEYSTORE_PASSWORD>password</DEFAULT_KEYSTORE_PASSWORD>
+		<PORT_NUMBER>5555</PORT_NUMBER>
+		<LOG_FILE>Server.log</LOG_FILE>
+	</ServerConfig>
+	<ClientConfig>
+		<PORT_NUMBER>5555</PORT_NUMBER>
+		<HOSTNAME>localhost</HOSTNAME>
+		<LOG_FILE>Client.log</LOG_FILE>
+	</ClientConfig>
+</config>
