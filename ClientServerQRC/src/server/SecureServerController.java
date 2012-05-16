@@ -24,9 +24,11 @@ import java.util.Vector;
 import java.util.Observer;
 import java.io.*;
 import javax.net.ssl.*;
+
+import common.XmlParser;
+
 import java.security.*;
 import java.security.cert.*;
-import controller.XmlParser;
 import java.util.logging.*;
 
 
@@ -52,6 +54,7 @@ public class SecureServerController implements Observer {
 	private final XmlParser xmlParser;
 	/* logging utility */
 	private final Logger fLogger;
+	
 
 	/** Port number of ServerController. */
 	private int port = 0;
@@ -221,7 +224,7 @@ public class SecureServerController implements Observer {
 	                	SecureServerController.this.fLogger.info("protocol: " + clientSession.getProtocol() + ", ");
 	                	SecureServerController.this.fLogger.info("cipher: " + clientSession.getCipherSuite() + "\n");
 	                	
-	                	SecureServerController.this.ClientModel = new ClientModel(SecureServerController.this.socket, SecureServerController.this.fLogger);
+	                	SecureServerController.this.ClientModel = new ClientModel(SecureServerController.this.socket, SecureServerController.this.xmlParser, SecureServerController.this.fLogger);
 	                    Thread t = new Thread(SecureServerController.this.ClientModel);
 	                    SecureServerController.this.ClientModel.addObserver(SecureServerController.this);
 	                    SecureServerController.this.clients.addElement(SecureServerController.this.ClientModel);

@@ -2,7 +2,7 @@
  * This class defines an xml parser to use for the code instead of hardcoding the values in the class itself.
  */
 
-package controller;
+package common;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
@@ -32,7 +32,7 @@ public class XmlParser {
 		
 		try {
 			ClassLoader classLoader = getClass().getClassLoader();
-		    InputStream XmlStream = classLoader.getResourceAsStream("controller/Config.xml"); // note, not getSYSTEMResourceAsStream 
+		    InputStream XmlStream = classLoader.getResourceAsStream("common/Config.xml"); // note, not getSYSTEMResourceAsStream 
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			Document doc = dBuilder.parse(XmlStream);

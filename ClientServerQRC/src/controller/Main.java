@@ -3,6 +3,8 @@
  */
 package controller;
 
+import common.XmlParser;
+
 import client.*;
 import server.*;
 
@@ -34,7 +36,7 @@ public class Main {
 			}
 			else if (args[0].equalsIgnoreCase("secureClient"))
 			{
-				SecureClientController scc = new SecureClientController();
+				SecureClientController scc = new SecureClientController(xmlParser, null);
 				scc.start();
 			}
 			else if (args[0].equalsIgnoreCase("secureServer"))

@@ -6,7 +6,8 @@ package client;
 import java.net.*;
 import java.util.Observable;
 import java.io.*;
-import controller.XmlParser;
+
+import common.XmlParser;
 
 
 /**
