@@ -22,6 +22,8 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
 import common.MessageParser;
+import common.MessageParser.TypeIndicator;
+import common.MessageParser.VersionIndicator;
 import common.XmlParser;
 
 
@@ -121,7 +123,7 @@ public class SecureClientController implements Runnable {
 	        c.connect(ssf,c.hostName,c.port);
 	        MessageParser messageParser = new MessageParser();
 	        System.out.println("Sending Version Message");
-	        byte[] msg = messageParser.CreateVersionMessage(1, MessageParser.TypeIndicator.VERSION.getIndicator(), (short)MessageParser.VersionIndicator.CLIENT_VERSION.getIndicator(), (short)0, (long)0);
+	        byte[] msg = messageParser.CreateVersionMessage(messageParser.new VersionMessage(1, TypeIndicator.VERSION, VersionIndicator.CLIENT_VERSION, (short)0, (long)0));
 	        c.sendMessage(msg);
 	        Thread.sleep(1000);
 	        c.disconnect();			

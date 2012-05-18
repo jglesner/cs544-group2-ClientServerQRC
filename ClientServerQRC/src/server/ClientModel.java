@@ -11,6 +11,8 @@ import javax.net.ssl.SSLSocket;
 import java.util.logging.*;
 import common.*;
 import common.GameState.State;
+import common.MessageParser.TypeIndicator;
+import common.MessageParser.VersionIndicator;
 
 /**
  * @author Jeremy Glesner
@@ -136,72 +138,63 @@ public class ClientModel extends Observable implements Runnable {
 	}
 
 	private void AuthenticateState(byte[] inputBuffer, int iByteCount) {
-		int TypeIndicator = this.messageParser.GetTypeIndicator(inputBuffer, iByteCount);
-		System.out.println("Type Indicator is: " + TypeIndicator);
-		if (TypeIndicator != MessageParser.TypeIndicator.VERSION.getIndicator())
+		if (this.messageParser.GetTypeIndicator(inputBuffer, iByteCount).isEqual(TypeIndicator.VERSION))
 		{
-			// need to send a version message to the client
-			byte[] outputBuffer = this.messageParser.CreateVersionMessage(m_iVersion, MessageParser.TypeIndicator.VERSION.getIndicator(), (short)MessageParser.VersionIndicator.VERSION_REQUIREMENT.getIndicator(), m_iMinorVersion, 0);
-			try
+			MessageParser.VersionMessage msg = this.messageParser.GetVersionMessage(inputBuffer, iByteCount);
+			if ((msg.getVersion() == this.m_iVersion) && (msg.getVersionType().isEqual(VersionIndicator.CLIENT_VERSION)))
 			{
-				oOutputStream.write(outputBuffer);
-			}
-			catch (Exception e)
-			{
-				// TODO: log the problem and exit
-			}
-		}
-		else
-		{
-			short VersionIndicator = this.messageParser.GetVersionType(inputBuffer, iByteCount);
-			if (VersionIndicator == (short)MessageParser.VersionIndicator.CLIENT_VERSION.getIndicator())
-			{
-				// need to check the versioning of the client
-				if (this.messageParser.GetVersion(inputBuffer, iByteCount) == this.m_iVersion)
-				{
-					// The client has a valid version and can communicate properly
-					// need to send a version message to the client
-					byte[] outputBuffer = this.messageParser.CreateVersionMessage(m_iVersion, MessageParser.TypeIndicator.VERSION.getIndicator(), (short)MessageParser.VersionIndicator.VERSION_ACK.getIndicator(), this.messageParser.GetMinorVersion(inputBuffer, iByteCount), this.m_lClientBankAmount);
-					try
-					{
-						oOutputStream.write(outputBuffer);
-					}
-					catch (Exception e)
-					{
-						// TODO: log the problem and exit
-					}
-					// This finishes the authentication state
-					System.out.println("Got a valid version from the client!");
+				msg.setBankAmount(this.m_lClientBankAmount);
+				msg.setVersionType(VersionIndicator.VERSION_ACK);
+				try	{
+					oOutputStream.write(this.messageParser.CreateVersionMessage(msg));
 					this.gameState.setState(State.WAIT);
+				} catch (Exception e) {
+					e.printStackTrace();
+					this.gameState.setState(State.CLOSED);
 				}
-				else
-				{
-					// client needs to upgrade their version
-					byte[] outputBuffer = this.messageParser.CreateVersionMessage(m_iVersion, MessageParser.TypeIndicator.VERSION.getIndicator(), (short)MessageParser.VersionIndicator.VERSION_UPGRADE.getIndicator(), this.messageParser.GetMinorVersion(inputBuffer, iByteCount), 0);
-					try
-					{
-						oOutputStream.write(outputBuffer);
-					}
-					catch (Exception e)
-					{
-						// TODO: log the problem and exit
-					}
-					// Close the connection
+			}
+			else if (msg.getVersionType().isEqual(VersionIndicator.CLIENT_VERSION))
+			{
+				// client needs to upgrade
+				// The server cannot communicate so send the message and close the connection
+				msg.setBankAmount((long)0);
+				msg.setVersion(this.m_iVersion);
+				msg.setMinorVersion(this.m_iMinorVersion);
+				msg.setTypeCode(TypeIndicator.VERSION);
+				msg.setVersionType(VersionIndicator.VERSION_UPGRADE);
+				try {
+					oOutputStream.write(this.messageParser.CreateVersionMessage(msg));
+					Thread.sleep(500);
+					this.gameState.setState(State.CLOSED);
+				} catch (Exception e) {
+					e.printStackTrace();
 					this.gameState.setState(State.CLOSED);
 				}
 			}
 			else
 			{
-				// need to send a version message to the client
-				byte[] outputBuffer = this.messageParser.CreateVersionMessage(m_iVersion, MessageParser.TypeIndicator.VERSION.getIndicator(), (short)MessageParser.VersionIndicator.VERSION_REQUIREMENT.getIndicator(), m_iMinorVersion, 0);
-				try
-				{
-					oOutputStream.write(outputBuffer);
+				msg.setBankAmount((long)0);
+				msg.setMinorVersion(this.m_iMinorVersion);
+				msg.setTypeCode(TypeIndicator.VERSION);
+				msg.setVersion(this.m_iVersion);
+				msg.setVersionType(VersionIndicator.VERSION_REQUIREMENT);
+				try {
+					oOutputStream.write(this.messageParser.CreateVersionMessage(msg));
+				} catch (Exception e) {
+					e.printStackTrace();
+					this.gameState.setState(State.CLOSED);
 				}
-				catch (Exception e)
-				{
-					// TODO: log the problem and exit
-				}
+			}
+		}
+		else
+		{
+			// client did not send the right message, server needs to force a version message
+			MessageParser.VersionMessage msg = this.messageParser.new VersionMessage(this.m_iVersion, TypeIndicator.VERSION, VersionIndicator.VERSION_REQUIREMENT, this.m_iMinorVersion,(long)0);
+			try {
+				oOutputStream.write(this.messageParser.CreateVersionMessage(msg));
+			} catch (Exception e) {
+				e.printStackTrace();
+				this.gameState.setState(State.CLOSED);
 			}
 		}
 		
