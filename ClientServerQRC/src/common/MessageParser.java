@@ -2,11 +2,9 @@ package common;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
-
-import server.card_game.Card;
-import server.card_game.Card.CardSuite;
-import server.card_game.Card.CardValue;
+import common.card_game.Card;
+import common.card_game.Card.CardSuite;
+import common.card_game.Card.CardValue;
 
 /* This class will be used by all classes to parse the incoming message or to create the outgoing messages
  * 
@@ -219,7 +217,7 @@ public class MessageParser {
    * This indicates the possible challenge indicators
    */
    public enum ChallengeIndicator{
-      NOT_SET(0), CLOSE_CONNECTION(1), CLOSE_CONNECTION_ACK(2);
+      NOT_SET(0), CHALLENGE_CONNECTION(1), CHALLENGE_CONNECTION_ACK(2);
       private int challndicator;
 		ChallengeIndicator(int challndicator)
 		{

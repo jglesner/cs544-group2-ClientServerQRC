@@ -8,7 +8,22 @@ public class GameState {
 	}
 	
 	public enum State {
-		LISTENING, AUTHENTICATE, WAIT, GAME_STATE, CLOSING, CLOSED
+		LISTENING(0), AUTHENTICATE(1), WAIT(2), GAME_STATE(3), CLOSING(4), CLOSED(5);
+		private int state;
+		State(int state)
+		{
+			this.setState(state);
+		}
+		public int getState() {
+			return state;
+		}
+		public void setState(int state) {
+			this.state = state;
+		}
+		public boolean isEqual(State rhs)
+		{
+			return (this.state == rhs.getState());
+		}
 	}
 	
 	public State getState()

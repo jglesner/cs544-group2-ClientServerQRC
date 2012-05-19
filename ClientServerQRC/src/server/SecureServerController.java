@@ -66,10 +66,12 @@ public class SecureServerController implements Observer {
 	public void start()
 	{
 		System.out.println("Starting Server...");	
+		this.fLogger.info("Starting the Server:");
 		try
 		{
 			startServerController();
 			System.out.println("Successful\n");	
+			this.fLogger.info("Server started successfully");
 		}
 		catch(Exception e)
 		{
@@ -216,7 +218,6 @@ public class SecureServerController implements Observer {
     	            HandshakeCompletedListener hcl=new SimpleHandshakeListener(uniqueID, SecureServerController.this.fLogger);
     	            SecureServerController.this.socket.addHandshakeCompletedListener(hcl);      
 	            	
-    	            System.out.print("Client " + uniqueID + " connected\n");
 	            	SecureServerController.this.fLogger.info("Client " + uniqueID + " connected using ");
 	                try 
 	                {
@@ -242,6 +243,7 @@ public class SecureServerController implements Observer {
 
     public void stopServerControllerThread() {
     	try {
+    		SecureServerController.this.fLogger.info("Stopping the server thread");
     		SecureServerController.this.ssocket.close();
     	}
     	catch (IOException ioe) {

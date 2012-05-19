@@ -1,4 +1,4 @@
-package server.card_game;
+package common.card_game;
 
 public class Card {
 	/*
@@ -19,6 +19,10 @@ public class Card {
 		public void setCardValue(int cardValue) {
 			this.cardValue = cardValue;
 		}
+		public boolean isEqual(CardValue rhs)
+		{
+			return (this.getCardValue() == rhs.getCardValue());
+		}
 	}
    
    /*
@@ -36,6 +40,10 @@ public class Card {
 		}
 		public void setCardSuite(int cardSuite) {
 			this.cardSuite = cardSuite;
+		}
+		public boolean isEqual(CardSuite rhs)
+		{
+			return (this.getCardSuite() == rhs.getCardSuite());
 		}
 	}
    
