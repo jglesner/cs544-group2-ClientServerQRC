@@ -1,14 +1,18 @@
 package common.card_game;
 
 public class Card {
+	
 	/*
-   * These are the different possible card values
-   */
-   public enum CardValue{
-      NOT_SET(0), CARD_ACE(1), CARD_2(2), CARD_3(3), CARD_4(4), CARD_5(5), CARD_6(6),
-      CARD_7(7), CARD_8(8), CARD_9(9), CARD_10(10), CARD_JACK(11), CARD_QUEEN(12), 
-      CARD_KING(13);
-      private int cardValue;
+	 * These are the different possible card values
+	 */	
+	public static int NUM_RANKS = 13;
+	public static int NUM_SUITS = 4;
+  
+	public enum CardValue{      
+		NOT_SET(0), CARD_ACE(1), CARD_2(2), CARD_3(3), CARD_4(4), CARD_5(5), CARD_6(6),     
+		CARD_7(7), CARD_8(8), CARD_9(9), CARD_10(10), CARD_JACK(11), CARD_QUEEN(12),      
+		CARD_KING(13);
+		private int cardValue;
 		CardValue(int cardValue)
 		{
 			this.setCardValue(cardValue);
@@ -23,14 +27,27 @@ public class Card {
 		{
 			return (this.getCardValue() == rhs.getCardValue());
 		}
+		public int getRankValue()
+		{
+			int cVal = -1;
+			if (cardValue == 1)
+			{
+				cVal = 12;
+			}
+			else if (cardValue > 0)
+			{
+				cVal = cardValue - 2;
+			}
+			return cVal;
+		}
 	}
    
    /*
    * These are the different possible card suites
    */
-   public enum CardSuite{
-      NOT_SET(0), CLUB(1), SPADE(2), DIAMOND(4), HEART(8);
-      private int cardSuite;
+	public enum CardSuite{
+		NOT_SET(0), CLUB(1), SPADE(2), DIAMOND(4), HEART(8);
+		private int cardSuite;
 		CardSuite(int cardSuite)
 		{
 			this.setCardSuite(cardSuite);
@@ -44,6 +61,10 @@ public class Card {
 		public boolean isEqual(CardSuite rhs)
 		{
 			return (this.getCardSuite() == rhs.getCardSuite());
+		}
+		public int getSuitValue()
+		{
+			return (int)(Math.log10(cardSuite) / Math.log10(2.0));
 		}
 	}
    
@@ -73,6 +94,12 @@ public class Card {
    public CardSuite getCardSuite()
    {
       return eSuite;
+   }
+   
+   public String toString()
+   {
+	   String ret = "(" + this.getCardSuite() + " " + this.getCardValue() + ")";
+	   return ret;
    }
 
 }

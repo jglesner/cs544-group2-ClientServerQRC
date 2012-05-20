@@ -14,7 +14,7 @@ import java.util.TimerTask;
 
 import javax.net.ssl.SSLSocket;
 
-import server.card_game.TexasHoldemModel;
+import server.card_game.texas_holdem.TexasHoldemModel;
 
 import java.util.logging.*;
 import common.*;
@@ -330,15 +330,20 @@ public class ClientModel extends Observable implements Runnable {
 				if (this.m_eGameTypeCode.isEqual(GameTypeCode.TEXAS_HOLDEM))
 				{
 					MessageParser.ServerPlayGameMessage svrMsg = oTHModel.updateModel(msg);
-					this.timeoutTimer.reschedule(m_lOpTimer);
-					try	{
-						oOutputStream.write(this.messageParser.CreateServerPlayGameMessage(svrMsg));
-						this.gameState.setState(State.WAIT);
-					} catch (Exception e) {
-						e.printStackTrace();
-						this.timeoutTimer.stop();
-						this.gameState.setState(State.CLOSED);
-					}					
+					// update client bank account
+					if (svrMsg != null)
+					{
+						this.m_lClientBankAmount = svrMsg.getBankAmount();
+						this.timeoutTimer.reschedule(m_lOpTimer);
+						try	{
+							oOutputStream.write(this.messageParser.CreateServerPlayGameMessage(svrMsg));
+							this.gameState.setState(State.WAIT);
+						} catch (Exception e) {
+							e.printStackTrace();
+							this.timeoutTimer.stop();
+							this.gameState.setState(State.CLOSED);
+						}
+					}
 				}
 			}
 			else
