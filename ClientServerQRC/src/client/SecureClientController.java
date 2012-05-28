@@ -5,14 +5,27 @@ package client;
 
 import java.io.*;
 import java.security.*;
+import java.util.Vector;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.FileHandler;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import java.net.*;
+
+import common.MessageParser;
+import common.MessageParser.TypeIndicator;
+import common.MessageParser.VersionIndicator;
+import common.XmlParser;
+
 
 /**
  * @author Jeremy Glesner
@@ -20,38 +33,62 @@ import java.net.*;
  */
 public class SecureClientController implements Runnable {
 
-	
-	private final String DEFAULT_TRUSTSTORE="client/truststore-client.jks";
-	private final String DEFAULT_TRUSTSTORE_PASSWORD="password";
-	private String trustStore=DEFAULT_TRUSTSTORE;
-	private String trustStorePassword=DEFAULT_TRUSTSTORE_PASSWORD;	
-	  
-	private final String DEFAULT_KEYSTORE="client/keystore-client.jks";
-	private final String DEFAULT_KEYSTORE_PASSWORD="password";
-    private String keyStore=DEFAULT_KEYSTORE;
-	private String keyStorePassword=DEFAULT_KEYSTORE_PASSWORD;  
-	  
-	private boolean connected; //status for listening		
+	private String trustStore=null;
+	private String trustStorePassword=null;	
+	private String keyStore=null;
+	private String keyStorePassword=null;  
+		
 	private SSLSocket socket;
+	private final XmlParser xmlParser;
+	/* logging utility */
+	private final Logger fLogger; 
+	private boolean connected; //status for listening	
 	
 	/** For reading input from socket */
-    private BufferedReader br;
+    private InputStream oInputStream;
 
     /** For writing output to socket. */
-    private PrintWriter pw;	
+    private OutputStream oOutputStream;	
 	
     /**
      * Port number of server
      */
-     private int port=5555; //default port
+     private int port = 0; //will be read from the config file
 
     /**
      * Host Name or IP address in String form
      */
-    private String hostName="localhost";//default host name
+    private String hostName= null;
 
-    public SecureClientController() {
-		connected = false;
+    public SecureClientController(XmlParser xmlParser, Logger fLogger) {
+    	this.xmlParser = xmlParser;
+    	if (fLogger != null)
+    	{
+    		this.fLogger = fLogger;
+    	}
+    	else
+    	{
+    		this.fLogger = Logger.getLogger(this.xmlParser.getClientTagValue("LOG_FILE"));
+    		this.fLogger.setUseParentHandlers(false);
+    		this.fLogger.removeHandler(new ConsoleHandler());
+    		try {
+    			FileHandler fh = new FileHandler(this.xmlParser.getClientTagValue("LOG_FILE"), true);
+    			fh.setFormatter(new SimpleFormatter());
+    			this.fLogger.addHandler(fh);
+    		} catch (Exception e) {
+    			e.printStackTrace();
+    			System.exit(1);
+    		}
+    	}
+	    this.port = Integer.parseInt(this.xmlParser.getClientTagValue("PORT_NUMBER"));
+	    this.connected = false;
+		this.trustStore=this.xmlParser.getClientTagValue("DEFAULT_TRUSTSTORE");
+		this.trustStorePassword=this.xmlParser.getClientTagValue("DEFAULT_TRUSTSTORE_PASSWORD");
+		this.keyStore=this.xmlParser.getClientTagValue("DEFAULT_KEYSTORE");
+		this.keyStorePassword=this.xmlParser.getClientTagValue("DEFAULT_KEYSTORE_PASSWORD");
+		this.fLogger.info("Setting port number to:" + this.port);
+		this.fLogger.info("Using TrustStore: " + this.trustStore);
+		this.fLogger.info("Setting KeyStore: " + this.keyStore);
     }    
     
     public boolean isConnected() {
@@ -81,16 +118,14 @@ public class SecureClientController implements Runnable {
 		try
 		{
 			//connectToServer();
-	        SecureClientController c = new SecureClientController();
+	        SecureClientController c = new SecureClientController(this.xmlParser, this.fLogger);
 	        SSLSocketFactory ssf=getSSLSocketFactory();	        
-	        c.connect(ssf,"localhost",5555);
-	        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-	        String msg = "";
-	        while(!msg.equalsIgnoreCase("quit"))
-	        {
-	           msg = br.readLine();
-	           c.sendMessage(msg);
-	        }
+	        c.connect(ssf,c.hostName,c.port);
+	        MessageParser messageParser = new MessageParser();
+	        System.out.println("Sending Version Message");
+	        byte[] msg = messageParser.CreateVersionMessage(messageParser.new VersionMessage(1, TypeIndicator.VERSION, VersionIndicator.CLIENT_VERSION, (short)0, (long)0));
+	        c.sendMessage(msg);
+	        Thread.sleep(1000);
 	        c.disconnect();			
 			System.out.println("Successful\n");	
 		}
@@ -106,17 +141,10 @@ public class SecureClientController implements Runnable {
         {
 	     this.hostName = hostName;
            this.port = port;
-           //socket = (SSLSocket)ssf.createSocket(hostName, port); //new SSLSocket(hostName,port);
-           socket = (SSLSocket)ssf.createSocket();
-           
-           InetAddress rAddress = InetAddress.getByAddress(new byte[]{(byte)192, (byte)168, 1, (byte)214});
-           SocketAddress sAddress = new InetSocketAddress(rAddress, 5555);
-           
-           socket.connect(sAddress);
-           
+           socket = (SSLSocket)ssf.createSocket(hostName, port); //new SSLSocket(hostName,port);
            //get I/O from socket
-           br = new BufferedReader(new         InputStreamReader(socket.getInputStream()));
-           pw = new PrintWriter(socket.getOutputStream(),true);
+           oInputStream = socket.getInputStream();
+           oOutputStream = socket.getOutputStream();
 
 		   connected = true;
            //initiate reading from server...
@@ -125,10 +153,10 @@ public class SecureClientController implements Runnable {
         }
     }
 
-    public void sendMessage(String msg) throws IOException
+    public void sendMessage(byte[] msg) throws IOException
     {
 		if(connected) {
-	        pw.println(msg);
+	        oOutputStream.write(msg);
         } else throw new IOException("Not connected to server");
     }
 
@@ -147,11 +175,12 @@ public class SecureClientController implements Runnable {
     }  
 
     public void run() {
-	   String msg = ""; //holds the msg received from server
+	   byte[] msg = new byte[100];
+	   int iByteSize = -1;
        try 
        {
-          while(connected && (msg = br.readLine())!= null)
-          {
+    	   while(connected && (iByteSize = oInputStream.read(msg)) > 0)
+    	   {
         	 System.out.println("Server:"+msg);
 			 //notify observers//
 			 //this.setChanged();

@@ -24,24 +24,23 @@ import java.util.Vector;
 import java.util.Observer;
 import java.io.*;
 import javax.net.ssl.*;
+
+import common.XmlParser;
+
 import java.security.*;
 import java.security.cert.*;
+import java.util.logging.*;
+
 
 /**
  * @author Jeremy Glesner
  *
  */
 public class SecureServerController implements Observer {
-
-	private final String DEFAULT_TRUSTSTORE="server/truststore-server.jks";
-	private final String DEFAULT_TRUSTSTORE_PASSWORD="password";
-	private String trustStore=DEFAULT_TRUSTSTORE;
-	private String trustStorePassword=DEFAULT_TRUSTSTORE_PASSWORD;	
-  
-	private final String DEFAULT_KEYSTORE="server/keystore-server.jks";
-	private final String DEFAULT_KEYSTORE_PASSWORD="password";
-	private String keyStore=DEFAULT_KEYSTORE;
-	private String keyStorePassword=DEFAULT_KEYSTORE_PASSWORD;  
+	private String trustStore=null;
+	private String trustStorePassword=null;	
+	private String keyStore=null;
+	private String keyStorePassword=null;  
 	
 	/** This vector holds all connected clients. */
 	private Vector<ClientModel> clients;
@@ -52,9 +51,13 @@ public class SecureServerController implements Observer {
 	private StartSecureServerControllerThread sst; //inner class
 	private SSLServerSocketFactory ssf;
 	private ClientModel ClientModel;
+	private final XmlParser xmlParser;
+	/* logging utility */
+	private final Logger fLogger;
+	
 
 	/** Port number of ServerController. */
-	private int port;
+	private int port = 0;
 	
 	/** status for listening */
 	private boolean listening;	
@@ -63,10 +66,12 @@ public class SecureServerController implements Observer {
 	public void start()
 	{
 		System.out.println("Starting Server...");	
+		this.fLogger.info("Starting the Server:");
 		try
 		{
 			startServerController();
 			System.out.println("Successful\n");	
+			this.fLogger.info("Server started successfully");
 		}
 		catch(Exception e)
 		{
@@ -74,10 +79,29 @@ public class SecureServerController implements Observer {
 		}	
 	}	
 	
-	public SecureServerController() {
+	public SecureServerController(XmlParser xmlParser) {
+		this.xmlParser = xmlParser;
+		this.fLogger = Logger.getLogger(this.xmlParser.getServerTagValue("LOG_FILE"));
+		this.fLogger.setUseParentHandlers(false);
+		this.fLogger.removeHandler(new ConsoleHandler());
+		try {
+			FileHandler fh = new FileHandler(this.xmlParser.getServerTagValue("LOG_FILE"), true);
+			fh.setFormatter(new SimpleFormatter());
+			this.fLogger.addHandler(fh);
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
 		this.clients = new Vector<ClientModel>();
-	    this.port = 5555; //default port
+	    this.port = Integer.parseInt(this.xmlParser.getServerTagValue("PORT_NUMBER"));
 	    this.listening = false;
+		this.trustStore=this.xmlParser.getServerTagValue("DEFAULT_TRUSTSTORE");
+		this.trustStorePassword=this.xmlParser.getServerTagValue("DEFAULT_TRUSTSTORE_PASSWORD");
+		this.keyStore=this.xmlParser.getServerTagValue("DEFAULT_KEYSTORE");
+		this.keyStorePassword=this.xmlParser.getServerTagValue("DEFAULT_KEYSTORE_PASSWORD");
+		this.fLogger.info("Setting port number to:" + this.port);
+		this.fLogger.info("Using TrustStore: " + this.trustStore);
+		this.fLogger.info("Setting KeyStore: " + this.keyStore);
 	}
 
 	public void startServerController() {
@@ -118,22 +142,24 @@ public class SecureServerController implements Observer {
 	}
 
 	 
-	  /**
-	   * Utility HandshakeCompletedListener which simply displays the
-	   * certificate presented by the connecting peer.
-	   */
-	  class SimpleHandshakeListener implements HandshakeCompletedListener
-	  {
-	    String ident;
+	/**
+	 * Utility HandshakeCompletedListener which simply displays the
+	 * certificate presented by the connecting peer.
+	 */
+	class SimpleHandshakeListener implements HandshakeCompletedListener
+	{
+		String ident;
+		private final Logger fLogger;
 
 	    /**
 	     * Constructs a SimpleHandshakeListener with the given
 	     * identifier.
 	     * @param ident Used to identify output from this Listener.
 	     */
-	    public SimpleHandshakeListener(String ident)
+	    public SimpleHandshakeListener(String ident, Logger fLogger)
 	    {
 	      this.ident=ident;
+	      this.fLogger = fLogger;
 	    }
 
 	    /** Invoked upon SSL handshake completion. */
@@ -143,10 +169,10 @@ public class SecureServerController implements Observer {
 	      try {
 	        X509Certificate cert=(X509Certificate)event.getPeerCertificates()[0];
 	        String peer=cert.getSubjectDN().getName();
-	        System.out.println(ident+": Request from "+peer+"\n");
+	        this.fLogger.info(ident+": Request from "+peer+"\n");
 	      }
 	      catch (SSLPeerUnverifiedException pue) {
-	        System.out.println(ident+": Peer unverified\n");
+	    	  this.fLogger.warning(ident+": Peer unverified\n");
 	      }
 	    }	
 	  }
@@ -189,17 +215,17 @@ public class SecureServerController implements Observer {
 	            	SecureServerController.this.socket = (SSLSocket)SecureServerController.this.ssocket.accept();
 	            	String uniqueID = socket.getInetAddress() + ":" + socket.getPort();
 	          
-    	            HandshakeCompletedListener hcl=new SimpleHandshakeListener(uniqueID);
+    	            HandshakeCompletedListener hcl=new SimpleHandshakeListener(uniqueID, SecureServerController.this.fLogger);
     	            SecureServerController.this.socket.addHandshakeCompletedListener(hcl);      
 	            	
-	            	System.out.print("Client " + uniqueID + " connected using ");
+	            	SecureServerController.this.fLogger.info("Client " + uniqueID + " connected using ");
 	                try 
 	                {
 	                	SSLSession clientSession = socket.getSession();
-	                	System.out.print("protocol: " + clientSession.getProtocol() + ", ");
-	                	System.out.println("cipher: " + clientSession.getCipherSuite() + "\n");
+	                	SecureServerController.this.fLogger.info("protocol: " + clientSession.getProtocol() + ", ");
+	                	SecureServerController.this.fLogger.info("cipher: " + clientSession.getCipherSuite() + "\n");
 	                	
-	                	SecureServerController.this.ClientModel = new ClientModel(SecureServerController.this.socket);
+	                	SecureServerController.this.ClientModel = new ClientModel(SecureServerController.this.socket, SecureServerController.this.xmlParser, SecureServerController.this.fLogger);
 	                    Thread t = new Thread(SecureServerController.this.ClientModel);
 	                    SecureServerController.this.ClientModel.addObserver(SecureServerController.this);
 	                    SecureServerController.this.clients.addElement(SecureServerController.this.ClientModel);
@@ -215,16 +241,16 @@ public class SecureServerController implements Observer {
 	        }
 	    }
 
-	    public void stopServerControllerThread() {
-	        try {
-	        	SecureServerController.this.ssocket.close();
-	        }
-	        catch (IOException ioe) {
-	            //unable to close ServerControllerSocket
-	        }
-	          
-	        this.listen = false;
-	    }
+    public void stopServerControllerThread() {
+    	try {
+    		SecureServerController.this.fLogger.info("Stopping the server thread");
+    		SecureServerController.this.ssocket.close();
+    	}
+    	catch (IOException ioe) {
+    		//unable to close ServerControllerSocket
+    	}
+    	this.listen = false;
+    }
 
 		  /**
 		   * Provides a SSLSocketFactory which ignores JSSE's choice of truststore,
@@ -314,9 +340,6 @@ public class SecureServerController implements Observer {
 	    return kms;
 	  }
 	}
-	
-
-
 }
 
 
