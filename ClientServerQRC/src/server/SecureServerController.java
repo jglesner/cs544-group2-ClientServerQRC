@@ -12,7 +12,7 @@
  *  http://www.ibm.com/developerworks/java/library/j-customssl/
  *  http://www.developer.com/java/ent/article.php/10933_1356891_2/A-PatternFramework-for-ClientServer-Programming-in-Java.htm
  *  http://publib.boulder.ibm.com/infocenter/dzichelp/v2r2/index.jsp?topic=%2Fcom.ibm.ims.soap.doc%2Fsgw_configmutualsslbasicauth.htm
- *  
+ *  http://www.raunakkathuria.com/technical-documents/ssl.html?task=findkey&keyref=two_way_ssl
  */
 
 

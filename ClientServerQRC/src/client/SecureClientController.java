@@ -12,6 +12,7 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import java.net.*;
 
 /**
  * @author Jeremy Glesner
@@ -105,7 +106,14 @@ public class SecureClientController implements Runnable {
         {
 	     this.hostName = hostName;
            this.port = port;
-           socket = (SSLSocket)ssf.createSocket(hostName, port); //new SSLSocket(hostName,port);
+           //socket = (SSLSocket)ssf.createSocket(hostName, port); //new SSLSocket(hostName,port);
+           socket = (SSLSocket)ssf.createSocket();
+           
+           InetAddress rAddress = InetAddress.getByAddress(new byte[]{(byte)192, (byte)168, 1, (byte)214});
+           SocketAddress sAddress = new InetSocketAddress(rAddress, 5555);
+           
+           socket.connect(sAddress);
+           
            //get I/O from socket
            br = new BufferedReader(new         InputStreamReader(socket.getInputStream()));
            pw = new PrintWriter(socket.getOutputStream(),true);
