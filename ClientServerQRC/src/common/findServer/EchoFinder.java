@@ -56,7 +56,7 @@ public class EchoFinder {
 			int third = Integer.parseInt(strArray[2]);
 			
 			//loop 1 through 254
-			for(int i=1; i<254; i++) {
+			for(int i=1; i<255; i++) {
 				String addr = first + "." + second + "." + third + "." + i;
 				System.out.println("IP: " + addr);
 				byte[] remoteAddress = new byte[]{(byte)first, (byte)second, (byte)third, (byte)i};
