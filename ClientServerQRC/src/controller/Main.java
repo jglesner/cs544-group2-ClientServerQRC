@@ -57,7 +57,7 @@ public class Main {
 		}
 		catch(Exception e)
 		{
-			System.out.println("Please pass in an argument of \"client\" or \"server\"");
+			System.out.println("Please pass in an argument of \"secureClient\" or \"secureServer\"");
 			
 		}
 	}

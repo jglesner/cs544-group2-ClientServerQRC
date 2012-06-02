@@ -119,15 +119,34 @@ public class SecureClientController implements Runnable {
 	public void start()
 	{
 		System.out.println("Starting Client...");	
-        SecureClientController c = new SecureClientController(this.xmlParser, this.fLogger);
-        SSLSocketFactory ssf=getSSLSocketFactory();	
+		SecureClientController c = null;
+		SSLSocketFactory ssf = null;
+		try {
+			c = new SecureClientController(this.xmlParser, this.fLogger);
+	        ssf=getSSLSocketFactory();
+		}
+		catch(Exception e)
+		{
+			System.out.println("Error " + e);
+		}		
         
+		//connect to server identified in config settings
 		try
 		{
-			//connectToServer();
 	        c.connect(ssf,c.hostName,c.port);
 		} catch (IOException e) {
-			c.findConnect(ssf, port);
+			System.out.println(e);
+		}
+		
+		//find server using various methods
+		if (!connected) {
+			try {
+				c.findConnect(ssf, port);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				System.out.println(e);
+				e.printStackTrace();
+			}
 		}
 		
 	    try {  
@@ -173,13 +192,15 @@ public class SecureClientController implements Runnable {
 	        socket = ef.findAGMPServer(port);
 	        
 	        //get I/O from socket
-	        oInputStream = socket.getInputStream();
-	        oOutputStream = socket.getOutputStream();
-	
-			connected = true;
-	        //initiate reading from server...
-	        Thread t = new Thread(this);
-	        t.start(); //will call run method of this class    	
+	        if (socket != null) {
+		        oInputStream = socket.getInputStream();
+		        oOutputStream = socket.getOutputStream();
+		
+				connected = true;
+		        //initiate reading from server...
+		        Thread t = new Thread(this);
+		        t.start(); //will call run method of this class    	
+	        }
         }
     }
 
