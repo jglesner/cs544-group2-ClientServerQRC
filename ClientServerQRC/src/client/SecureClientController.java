@@ -4,6 +4,9 @@
 package client;
 
 import java.io.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.security.*;
 import java.util.Vector;
 import java.util.logging.ConsoleHandler;
@@ -24,6 +27,7 @@ import javax.net.ssl.TrustManagerFactory;
 import common.MessageParser;
 import common.MessageParser.TypeIndicator;
 import common.MessageParser.VersionIndicator;
+import common.findServer.EchoFinder;
 import common.XmlParser;
 
 
@@ -115,12 +119,18 @@ public class SecureClientController implements Runnable {
 	public void start()
 	{
 		System.out.println("Starting Client...");	
+        SecureClientController c = new SecureClientController(this.xmlParser, this.fLogger);
+        SSLSocketFactory ssf=getSSLSocketFactory();	
+        
 		try
 		{
 			//connectToServer();
-	        SecureClientController c = new SecureClientController(this.xmlParser, this.fLogger);
-	        SSLSocketFactory ssf=getSSLSocketFactory();	        
 	        c.connect(ssf,c.hostName,c.port);
+		} catch (IOException e) {
+			c.findConnect(ssf, port);
+		}
+		
+	    try {  
 	        MessageParser messageParser = new MessageParser();
 	        System.out.println("Sending Version Message");
 	        byte[] msg = messageParser.CreateVersionMessage(messageParser.new VersionMessage(1, TypeIndicator.VERSION, VersionIndicator.CLIENT_VERSION, (short)0, (long)0));
@@ -131,7 +141,7 @@ public class SecureClientController implements Runnable {
 		}
 		catch(Exception e)
 		{
-			System.out.println("Error " + e);			
+			System.out.println("Error " + e);
 		}	
 
 	}
@@ -139,9 +149,9 @@ public class SecureClientController implements Runnable {
     public void connect(SSLSocketFactory ssf, String hostName, int port) throws IOException {
         if(!connected)
         {
-	     this.hostName = hostName;
-           this.port = port;
-           socket = (SSLSocket)ssf.createSocket(hostName, port); //new SSLSocket(hostName,port);
+        	this.hostName = hostName;
+            this.port = port;
+            socket = (SSLSocket)ssf.createSocket(hostName, port); //new SSLSocket(hostName,port);
            //get I/O from socket
            oInputStream = socket.getInputStream();
            oOutputStream = socket.getOutputStream();
@@ -150,6 +160,26 @@ public class SecureClientController implements Runnable {
            //initiate reading from server...
            Thread t = new Thread(this);
            t.start(); //will call run method of this class
+        }
+    }
+    
+    public void findConnect(SSLSocketFactory ssf, int port) throws IOException {
+        if(!connected)
+        { 	
+        	this.port = port;
+        	System.out.println("Attempting to find Server via ICMP Echo or TCP Port 7 Echo...");
+			EchoFinder ef = new EchoFinder(ssf, port);
+	        
+	        socket = ef.findAGMPServer(port);
+	        
+	        //get I/O from socket
+	        oInputStream = socket.getInputStream();
+	        oOutputStream = socket.getOutputStream();
+	
+			connected = true;
+	        //initiate reading from server...
+	        Thread t = new Thread(this);
+	        t.start(); //will call run method of this class    	
         }
     }
 
