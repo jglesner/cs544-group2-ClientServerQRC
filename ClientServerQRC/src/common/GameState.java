@@ -8,7 +8,7 @@ public class GameState {
 	}
 	
 	public enum State {
-		LISTENING(0), AUTHENTICATE(1), WAIT(2), GAME_STATE(3), CLOSING(4), CLOSED(5);
+		LISTENING(0), AUTHENTICATE(1), GAMELIST(2), GAMESET(3), GAMEPLAY(4), CLOSING(5), CLOSED(6);
 		private int state;
 		State(int state)
 		{

@@ -1,3 +1,13 @@
+/**
+ *  @author GROUP 2, CS544-900-SPRING12, DREXEL UNIVERSITY
+ *  
+ *  This page contains game logic for playing Texas Holdem.
+ *  
+ *  This ranking function was downloaded and modified from
+ *  http://www.jroller.com/JamesGoodwill/entry/texas_hold_em_hand_evaluator
+ *  
+ */
+
 package server.card_game.texas_holdem;
 
 import common.card_game.Card;

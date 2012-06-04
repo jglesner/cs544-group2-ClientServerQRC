@@ -15,7 +15,7 @@ public class MessageParser {
 	 * This is the different possible type indicators
 	 */
 	public enum TypeIndicator{
-		NOT_SET(0), VERSION(1), GAME(2), CLOSE_CONNECTION(3), CHALLENGE_CONNECTION(4);
+		NOT_SET(0), VERSION(1), LIST(2), SET(3), GAME(4), CLOSE_CONNECTION(5), CHALLENGE_CONNECTION(6);
 		private int indicator;
 		TypeIndicator(int indicator)
 		{
@@ -292,6 +292,16 @@ public class MessageParser {
       public long getBankAmount()
       {
          return lBankAmount;
+      }   
+      
+      public String toString()
+      {
+    	  String message = "";
+    	  message += "Type Indicator: " + eTypeCode.getIndicator() + "\n";
+    	  message += "Version Type: " + eVersionType.getIndicator() + "\n";
+    	  message += "Your bank account value is: " + this.lBankAmount + "\n";
+    	  return message;
+    	  
       }      
    }
    
@@ -395,6 +405,20 @@ public class MessageParser {
       {
          return oGameTypeCodeList;
       } 
+      
+      public String toString()
+      {
+    	  String message = "";
+    	  int i=0;
+    	  for (GameTypeCode gameList : oGameTypeCodeList)
+    	  {
+    		  i++;
+    		  message += "Option " + i + ": " + gameList.getGameTypeCode();
+    	  }
+		return message;
+    	  
+      }
+      
    }
    
    /*
@@ -507,6 +531,15 @@ public class MessageParser {
       {
          return eGameTypeResponse;
       }
+      
+      public String toString()
+      {
+    	  String message = "";
+    	  message += "Response: " + eGameTypeResponse.getGameTypeResponse() + "\n";
+    	  return message;
+    	  
+      }      
+      
    }
    
     /*
@@ -905,8 +938,8 @@ public class MessageParser {
 		long bankamount = -1;
 		if (iSize == 12)
 		{
-			version = (int)(((buffer[0] << 8) | buffer[1]) & 0xFFFF );
-			indicator.setIndicator((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
+			version = (int)(((buffer[0] << 8) | buffer[1]) & 0xFFFF ); //FFFF
+			indicator.setIndicator((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF)); //FFFF
 			verType.setIndicator((short)(buffer[4] & 0xFF));
 			minorversion = (short)(buffer[5] & 0xFF);
 			short byte1 = (short)(buffer[8] & 0xFF);

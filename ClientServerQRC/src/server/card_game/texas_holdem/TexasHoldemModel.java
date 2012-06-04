@@ -1,3 +1,13 @@
+/**
+ *  @author GROUP 2, CS544-900-SPRING12, DREXEL UNIVERSITY
+ *  
+ *  This page contains game logic for playing Texas Holdem.
+ *  
+ *  This model class was downloaded and modified from
+ *  //TODO WHERE WAS THIS CODE TAKEN FROM? OR IS IT ORIGINAL?
+ *  
+ */
+
 package server.card_game.texas_holdem;
 
 import server.ClientModel;

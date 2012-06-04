@@ -2,14 +2,10 @@ package common.findServer;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
-import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.Collections;
 import java.util.Enumeration;
-
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
@@ -58,18 +54,17 @@ public class EchoFinder {
 			//loop 1 through 254
 			for(int i=1; i<255; i++) {
 				String addr = first + "." + second + "." + third + "." + i;
-				System.out.println("IP: " + addr);
 				byte[] remoteAddress = new byte[]{(byte)first, (byte)second, (byte)third, (byte)i};
 				if (InetAddress.getByAddress(remoteAddress).isReachable(100)) {
 					try{
 						socket = bs.connect(ssf, remoteAddress, port);
-						System.out.println("Connected");
+						System.out.println("Connected to IP: " + addr);
 						break;
 					} catch (IOException e) {
-						System.out.println("Connection Refused");	
+						//System.out.println("Connection Refused");	
 					}
 				} else {
-					System.out.println("Connection Refused");	
+					//System.out.println("Connection Refused");	
 				}
 			}	
 		
