@@ -25,10 +25,6 @@ package client;
 
 import java.io.*;
 import java.security.*;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.FileHandler;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -36,21 +32,24 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import common.GameState;
-import common.MessageParser;
 import common.GameState.State;
 import common.MessageParser.GameIndicator;
+import common.MessageParser.GamePlayRequest;
 import common.MessageParser.GameTypeCode;
 import common.MessageParser.TypeIndicator;
 import common.MessageParser.VersionIndicator;
 import common.findServer.EchoFinder;
-import common.XmlParser;
+import common.*;
 
 
 /**
- * SecureClientController class manages the logic for the client side
- * within the AGMP example application.
- * 
+ *  SecureClientController class manages the logic for the client side
+ *  within the AGMP example application.
+ *   
+ *  @author GROUP 2, CS544-900-SPRING12, DREXEL UNIVERSITY
+ *  Members: Jeremy Glesner, Dustin Overmiller, Yiqi Ju, Lei Yuan
+ *  Project: Advanced Game Message Protocol Implementation
+ *  
  */
 public class SecureClientController implements Runnable {
 
@@ -60,13 +59,12 @@ public class SecureClientController implements Runnable {
 	private String keyStore=null;
 	private String keyStorePassword=null; 
 	
-	/* logging utility */
-	private final Logger fLogger; 
-	
 	/* management mechanisms */
     private GameState gameState;
     private MessageParser messageParser;
 	private boolean connected;
+	private LogAndPublish logAndPublish;
+	private long bankAmount;
 	
 	/* connectivity mechanisms */    
 	private SecureClientController c = null;
@@ -87,30 +85,12 @@ public class SecureClientController implements Runnable {
      * @param xmlParser Incoming XML Parser
      * @param fLogger Incoming Logger
      */
-    public SecureClientController(XmlParser xmlParser, Logger fLogger) {
+    public SecureClientController(XmlParser xmlParser, LogAndPublish logAndPublish) 
+    {
         
 		/* setup parser */
     	this.xmlParser = xmlParser;
-    	
-		/* setup logger */
-    	if (fLogger != null)
-    	{
-    		this.fLogger = fLogger;
-    	}
-    	else
-    	{
-    		this.fLogger = Logger.getLogger(this.xmlParser.getClientTagValue("LOG_FILE"));
-    		this.fLogger.setUseParentHandlers(false);
-    		this.fLogger.removeHandler(new ConsoleHandler());
-    		try {
-    			FileHandler fh = new FileHandler(this.xmlParser.getClientTagValue("LOG_FILE"), true);
-    			fh.setFormatter(new SimpleFormatter());
-    			this.fLogger.addHandler(fh);
-    		} catch (Exception e) {
-    			e.printStackTrace();
-    			System.exit(1);
-    		}
-    	}    	
+    	this.logAndPublish = logAndPublish;
     	
     	/* instantiate remaining variables */
     	this.gameState = new GameState();
@@ -125,9 +105,12 @@ public class SecureClientController implements Runnable {
 		this.keyStore=this.xmlParser.getClientTagValue("DEFAULT_KEYSTORE");
 		this.keyStorePassword=this.xmlParser.getClientTagValue("DEFAULT_KEYSTORE_PASSWORD");    
 		this.hostName = this.xmlParser.getClientTagValue("HOSTNAME");
-		this.fLogger.info("Setting port number to:" + this.port);
-		this.fLogger.info("Using TrustStore: " + this.trustStore);
-		this.fLogger.info("Setting KeyStore: " + this.keyStore);    	
+		this.bankAmount = 0;
+		
+		logAndPublish.write("Setting port number to:" + this.port, true, false);
+		logAndPublish.write("Using TrustStore: " + this.trustStore, true, false);
+		logAndPublish.write("Setting KeyStore: " + this.keyStore, true, false);
+	
     }    
     
     /**
@@ -183,17 +166,17 @@ public class SecureClientController implements Runnable {
 	{
 		
 		/* Log and Publish */
-		logAndPublish("Client connecting to server...", true, true);
+		logAndPublish.write("Client connecting to server...", true, true);
 
 		/* instantiate a new SecureClientController */
 		try {
-			c = new SecureClientController(this.xmlParser, this.fLogger);
+			c = new SecureClientController(this.xmlParser, logAndPublish);
 	        ssf=getSSLSocketFactory();
 		}
 		catch(Exception e)
 		{
 			/* Log and Publish */
-			logAndPublish(e, true, true);			
+			logAndPublish.write(e, true, true);			
 		}		
         
 		/* Connect to server identified in configuration settings */
@@ -203,7 +186,7 @@ public class SecureClientController implements Runnable {
 		} catch (IOException e) 
 		{
 			/* Log and Publish */
-			logAndPublish(e, true, true);
+			logAndPublish.write(e, true, true);
 		}
 		
 		/* find server using ICMP/TCP methods */
@@ -215,12 +198,12 @@ public class SecureClientController implements Runnable {
 			} catch (Exception e) 
 			{
 				/* Log and Publish */
-				logAndPublish(e, true, true);				
+				logAndPublish.write(e, true, true);				
 			}
 		}
 		
 		/* Log and Publish */
-		logAndPublish("Client connected.", true, true);
+		logAndPublish.write("Client connected.", true, true);
 
 	}
 
@@ -238,7 +221,7 @@ public class SecureClientController implements Runnable {
     		   	if (this.gameState.getState().isEqual(State.AUTHENTICATE))
     		   	{
     				/* Log and Publish */
-    				logAndPublish("Enter Authentication State.", false, true);
+    				logAndPublish.write("Enter Authentication State.", false, true);
     				
     				GameAuthenticateState();
     		   	}
@@ -246,14 +229,14 @@ public class SecureClientController implements Runnable {
     		   	else if (this.gameState.getState().isEqual(State.GAMELIST))
 	       		{
     				/* Log and Publish */
-    				logAndPublish("Enter List State.", false, true);
+    				logAndPublish.write("Enter List State.", false, true);
     				
 	       			GameListState();
 	       		}    	        		
     		   	else if (this.gameState.getState().isEqual(State.GAMESET))
         		{
     				/* Log and Publish */
-    				logAndPublish("Enter Set State.", false, true);
+    				logAndPublish.write("Enter Set State.", false, true);
     				
         			GameSetState();
         		}        		
@@ -261,23 +244,23 @@ public class SecureClientController implements Runnable {
         		else if (this.gameState.getState().isEqual(State.GAMEPLAY))
         		{
     				/* Log and Publish */
-    				logAndPublish("Enter Play State.", false, true);
+    				logAndPublish.write("Enter Play State.", false, true);
     				
         			GamePlayState();
         		}
         		else if (this.gameState.getState().isEqual(State.CLOSING))
         		{
     				/* Log and Publish */
-    				logAndPublish("Enter Closing State.", false, true);
+    				logAndPublish.write("Enter Closing State.", false, true);
     				
         			ClosingState();
         			break;
         		}
 				/* Log and Publish */
-				logAndPublish("Connection status: " + connected, false, false);
+				logAndPublish.write("Connection status: " + connected, false, false);
 				
 				/* Log and Publish */
-				logAndPublish("Game state: " + this.gameState.getState(), false, false);				
+				logAndPublish.write("Game state: " + this.gameState.getState(), false, false);				
 
         	}
     	   connected = false;
@@ -286,7 +269,7 @@ public class SecureClientController implements Runnable {
 		catch(Exception e)
 		{
       		/* Log and Publish */
-      		logAndPublish(e, true, true); 
+      		logAndPublish.write(e, true, true); 
 		}	    		   
         finally { connected = false; }
     }
@@ -312,8 +295,6 @@ public class SecureClientController implements Runnable {
 
 		/* set variables */
 		int command = 0;
-	
-		System.exit(0);
 		
 		DISPLAY:
 		while(true)
@@ -321,39 +302,94 @@ public class SecureClientController implements Runnable {
 		
 			try
 			{
-
-			//REQUIRES X SUB STATES
-			
-			//STATE1
-	//			1) Player puts down an ante
-			System.out.println("Place your bet using a whole integer: ");
-			//command = Integer.parseInt(br.readLine());
-			
-			//STATE2
-	//			2) Dealer will give the player two cards
-			//DISPLAY TWO CARDS
-	//			3) Player will decide to play or fold
-	//			a) if the player plays they must bet twice their ante amount
-	//			b) if they fold they have to go back to 1)
-			System.out.println("To play this hand, enter 1. To fold this hand, enter 2");
-			//command = Integer.parseInt(br.readLine());
-			if (command == 1) {
 				
-			}
+				/* minimum ante allowable */
+				int min_ante = Integer.parseInt(this.xmlParser.getServerTagValue("MIN_ANTE"));
+				
+				
+				/* sub-state: Verify player has enough money to play */
+				{
+					
+					if (this.bankAmount < min_ante)
+					{
+						logAndPublish.write("You are too poor to play this game.  Returning to game list...", false, true);
+						this.gameState.setState(State.GAMELIST);
+						break;
+					}
+					MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, TypeIndicator.GAME, GameIndicator.PLAY_GAME, GameTypeCode.TEXAS_HOLDEM, GamePlayRequest.NOT_SET, (long)0);  
+			        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));					
+				    
+			        
+				}
+				
+				
+				/* sub-state: Begin Playing A Game Of Texas Holdem? */
+				{
+					
+					logAndPublish.write("Begin Playing A Game Of Texas Holdem?", false, true);
+					
+					/* loop to handle user command line input */
+					command = UserSelection("Enter 1 to begin, and 2 to return to game list.", 1, 2);
+					
+					/* handle user selection */
+					if (command == 1){
+					
+						/* send init message */
+						MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, TypeIndicator.GAME, GameIndicator.PLAY_GAME, GameTypeCode.TEXAS_HOLDEM, GamePlayRequest.INIT, (long)0);  
+				        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));						
+						
+						/* proceed to the next step */
+						this.gameState.setState(State.GAMEPLAY);
+	
+					} else {
+						
+						/* transition to closing state */
+						this.gameState.setState(State.GAMELIST);
+						break;
+					}				
+				}
+				
+				
+				/* sub-state: Player puts down an ante */
+				{
+
+					/* sub-state: place your bet */
+					logAndPublish.write("Place your bet.", false, true);
+					
+
+					
+					/* loop to handle user command line input */
+					command = UserSelection("Enter any amount greater than " + min_ante + " to begin, and 2 to return to game list.", min_ante, (int)this.bankAmount);
+					
+					/* handle user selection */
+					
+						/* send init message */
+						MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, TypeIndicator.GAME, GameIndicator.PLAY_GAME, GameTypeCode.TEXAS_HOLDEM, GamePlayRequest.GET_HOLE, (long)command);  
+				        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));						
+						
+						/* proceed to the next step */
+						this.gameState.setState(State.GAMEPLAY);
+					
+				}
 			
-	//			4) If player bets then the dealer gives 3 flop cards
-	//			5) Player can bet (only can bet the ante amount) , check, or fold
-	//			6) If Player bets or checks the dealer gives a turn card
-	//			7) Player can bet (only can bet the ante amount) check or fold
-	//			8) If player checks or bets the dealer determines the winner and updates the players bank amount, etc.			
-			
+				/* Dealer will give the player two cards */
+				{
+					
+			        /* get server response */
+			        ServerResponse sr = this.receiveMessage();
+					
+
+				}
+
 			
 			}
 			catch(Exception e)
 			{
-				continue DISPLAY;
+				logAndPublish.write(e,true,true);
+				this.disconnect();
 			}
 		}
+		
 	}
 	
 	/**
@@ -372,7 +408,7 @@ public class SecureClientController implements Runnable {
         	MessageParser.ServerGetGameMessage msg = this.messageParser.GetServerGetGameMessage(sr.getMessage(), sr.getSize());
     		
         	/* Log and Publish */
-    		logAndPublish(msg.toString(), false, true);  
+    		logAndPublish.write(msg.toString(), false, true);  
         }
         else
         {
@@ -385,6 +421,9 @@ public class SecureClientController implements Runnable {
 		this.gameState.setState(State.GAMEPLAY);
 		
 	}
+	
+
+	
 	/**
 	 * GameListState method enables the user to select which game they 
 	 * would like to play or to exit, disconnect and close the client application.
@@ -405,7 +444,7 @@ public class SecureClientController implements Runnable {
         	MessageParser.ServerGetGameMessage msg = this.messageParser.GetServerGetGameMessage(sr.getMessage(), sr.getSize());
 
     		/* Log and Publish */
-    		logAndPublish(msg.toString(), false, false);          	
+    		logAndPublish.write(msg.toString(), false, false);          	
         }
         else
         {
@@ -414,32 +453,10 @@ public class SecureClientController implements Runnable {
         
         //TODO: ADD ERROR HANDLING AND STATE CHANGES USING SERVER RESPONSE//
 
-        //TODO: ADD DYNAMIC MENU USING SERVER RESPONSE//
-        /* Hard Coded Menu */
-		System.out.println("1: Play Texas Hold'em");
-		System.out.println("2: Close Connection");		
+        //TODO: ADD DYNAMIC MENU USING SERVER RESPONSE//	
 		
 		/* loop to handle user command line input */
-		reset:
-		while(true) {
-			try {
-				command = Integer.parseInt(br.readLine());
-			} catch (NumberFormatException e) {
-			
-	    		/* Log and Publish */
-	    		logAndPublish(e, true, false);
-	    		logAndPublish("Invalid Selection.  Try again.", false, true);
-				continue reset;
-
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-			/* command contains a valid number */
-			if ((command ==1) || (command == 2)) 
-				break;
-		}
+		command = UserSelection("1: Play Texas Hold'em\n2: Close Connection", 1, 2);
 		
 		/* handle user selection */
 		if (command == 1){
@@ -465,7 +482,7 @@ public class SecureClientController implements Runnable {
 	{
 
 		/* Log and Publish */
-		logAndPublish("Sending Version Message", true, true);
+		logAndPublish.write("Sending Version Message", true, true);
         
         MessageParser.VersionMessage oMsg1 = this.messageParser.new VersionMessage(1, TypeIndicator.VERSION, VersionIndicator.CLIENT_VERSION, (short)0, (long)0);
         this.sendMessage(this.messageParser.CreateVersionMessage(oMsg1));
@@ -478,8 +495,10 @@ public class SecureClientController implements Runnable {
         {
         	MessageParser.VersionMessage iMsg = this.messageParser.GetVersionMessage(sr.getMessage(), sr.getSize());
 
+        	this.bankAmount = iMsg.getBankAmount();
+        	
     		/* Log and Publish */
-    		logAndPublish(iMsg.toString(), false, true);        	
+    		logAndPublish.write(iMsg.toString(), false, true);        	
         }
         else
         {
@@ -592,7 +611,7 @@ public class SecureClientController implements Runnable {
     {
         
 		/* Log and Publish */
-		logAndPublish("Open secure connection to " + hostName + ".", true, true);    	
+		logAndPublish.write("Open secure connection to " + hostName + ".", true, true);    	
     	
     	if(!connected)
         {
@@ -611,7 +630,7 @@ public class SecureClientController implements Runnable {
    		 	this.connected = true;
    		 	
    			/* Log and Publish */
-   			logAndPublish("'connect' status: " + connected, false, false);   		 	
+   			logAndPublish.write("'connect' status: " + connected, false, false);   		 	
    		 	
    		 	/* Spawn thread with 'this' instance.  Initiate reading from server. */
    		 	Thread t = new Thread(this);
@@ -631,7 +650,7 @@ public class SecureClientController implements Runnable {
     {
         
 		/* Log and Publish */
-		logAndPublish("Attempting to find server using ICMP and/or TCP.", true, true); 
+		logAndPublish.write("Attempting to find server using ICMP and/or TCP.", true, true); 
     	
     	if(!connected)
         { 	
@@ -653,7 +672,7 @@ public class SecureClientController implements Runnable {
 				connected = true;
 
 	  			/* Log and Publish */
-	   			logAndPublish("'findConnect' status: " + connected, false, true);   		 	
+	   			logAndPublish.write("'findConnect' status: " + connected, false, true);   		 	
 				
 				/* Spawn thread with 'this' instance.  Initiate reading from server. */
 		        Thread t = new Thread(this);
@@ -662,7 +681,50 @@ public class SecureClientController implements Runnable {
         }
     }
     
+	/**
+	 * UserSelection method to capture user input from command line to questions
+	 * 
+	 * @param choice String summarizing the choice to be made
+	 * @param greaterThan Integer of a value to be greater than as first number in the choice sequence
+	 * @param lessThan Integer of a value to be less than and equal to the last number in the choice sequence
+	 * @return
+	 */
+	public int UserSelection(String choice, int greaterThan, int lessThan)
+	{
+		int command = -1;
+		
+		reset:
+		while(true) {
+			try {
+				logAndPublish.write(choice, false, true);
+				command = Integer.parseInt(br.readLine());
+			} catch (NumberFormatException e) {
+			
+	    		/* Log and Publish */
+	    		logAndPublish.write(e, true, false);
+	    		logAndPublish.write("Invalid Selection.  Try again.", false, true);
+				continue reset;
 
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				this.disconnect();
+			}
+			
+			/* command contains a valid number */
+			if ((command >= greaterThan) && (command <=lessThan))
+				break;
+			else 
+			{
+				logAndPublish.write("Invalid Selection.  Try again.", false, true);
+				continue reset;
+			}
+		}	
+		
+		return command;
+	
+	}    
+    
     /**
      * receiveMessage method reads server response from ObjectInputStream 
      * @return 
@@ -693,7 +755,8 @@ public class SecureClientController implements Runnable {
     /**
      * Disconnect this client from the server
      */
-    public void disconnect() {
+    public void disconnect() 
+    {
     	
     	/* Disconnect from server */
 		if(socket != null && connected)
@@ -703,43 +766,15 @@ public class SecureClientController implements Runnable {
           }catch(IOException ioe) {
         	  
       		/* Log and Publish */
-      		logAndPublish(ioe, true, true); 
+      		logAndPublish.write(ioe, true, true); 
           }
           finally {
 			this.connected = false;
           }
         }
-    }      
-    
-    /**
-     * logAndPublish method to write out to console and/or logger.
-     * @param msg Message to publish
-     * @param log Write to logger boolean
-     * @param console Write to console boolean
-     */
-    public void logAndPublish (String msg, boolean log, boolean console) {
-    	if (console)
-    		System.out.println(msg);
-    	
-    	if (log)
-    		this.fLogger.info(msg);
-    	
-    }   
-    
-    /**
-     * logAndPublish method to write out to console and/or logger.
-     * @param msg Exception to publish
-     * @param log Write to logger boolean
-     * @param console Write to console boolean
-     */
-    public void logAndPublish (Exception msg, boolean log, boolean console) {
-    	if (console)
-    		msg.printStackTrace();
-    	
-    	if (log)
-    		this.fLogger.info(msg.getMessage());
-    }       
+    }
 }
+
 
 /**
  * ServerResponse class used to store a response message and length from an AGMP Server

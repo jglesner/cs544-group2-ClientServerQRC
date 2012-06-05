@@ -1,5 +1,7 @@
 /**
  *  @author GROUP 2, CS544-900-SPRING12, DREXEL UNIVERSITY
+ *  Members: Jeremy Glesner, Dustin Overmiller, Yiqi Ju, Lei Yuan
+ *  Project: Advanced Game Message Protocol Implementation
  *  
  *  This is an example of a client side application using the Advanced Game Management Protocol to send messages   
  * 
@@ -28,17 +30,18 @@ import java.util.Vector;
 import java.util.Observer;
 import java.io.*;
 import javax.net.ssl.*;
-
-import common.XmlParser;
-
+import common.*;
 import java.security.*;
 import java.security.cert.*;
 import java.util.logging.*;
 
 
 /**
- * @author GROUP2
- *
+ *  The SecureServerController Class used to instantiate the server
+ *  
+ *  @author GROUP 2, CS544-900-SPRING12, DREXEL UNIVERSITY
+ *  Members: Jeremy Glesner, Dustin Overmiller, Yiqi Ju, Lei Yuan
+ *  Project: Advanced Game Message Protocol Implementation
  */
 public class SecureServerController implements Observer {
 	private String trustStore=null;
@@ -83,7 +86,7 @@ public class SecureServerController implements Observer {
 		}	
 	}	
 	
-	public SecureServerController(XmlParser xmlParser) {
+	public SecureServerController(XmlParser xmlParser, LogAndPublish logAndPublish) {
 		this.xmlParser = xmlParser;
 		this.fLogger = Logger.getLogger(this.xmlParser.getServerTagValue("LOG_FILE"));
 		this.fLogger.setUseParentHandlers(false);
