@@ -47,7 +47,7 @@ public class Main {
 
 			if (args[0].equalsIgnoreCase("secureClient"))
 			{
-				SecureClientController scc = new SecureClientController(xmlParser, null);
+				SecureClientController scc = new SecureClientController(xmlParser, null,null);
 				scc.start();
 			}
 			else if (args[0].equalsIgnoreCase("secureServer"))

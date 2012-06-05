@@ -21,5 +21,6 @@
 		<DEFAULT_KEYSTORE>client/keystore-client.jks</DEFAULT_KEYSTORE>
 		<DEFAULT_KEYSTORE_PASSWORD>password</DEFAULT_KEYSTORE_PASSWORD>
 		<LOG_FILE>Client.log</LOG_FILE>
-	</ClientConfig>
+		<VERSION>1</VERSION>
+		<MINOR_VERSION>0</MINOR_VERSION></ClientConfig>
 </config>

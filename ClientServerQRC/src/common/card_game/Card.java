@@ -7,7 +7,15 @@ public class Card {
 	 */	
 	public static int NUM_RANKS = 13;
 	public static int NUM_SUITS = 4;
-  
+    private boolean is_visible=true;
+	public boolean isIs_visible() {
+		return is_visible;
+	}
+
+	public void setIs_visible(boolean is_visible) {
+		this.is_visible = is_visible;
+	}
+
 	public enum CardValue{      
 		NOT_SET(0), CARD_ACE(1), CARD_2(2), CARD_3(3), CARD_4(4), CARD_5(5), CARD_6(6),     
 		CARD_7(7), CARD_8(8), CARD_9(9), CARD_10(10), CARD_JACK(11), CARD_QUEEN(12),      

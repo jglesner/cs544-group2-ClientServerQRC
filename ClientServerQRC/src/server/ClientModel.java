@@ -156,7 +156,12 @@ public class ClientModel extends Observable implements Runnable {
 		this.socket.close();
         }catch(IOException ioe){ };
     }
-
+    public void sendMessage (byte[] msg) throws IOException
+    {
+		outputStream.writeByte((byte)msg.length);
+        outputStream.write(msg); 
+        outputStream.flush();
+    }
     public void run() {
         //byte[] inputBuffer = new byte[100];
         //int iByteCount = -1;
@@ -184,10 +189,10 @@ public class ClientModel extends Observable implements Runnable {
 //        			}		
 //        		}
         		 
-        		byte iByteCount = inputstream.readByte();
-        		byte [] inputBuffer = new byte[iByteCount];
-        		inputstream.readFully(inputBuffer); 
-        		
+//        		byte iByteCount = inputstream.readByte();
+        		byte iByteCount=inputstream.readByte();
+        		byte [] inputBuffer=new byte[iByteCount] ;
+        		inputstream.readFully(inputBuffer);
         		if (this.gameState.getState().isEqual(State.AUTHENTICATE))
         		{
         			System.out.println("entering authenticate");
@@ -210,7 +215,7 @@ public class ClientModel extends Observable implements Runnable {
         			GamePlayState(inputBuffer, iByteCount);
         		}
         		else if (this.gameState.getState().isEqual(State.CLOSING))
-        		{
+        		{	
         			System.out.println("entering closing");
         			ClosingState(inputBuffer, iByteCount);
         		}
@@ -353,6 +358,7 @@ public class ClientModel extends Observable implements Runnable {
 		if (this.messageParser.GetGameIndicator(inputBuffer, iByteCount).isEqual(GameIndicator.SET_GAME) & this.m_bGotGames)
 		{
 			//this.gameState.setState(State.GAMEPLAY);
+			System.out.println("version and gameindicator right");
 			MessageParser.ClientSetGameMessage msg = this.messageParser.GetClientSetGameMessage(inputBuffer, iByteCount);
 			// make sure this was indeed a client get game message
 			if (!msg.getGameIndicator().isEqual(GameIndicator.SET_GAME))
@@ -366,6 +372,7 @@ public class ClientModel extends Observable implements Runnable {
 			if (msg.getGameTypeCode().isEqual(GameTypeCode.TEXAS_HOLDEM))
 			{
 				// reset the game model
+				System.out.println("GameTypecode is right");
 				this.oTHModel.Reset();
 				this.m_eGameTypeCode = msg.getGameTypeCode();
 				this.gameState.setState(State.GAMEPLAY);
@@ -393,11 +400,12 @@ public class ClientModel extends Observable implements Runnable {
 			this.m_bSetGames = true;
 			this.timeoutTimer.reschedule(m_lOpTimer);
 			MessageParser.ServerSetGameMessage svrMsg = this.messageParser.new ServerSetGameMessage(m_iVersion, TypeIndicator.SET, GameIndicator.SET_GAME, this.m_eGameTypeCode, GameTypeResponse.ACK);
+			byte[] outputBuffer=this.messageParser.CreateServerSetGameMessage(svrMsg);
 			try	{
 				//oOutputStream.write(this.messageParser.CreateServerSetGameMessage(svrMsg));
-				outputStream.writeByte((byte)this.messageParser.CreateServerSetGameMessage(svrMsg).length);
-		        outputStream.write(this.messageParser.CreateServerSetGameMessage(svrMsg)); 
-		        outputStream.flush();				
+				System.out.println("send setgame ack");
+				System.out.println(this.messageParser.GetTypeIndicator(outputBuffer, outputBuffer.length));
+		        sendMessage(outputBuffer);
 				this.gameState.setState(State.GAMEPLAY);
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -420,10 +428,12 @@ public class ClientModel extends Observable implements Runnable {
 		{
 			// first transition to GameListState
 			//this.gameState.setState(State.GAMESET);
+
 			if (this.messageParser.GetGameIndicator(inputBuffer, iByteCount).isEqual(GameIndicator.GET_GAME))
 			{
 				MessageParser.ClientGetGameMessage msg = this.messageParser.GetClientGetGameMessage(inputBuffer, iByteCount);
 				// make sure this was indeed a client get game message
+				
 				if (!msg.getGameIndicator().isEqual(GameIndicator.GET_GAME))
 				{
 					// not a client message, must be a server message. Ignore
@@ -431,17 +441,18 @@ public class ClientModel extends Observable implements Runnable {
 					this.gameState.setState(State.GAMELIST);
 					return;
 				}
+				
 				this.fLogger.info(this.uniqueID + ": Received Client Get Game Message, Sending Games");
 				this.m_bGotGames = true;
 				this.m_bSetGames = false;
 				this.m_eGameTypeCode = GameTypeCode.NOT_SET;
 				this.timeoutTimer.reschedule(m_lOpTimer);
 				MessageParser.ServerGetGameMessage svrMsg = this.messageParser.new ServerGetGameMessage(m_iVersion, TypeIndicator.LIST, GameIndicator.GET_GAME, 0, oGameTypeList);
+				byte[] outputBuffer=this.messageParser.CreateServerGetGameMessage(svrMsg);
 				try	{
 					//oOutputStream.write(this.messageParser.CreateServerGetGameMessage(svrMsg));
-					outputStream.writeByte((byte)this.messageParser.CreateServerGetGameMessage(svrMsg).length);
-			        outputStream.write(this.messageParser.CreateServerGetGameMessage(svrMsg)); 
-			        outputStream.flush();
+				     System.out.println("send message");
+					sendMessage(outputBuffer);
 					this.gameState.setState(State.GAMESET);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -514,8 +525,10 @@ public class ClientModel extends Observable implements Runnable {
 		{
 
 			MessageParser.VersionMessage msg = this.messageParser.GetVersionMessage(inputBuffer, iByteCount);
+			System.out.println(msg.getVersion());
 			if ((msg.getVersion() == this.m_iVersion) && (msg.getVersionType().isEqual(VersionIndicator.CLIENT_VERSION)))
 			{
+				System.out.println("client verision");
 				// reset the timer
 				this.timeoutTimer.reschedule(this.m_lOpTimer);
 				msg.setBankAmount(this.m_lClientBankAmount);
@@ -537,6 +550,7 @@ public class ClientModel extends Observable implements Runnable {
 			{
 				// client needs to upgrade
 				// The server cannot communicate so send the message and close the connection
+				
 				msg.setBankAmount((long)0);
 				msg.setVersion(this.m_iVersion);
 				msg.setMinorVersion(this.m_iMinorVersion);
