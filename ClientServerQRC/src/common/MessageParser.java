@@ -486,7 +486,7 @@ public class MessageParser {
       public ServerSetGameMessage(int version, TypeIndicator typecode, GameIndicator gameindicator, GameTypeCode gametypecode, GameTypeResponse gametyperesponse)
       {
          this.iVersion = version;
-         this.eTypeCode = typecode;
+         this.eTypeCode=typecode;
          this.eGameIndicator = gameindicator;
          this.eGameTypeCode = gametypecode;
          this.eGameTypeResponse = gametyperesponse;
@@ -1174,9 +1174,14 @@ public class MessageParser {
 	{
 		byte[] buffer = new byte[8];
 		buffer[0] = (byte)((message.getVersion() & 0xFF00) >> 8);
+//		System.out.println(buffer[0]);
 		buffer[1] = (byte)(message.getVersion() & 0xFF);
+//		System.out.println(buffer[1]);
+//		System.out.println(message.getTypeCode().getIndicator());
 		buffer[2] = (byte)((message.getTypeCode().getIndicator() & 0xFF00) >> 8);
+//		System.out.println(buffer[2]);
 		buffer[3] = (byte)(message.getTypeCode().getIndicator() & 0xFF);
+//		System.out.println(buffer[3]);
 		buffer[4] = (byte)(message.getGameIndicator().getIndicator() & 0xFF);
 		buffer[5] = (byte)(message.getGameTypeCode().getGameTypeCode() & 0xFF);
 		buffer[6] = (byte)(message.getGameTypeResponse().getGameTypeResponse() & 0xFF);

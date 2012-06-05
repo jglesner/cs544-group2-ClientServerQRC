@@ -10,23 +10,120 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.JOptionPane;
 
+import common.MessageParser.TypeIndicator;
 
-/**
- *
- * @author yiqiju
- */
+
 public class TexasGame extends javax.swing.JFrame {
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
+    public InputState getbPlayGames() {
+		return bPlayGames;
+	}
+
+	public void setbPlayGames(InputState bPlayGames) {
+		this.bPlayGames = bPlayGames;
+	}
+
+	public InputState getbGetHole() {
+		return bGetHole;
+	}
+
+	public void setbGetHole(InputState bGetHole) {
+		this.bGetHole = bGetHole;
+	}
+
+	public InputState getbGetFlog() {
+		return bGetFlog;
+	}
+
+	public void setbGetFlog(InputState bGetFlog) {
+		this.bGetFlog = bGetFlog;
+	}
+
+	public InputState getbGetTurn() {
+		return bGetTurn;
+	}
+
+	public void setbGetTurn(InputState bGetTurn) {
+		this.bGetTurn = bGetTurn;
+	}
+
+	public InputState getbGetRiver() {
+		return bGetRiver;
+	}
+
+	public void setbGetRiver(InputState bGetRiver) {
+		this.bGetRiver = bGetRiver;
+	}
+	private javax.swing.JButton jButton3;
+    private javax.swing.JButton jButton4;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel10;
+    private javax.swing.JLabel jLabel11;
+    private javax.swing.JLabel jLabel12;
+    private javax.swing.JLabel jLabel13;
+    private javax.swing.JLabel jLabel14;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
+
+
+	private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel7;
+    private javax.swing.JLabel jLabel8;
+    private javax.swing.JLabel jLabel9;
+    private javax.swing.JMenu jMenu1;
+    private javax.swing.JMenu jMenu2;
+    private javax.swing.JMenuBar jMenuBar1;
+    private javax.swing.JMenuItem jMenuItem1;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel3;
+    private javax.swing.JTextField jTextField1;
     
-    public ClientPokerModel CM = new ClientPokerModel();
-    public int iAnte;
-    public String lBankAmount;
-    public String lBetAmount;
-    public int lPotSize;    
+    
+    private ClientPokerModel pokerModel = new ClientPokerModel();
+    private int userAnte=-1;
+    private int minAnte=-1;
+    private InputState bPlayGames=InputState.NOT_SET;
+    private InputState bGetHole=InputState.NOT_SET;
+    private InputState bGetFlog=InputState.NOT_SET;
+    private InputState bGetTurn=InputState.NOT_SET;
+    private InputState bGetRiver=InputState.NOT_SET;
+  
+    
+  
+
+	public ClientPokerModel getPokerModel() {
+		return pokerModel;
+	}
+
+	public void setPokerModel(ClientPokerModel pokerModel) {
+		this.pokerModel = pokerModel;
+	}
+
+	public int getUserAnte() {
+		return userAnte;
+	}
+
+	public void setUserAnte(int userAnte) {
+		this.userAnte = userAnte;
+	}
+
+	public int getMinAnte() {
+		return minAnte;
+	}
+
+	public void setMinAnte(int minAnte) {
+		this.minAnte = minAnte;
+	}
     /**
      * Creates new form TexasGame
      */
     public TexasGame() {
-        initComponents();
+       
     }
 
     /**
@@ -36,7 +133,7 @@ public class TexasGame extends javax.swing.JFrame {
      */
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
+   public void initComponents() {
 
         jPanel2 = new javax.swing.JPanel();
         jPanel1 = new javax.swing.JPanel();
@@ -81,7 +178,7 @@ public class TexasGame extends javax.swing.JFrame {
         setBackground(new java.awt.Color(0, 153, 153));
 
         jPanel1.setBackground(new java.awt.Color(0, 153, 153));
-
+        jLabel2.setText("flop1");
         jLabel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
         jLabel2.setBackground(new java.awt.Color(102, 0, 0));
@@ -97,11 +194,11 @@ public class TexasGame extends javax.swing.JFrame {
         jLabel5.setText("river");
         jLabel5.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
-        jLabel9.setText("The pot is .., please select to Bet or Fold.");
+        jLabel9.setText("The minimum Ante is "+new Integer(this.minAnte).toString());
 
         jLabel12.setText("Pot:");
 
-        jLabel13.setText("0");
+        jLabel13.setText(new Long(pokerModel.getlPotSize()).toString());
 
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -191,30 +288,20 @@ public class TexasGame extends javax.swing.JFrame {
                     .add(jLabel7, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 96, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap())
         );
-
+        
         jLabel10.setText("Bet Amount:");
+        jTextField1.setText(new Long(this.pokerModel.getlBetAmount()).toString());
+        jTextField1.setCursor(new java.awt.Cursor(java.awt.Cursor.TEXT_CURSOR));
 
         jLabel11.setText("Bank Account:");
-
-        jTextField1.setText("0");
-        jTextField1.setCursor(new java.awt.Cursor(java.awt.Cursor.TEXT_CURSOR));
-        jTextField1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextField1ActionPerformed(evt);
-            }
-        });
-        jTextField1.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
-            public void propertyChange(java.beans.PropertyChangeEvent evt) {
-                jTextField1PropertyChange(evt);
-            }
-        });
-
-        jLabel14.setText("0");
+        jLabel14.setText(new Long(this.pokerModel.getlBankAmount()).toString());
 
         jButton3.setText("Yes");
         jButton3.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton3ActionPerformed(evt);
+            	System.out.println("into action");
+                userAnte=Integer.parseInt(jTextField1.getText());
+                bGetHole=InputState.YES;
             }
         });
 
@@ -389,146 +476,27 @@ public class TexasGame extends javax.swing.JFrame {
         
         
     }
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
-    private javax.swing.JButton jButton2;
-    private javax.swing.JButton jButton3;
-    private javax.swing.JButton jButton4;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel10;
-    private javax.swing.JLabel jLabel11;
-    private javax.swing.JLabel jLabel12;
-    private javax.swing.JLabel jLabel13;
-    private javax.swing.JLabel jLabel14;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel5;
-    private javax.swing.JLabel jLabel6;
-    private javax.swing.JLabel jLabel7;
-    private javax.swing.JLabel jLabel8;
-    private javax.swing.JLabel jLabel9;
-    private javax.swing.JMenu jMenu1;
-    private javax.swing.JMenu jMenu2;
-    private javax.swing.JMenuBar jMenuBar1;
-    private javax.swing.JMenuItem jMenuItem1;
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel2;
-    private javax.swing.JPanel jPanel3;
-    private javax.swing.JTextField jTextField1;
-    // End of variables declaration//GEN-END:variables
+    public enum InputState{
+		NOT_SET(0), YES(1), NO(2); 
+		private int indicator;
+		InputState(int indicator)
+		{
+			this.setIndicator(indicator);
+		}
+		public int getIndicator() {
+			return indicator;
+		}
+		public void setIndicator(int indicator) {
+			this.indicator = indicator;
+		}
+		public boolean isEqual(TypeIndicator rhs)
+		{
+			return (this.indicator == rhs.getIndicator());
+		}
+	}
 
-    //minimum ante/ModelClient.java--line 327
-public void MiniAnte(){
 
-    String miniAnte = "The minimum ante is" + iAnte + "! Type your bet amount(no smaller than ante),then click yes to play, or click fold to quit."; 
-    jLabel9.setText(miniAnte);
-    jLabel14.setText(lBankAmount);
-    
-    
-    //click yes
-    jButton3.addActionListener(new ActionListener(){
-        
-       public void actionPerformed(ActionEvent ae) {
-           //listen the bet textfield
-           
-    jTextField1.getDocument().addDocumentListener(new BetInputListener(){
-     public void BetInputListener implements DocumentListener(){
-     }
-             /*
-              * need m_bGetHole=true m_lClientAnte=input 
-              * 
-              * 
-              */     }                                                                    
-                           }})
-            );
-    //click fold to exit
-    jButton1.addActionListener(new ActionListener(){
-       public void actionPerformed(ActionEvent ae) {
-             /*
-              * m_bGetHole=false;
-              * 
-              * 
-              */      }                                                                    
-                           });
-    
-}
-          
-    
 
-//invalid ante/ModelClient.java--line 344
-public void invAnte(){
-    JOptionPane.showMessageDialog(null, "Ante is invalid!");
-}
-
-//ModelClient.java--line 358
-public void flop(){
-    //set display message
-    iAnte = 2*iAnte;
-    jLabel9.setText("click to bet"+ iAnte +",or fold.");
-    //click bet in flop phase
-    jButton3.addActionListener(new ActionListener(){
-            @Override         
-       public void actionPerformed(ActionEvent ae) {
-             /*need m_bGetFlop=true 
-              * 
-              * 
-             */       }});
-    //click fold in flop phase
-    jButton1.addActionListener(new ActionListener(){
-            @Override
-       public void actionPerformed(ActionEvent ae) {
-             /*
-              * need m_bGetHole=false;
-              * 
-              * 
-              */      }
-             });
-}
-
-//ModelClient.java--line 380
-public void turn(){
-    //set dispaly message
-    jLabel9.setText("click to check" + 0*iAnte + ", bet" + 1*iAnte + ", or fold.");
-    //click chek in turn phase
-    jButton4.addActionListener(new ActionListener(){
-            @Override         
-       public void actionPerformed(ActionEvent ae) {
-             /*
-              * need m_bGetRiver=true; m_lClientBetAmount=0
-              * 
-              * 
-             */       }});
-    //click bet in turn phase
-    jButton3.addActionListener(new ActionListener(){
-            @Override         
-       public void actionPerformed(ActionEvent ae) {
-             /*
-              * need m_bGetRiver=true  m_lClientBetAmount=m_lClientAnte; 
-              * 
-              * 
-             */       }});
-    //click fold in turn phase
-    jButton1.addActionListener(new ActionListener(){
-            @Override
-       public void actionPerformed(ActionEvent ae) {
-             /*
-              * 
-              * need m_bGetRiver=false;
-              *               
-              */      }
-             });
-}
-
-//show winner/ModelClient.java--413
-public void winner(){
-    jLabel9.setText("The winner is" + CM.getOwinner() + "!");
-}
-
-//invalid fold message/ModelClient.java--435
-public void invFold(){
-    jLabel9.setText("Invalid Fold.");
-}
 
 }
     

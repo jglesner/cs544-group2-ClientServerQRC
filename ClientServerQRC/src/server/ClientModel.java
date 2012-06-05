@@ -325,7 +325,7 @@ public class ClientModel extends Observable implements Runnable {
 					this.m_lClientBankAmount = svrMsg.getBankAmount();
 					this.timeoutTimer.reschedule(m_lOpTimer);
 					try	{
-						oOutputStream.write(this.messageParser.CreateServerPlayGameMessage(svrMsg));
+						sendMessage(this.messageParser.CreateServerPlayGameMessage(svrMsg));
 						this.gameState.setState(State.GAMEPLAY);
 					} catch (Exception e) {
 						e.printStackTrace();

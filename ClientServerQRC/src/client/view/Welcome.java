@@ -182,8 +182,6 @@ public class Welcome extends javax.swing.JFrame {
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         //when button1 is clicked, start TexasGame
-       this.texasGame=new TexasGame();
-        this.texasGame.main(null);
         this.SetGames=true;
         this.gametypecode=1;
         
@@ -258,23 +256,7 @@ public class Welcome extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItem1;
     // End of variables declaration//GEN-END:variables
 
-// enter Texas Hold'em    
-public void enterTexas(){
-    jButton1.addActionListener(new ActionListener(){
 
-            @Override
-            public void actionPerformed(ActionEvent ae) {
-                TexasGame TG = new TexasGame();
-                TG.main(null);
-            }
-        
-    });
-}
-
-//game selection error
-public void selectError(){
-    jLabel3.setText("Error! Please select your game again!");
-}
 
 
 }

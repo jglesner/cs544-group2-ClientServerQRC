@@ -41,6 +41,7 @@ import javax.net.ssl.TrustManagerFactory;
 
 import client.card_game.ClientPokerModel;
 import client.view.TexasGame;
+import client.view.TexasGame.InputState;
 import client.view.Welcome;
 import common.GamePhase;
 import common.GamePhase.Phase;
@@ -322,6 +323,7 @@ public class SecureClientController implements Runnable {
     							System.out.println("right poker");
     						setGame();
     						this.holdemModel=new ClientPokerModel();
+    						this.gamePhase=new GamePhase();
     						this.gamePhase.setPhase(Phase.INIT);
     						this.m_bPlayGames=true;
     						this.m_bSetGames=false;
@@ -468,7 +470,7 @@ public class SecureClientController implements Runnable {
 				this.m_bSetGames=false;
 				this.gameState.setState(State.GAMESET);
 //				UI send error and ask client to reclick the game
-	                welcome.selectError();
+	             
 			}
 			
 		}
@@ -493,13 +495,15 @@ public class SecureClientController implements Runnable {
 				    ServerResponse sr = this.receiveMessage();
 					TypeIndicator typecode=this.messageParser.GetTypeIndicator(sr.getMessage(), sr.getSize());
 					GameIndicator gameIndicator=this.messageParser.GetGameIndicator(sr.getMessage(), sr.getSize());
-					System.out.println(typecode);
-					System.out.println(gameIndicator);
-					if(typecode.isEqual(TypeIndicator.GAME)
-						&& gameIndicator.isEqual(GameIndicator.SET_GAME)){
+					
+					System.out.println(typecode.getIndicator());
+					System.out.println(gameIndicator.getIndicator());
+					
+					if(typecode.getIndicator()==TypeIndicator.SET.getIndicator()
+						&& gameIndicator.getIndicator()== GameIndicator.SET_GAME.getIndicator()){
 						System.out.println("typecode and gameindicator right");
 						MessageParser.ServerSetGameMessage serverSetGameMsg=this.messageParser.GetServerSetGameMessage(sr.getMessage(), sr.getSize());
-						if(serverSetGameMsg.getGameTypeResponse().isEqual(GameTypeResponse.ACK)){
+						if(serverSetGameMsg.getGameTypeResponse().getGameTypeResponse()==GameTypeResponse.ACK.getGameTypeResponse()){
 							System.out.println("get respond from server setgame message");
 						  this.fLogger.info(uniqueID+": receive server gameType ACK");
 						  return true;
@@ -517,8 +521,10 @@ public class SecureClientController implements Runnable {
 	public void playGame() throws IOException{
 		
 			while(m_bPlayGames){
+				
 				Phase currentPhase=this.gamePhase.getPhase();
 				if(currentPhase.isEqual(Phase.INIT)){
+					System.out.println("into Init phase");
 				    sendInitGameMsg();
 				    if(recvInitGameAckMsg()){
 				    	this.gamePhase.setPhase(Phase.HOLE);
@@ -528,10 +534,31 @@ public class SecureClientController implements Runnable {
 //					 Update UI
 		//			UI Pop out want to play game showing the minium Ante and bankamount
 		//			if client inputs Ante and click yes :  m_bGetHole=true m_lClientAnte=input
-		//			else click no                       :  m_bGetHole=false                                                     
-	                    TG.MiniAnte();
-	                    
+		//			else click no                       :  m_bGetHole=false       
+					this.TG=new TexasGame();
+					System.out.println("into Hole phase");
+					System.out.println(this.m_lClientAnte);
+					if(holdemModel!=null)
+						System.out.println("right model");
+				     this.TG.setMinAnte(this.m_lClientAnte);
+	                 this.TG.setPokerModel(holdemModel);
+	                 System.out.println(this.TG.getPokerModel().getlBankAmount());
+	                 System.out.println(this.TG.getMinAnte());
+	                 this.TG.initComponents();
+	                 TG.setVisible(true);
+	                  while(this.TG.getbGetHole().getIndicator()==InputState.NOT_SET.getIndicator()){
+	                	  System.out.println("no input");
+	                  }
+	                  if(this.TG.getbGetHole().getIndicator()==InputState.YES.getIndicator())
+	                  {
+	                	  this.m_bGetHole=true;
+	                	  this.m_lClientAnte=this.TG.getUserAnte();
+	                  }
+	                  else
+	                      this.m_bGetHole=false;
+	                  
 					if(this.m_bGetHole){
+					  System.out.println(this.m_lClientAnte);
 			           sendHoleRequestMsg();
 			           if(recvHoleAckMsg()){
 			        	   this.gamePhase.setPhase(Phase.FLOP);
@@ -539,8 +566,6 @@ public class SecureClientController implements Runnable {
 			           }
 			           else{
 //			        	   UI Pop out "ante is invalid"  then go back to HOLE Phase
-	                               TG.invAnte();
-	                               
 			        	   this.gamePhase.setPhase(Phase.HOLE); 
 			           }
 					}
@@ -554,8 +579,8 @@ public class SecureClientController implements Runnable {
 //					UI Pop out want to follow betting 2*Ante or Fold
 					//			if click follow : m_bGetFlop=true
 					//			else click fold : m_bGetFlop=false
-	                      TG.flop();
-	                                
+	                     
+					System.out.println("into Flop phase");              
 					if(this.m_bGetFlog){
 					    sendFlopRequestMsg();
 					    if(recvFlopAckMsg()){
@@ -579,7 +604,7 @@ public class SecureClientController implements Runnable {
 //						if client clicks check :  m_bGetTurn=true m_lClientBetAmount=0
 //					    if client clicks folow  : m_bGetTurn=true  m_lClientBetAmount=m_lClientAnte;
 					//	else client clicks fold :	m_bGetTurn=false;
-	                            
+					System.out.println("into Turn phase");
 					if(this.m_bGetTurn){
 						sendTurnRequestMsg();
 						if(recvTurnAckMsg()){
@@ -602,13 +627,13 @@ public class SecureClientController implements Runnable {
 //					if client clicks check :  m_bGetRiver=true m_lClientBetAmount=0
 //				    if client clicks folow  : m_bGetRiver=true  m_lClientBetAmount=m_lClientAnte;
 				//	else client clicks fold :	m_bGetRiver=false;
-	                            TG.turn();
+					System.out.println("into River phase");
 	                            
-					if(this.m_bGetRiver){
+					if(this.m_bGetRiver==true){
 						sendRiverRequestMsg();
 						if(recvRiverAckMsg()){
 //							UI should pop out the winner and update() the result
-	                                            TG.winner();
+	                                            
 							this.gamePhase.setPhase(Phase.INIT);
 							this.holdemModel.init();
 						    this.m_bGetRiver=false;
@@ -623,19 +648,20 @@ public class SecureClientController implements Runnable {
 					}
 				}
 				else if(currentPhase.isEqual(Phase.FOLD)){
+					System.out.println("into Fold phase");
 					sendFoldRequestMsg();
 					if(recvFoldAckMsg()){
 //					UI	Pop out the winner and update UI
-	                                    TG.winner();
+	                                   
 						this.gamePhase.setPhase(Phase.INIT);
 					}
 					else{
 //				    UI pop out "invalid FolD"
-	                                    TG.invFold();
+	                                  
 					}
 				}
 				else if(currentPhase.isEqual(Phase.QUIT)){
-				
+					System.out.println("into quit phase");
 					this.gameState.setState(State.CLOSING);
 					this.m_bPlayGames=false;
 				}
@@ -663,14 +689,16 @@ public class SecureClientController implements Runnable {
 				    ServerResponse sr=this.receiveMessage();
 					TypeIndicator typecode=this.messageParser.GetTypeIndicator(sr.getMessage(), sr.getSize());
 					GameIndicator gameIndicator=this.messageParser.GetGameIndicator(sr.getMessage(), sr.getSize());
-					if(typecode.isEqual(TypeIndicator.GAME)
-						&& gameIndicator.isEqual(GameIndicator.PLAY_GAME)){
+					if(typecode.getIndicator()==TypeIndicator.GAME.getIndicator()
+						&& gameIndicator.getIndicator()==GameIndicator.PLAY_GAME.getIndicator()){
 						MessageParser.ServerPlayGameMessage initGameResponseMsg=this.messageParser.GetServerPlayGameMessage(sr.getMessage(), sr.getSize());
-						if(initGameResponseMsg.getGamePlayResponse().isEqual(GamePlayResponse.INIT_ACK)){
+						if(initGameResponseMsg.getGamePlayResponse().getGamePlayResponse()==GamePlayResponse.INIT_ACK.getGamePlayResponse()){
 						  this.fLogger.info(uniqueID+": receive server init game ACK");
 						  this.m_lClientBankAmount=initGameResponseMsg.getBankAmount();
 					      this.m_lClientAnte=initGameResponseMsg.getAnte();
 					      this.holdemModel.setlBankAmount(initGameResponseMsg.getBankAmount());
+					      System.out.println(this.holdemModel.getlBankAmount());
+					      System.out.println(initGameResponseMsg.getBankAmount());
 						  return true;
 						}
 				}
@@ -678,6 +706,7 @@ public class SecureClientController implements Runnable {
 		}
     public void sendHoleRequestMsg() throws IOException{
 //	    	construct Hole request game message
+    	    System.out.println("send Hole requeset");
 			int version=this.m_iVersion;
 			TypeIndicator typecode=TypeIndicator.GAME;
 			GameIndicator gameIndicator=GameIndicator.PLAY_GAME;
@@ -692,13 +721,14 @@ public class SecureClientController implements Runnable {
 	public boolean recvHoleAckMsg() throws IOException{
 		
 			  while(true){
+				  System.out.println("into recieve Hole Card");
 				  ServerResponse sr=this.receiveMessage();
 				  TypeIndicator typecode=this.messageParser.GetTypeIndicator(sr.getMessage(), sr.getSize());
 				  GameIndicator gameIndicator=this.messageParser.GetGameIndicator(sr.getMessage(), sr.getSize());
-				  if(typecode.isEqual(TypeIndicator.GAME)
-					  && gameIndicator.isEqual(GameIndicator.PLAY_GAME)){
+				  if(typecode.getIndicator()==TypeIndicator.GAME.getIndicator()
+					  && gameIndicator.getIndicator()==GameIndicator.PLAY_GAME.getIndicator()){
 					 MessageParser.ServerPlayGameMessage serverHoleMsg=this.messageParser.GetServerPlayGameMessage(sr.getMessage(), sr.getSize());
-					 if(serverHoleMsg.getGamePlayResponse().isEqual(GamePlayResponse.GET_HOLE_ACK)){
+					 if(serverHoleMsg.getGamePlayResponse().getGamePlayResponse()==GamePlayResponse.GET_HOLE_ACK.getGamePlayResponse()){
 						 this.fLogger.info(uniqueID+": receive server get Hole ACK");
 						 long bankamount=serverHoleMsg.getBankAmount();
 						 this.m_lClientAnte=serverHoleMsg.getAnte();
@@ -714,6 +744,7 @@ public class SecureClientController implements Runnable {
 						 this.holdemModel.setoPlayerCards(playerCards);
 						 this.holdemModel.setoDealerCards(dealerCards);
 						 this.holdemModel.setiAnte(this.m_lClientAnte);
+						 System.out.println("getresponse from server");
 						    return true;
 						}
 						else if(serverHoleMsg.getGamePlayResponse().isEqual(GamePlayResponse.INVALID_ANTE_BET)) {
