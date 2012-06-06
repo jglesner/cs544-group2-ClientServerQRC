@@ -129,17 +129,17 @@ public class MessageParser {
       private int gamePlayRequest;
 		GamePlayRequest(int gamePlayRequest)
 		{
-			this.setGamePlayRequest(gamePlayRequest);
+			setGamePlayRequest(gamePlayRequest);
 		}
 		public int getGamePlayRequest() {
 			return gamePlayRequest;
 		}
-		public void setGamePlayRequest(int gamePlayRequest) {
-			this.gamePlayRequest = gamePlayRequest;
+		public void setGamePlayRequest(int gpr) {
+			gamePlayRequest = gpr;
 		}
 		public boolean isEqual(GamePlayRequest rhs)
 		{
-			return (this.gamePlayRequest == rhs.getGamePlayRequest());
+			return (gamePlayRequest == rhs.getGamePlayRequest());
 		}
 	}
    
@@ -187,6 +187,18 @@ public class MessageParser {
 		public boolean isEqual(Winner rhs)
 		{
 			return (this.winner == rhs.getWinner());
+		}
+		public static String getEnum(int value)
+		{
+			if (value == DEALER.getWinner())
+				return "DEALER";
+			else if (value == PLAYER.getWinner())
+				return "PLAYER";
+			else if (value == DRAW.getWinner())
+				return "DRAW";
+			
+			return "NOT_SET";
+			
 		}
 	}
    
@@ -813,6 +825,9 @@ public class MessageParser {
       {
          return lBankAmount;
       }
+      
+
+      
    }
    
    /*
@@ -1207,10 +1222,10 @@ public class MessageParser {
     		byte byte2 = (byte)(buffer[9] & 0xFF);
     		byte byte3 = (byte)(buffer[10] & 0xFF);
     		byte byte4 = (byte)(buffer[11] & 0xFF);
-    		betamount = (long)(((byte1 << 24) & 0xFF000000) |
-    						   ((byte2 << 16) & 0xFF0000) |
-    						   ((byte3 << 8) & 0xFF00) |
-    						   (byte4));
+    		betamount = ((long)(0xff & buffer[8]) << 24 |
+    					(long)(0xff & buffer[9]) << 16 |
+    					(long)(0xff & buffer[10]) << 8 |
+    					(long)(0xff & buffer[11]) << 0);
 		}
 		
 		ClientPlayGameMessage message = new ClientPlayGameMessage(version, typecode, gameindicator, gamecode, gamerequest, betamount);
@@ -1314,26 +1329,28 @@ public class MessageParser {
     		byte byte2 = (byte)(buffer[21] & 0xFF);
     		byte byte3 = (byte)(buffer[22] & 0xFF);
     		byte byte4 = (byte)(buffer[23] & 0xFF);
-    		potsize = (long)(((byte1 << 24) & 0xFF000000) |
-    						   ((byte2 << 16) & 0xFF0000) |
-    						   ((byte3 << 8) & 0xFF00) |
-    						   (byte4));
+    		potsize = ((long)(0xff & buffer[20]) << 24 |
+    				(long)(0xff & buffer[21]) << 16 |
+    				(long)(0xff & buffer[22]) << 8 |
+    				(long)(0xff & buffer[23]) << 0);
     		byte1 = (byte)(buffer[24] & 0xFF);
     		byte2 = (byte)(buffer[25] & 0xFF);
     		byte3 = (byte)(buffer[26] & 0xFF);
     		byte4 = (byte)(buffer[27] & 0xFF);
-    		betamount = (long)(((byte1 << 24) & 0xFF000000) |
-    						   ((byte2 << 16) & 0xFF0000) |
-    						   ((byte3 << 8) & 0xFF00) |
-    						   (byte4));
+    		betamount = ((long)(0xff & buffer[24]) << 24 |
+    				(long)(0xff & buffer[25]) << 16 |
+    				(long)(0xff & buffer[26]) << 8 |
+    				(long)(0xff & buffer[27]) << 0);
     		byte1 = (byte)(buffer[28] & 0xFF);
     		byte2 = (byte)(buffer[29] & 0xFF);
     		byte3 = (byte)(buffer[30] & 0xFF);
     		byte4 = (byte)(buffer[31] & 0xFF);
-    		bankamount = (long)(((byte1 << 24) & 0xFF000000) |
-    						   ((byte2 << 16) & 0xFF0000) |
-    						   ((byte3 << 8) & 0xFF00) |
-    						   (byte4));
+    		bankamount = ((long)(0xff & buffer[28]) << 24 |
+    				(long)(0xff & buffer[29]) << 16 |
+    				(long)(0xff & buffer[30]) << 8 |
+    				(long)(0xff & buffer[31]) << 0);
+    		
+
 		}
 		
 		ServerPlayGameMessage message = new ServerPlayGameMessage(version, typecode, gameindicator, gamecode, gameresponse, 
@@ -1357,7 +1374,7 @@ public class MessageParser {
 		buffer[7] = 0;
 		buffer[8] = (byte)((message.getAnte() & 0xFF00) >> 8);
 		buffer[9] = (byte)(message.getAnte() & 0xFF);
-		buffer[10] = (byte)(((message.getPlayerCard1().getCardSuite().getCardSuite() & 0x0F) << 4) | (message.getPlayerCard1().getCardValue().getCardValue() & 0x0F)); 
+		buffer[10] = (byte)(((message.getPlayerCard1().getCardSuite().getCardSuite() & 0x0F) << 4) | (message.getPlayerCard1().getCardValue().getCardValue() & 0x0F)); 		
 		buffer[11] = (byte)(((message.getPlayerCard2().getCardSuite().getCardSuite() & 0x0F) << 4) | (message.getPlayerCard2().getCardValue().getCardValue() & 0x0F));
 		buffer[12] = (byte)(((message.getDealerCard1().getCardSuite().getCardSuite() & 0x0F) << 4) | (message.getDealerCard1().getCardValue().getCardValue() & 0x0F)); 
 		buffer[13] = (byte)(((message.getDealerCard2().getCardSuite().getCardSuite() & 0x0F) << 4) | (message.getDealerCard2().getCardValue().getCardValue() & 0x0F));
@@ -1379,6 +1396,8 @@ public class MessageParser {
 		buffer[29] = (byte)((message.getBankAmount() & 0xFF0000) >> 16);
 		buffer[30] = (byte)((message.getBankAmount() & 0xFF00) >> 8);
 		buffer[31] = (byte)(message.getBankAmount() & 0xFF);
+		
+
 		
 		return buffer;
 	}

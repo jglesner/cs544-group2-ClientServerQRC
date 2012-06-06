@@ -12,6 +12,8 @@ package server.card_game.texas_holdem;
 
 import server.ClientModel;
 import server.card_game.Deck;
+import common.GamePlayState;
+import common.GamePlayState.PlayState;
 import common.MessageParser;
 import common.MessageParser.GamePlayRequest;
 import common.MessageParser.GamePlayResponse;
@@ -23,7 +25,7 @@ import common.card_game.Card.CardValue;
 
 public class TexasHoldemModel {
 	private Deck deck;
-	private GamePlayRequest prevGamePlayRequest;
+	private GamePlayState prevGamePlayState;
 	private long lBankAmount;
 	private long lPotSize;
 	private long lBetAmount;
@@ -35,6 +37,7 @@ public class TexasHoldemModel {
 	
 	public TexasHoldemModel(ClientModel model)
 	{
+		prevGamePlayState = new GamePlayState();
 		this.model = model;
 		this.lBankAmount = this.model.getClientBankAmount();
 		this.model.getLogger().info(this.model.uniqueID + ": Creating Texas Holdem Server Model");
@@ -56,7 +59,6 @@ public class TexasHoldemModel {
 		lPotSize = 0;
 		lBetAmount = 0;
 		iAnte = Integer.parseInt(this.model.getXmlParser().getServerTagValue("MIN_ANTE"));
-		prevGamePlayRequest = GamePlayRequest.NOT_SET;
 	}
 	
 	public void Reset()
@@ -67,12 +69,15 @@ public class TexasHoldemModel {
 	public MessageParser.ServerPlayGameMessage updateModel(MessageParser.ClientPlayGameMessage clientMsg)
 	{
 		ServerPlayGameMessage serverMsg = null;
+		
 		// determine the current state of the game
-		if (prevGamePlayRequest.isEqual(GamePlayRequest.NOT_SET) || prevGamePlayRequest.isEqual(GamePlayRequest.GET_RIVER))
+		if ((prevGamePlayState.getPlayState().isEqual(PlayState.NOT_SET)) || (prevGamePlayState.getPlayState().isEqual(PlayState.GET_RIVER)))
 		{
+			//System.out.println("FIRST");
 			// first initialized, the client should have sent an init request
 			if (clientMsg.getGamePlayRequest().isEqual(GamePlayRequest.INIT))
 			{
+				//System.out.println("FIRST-1");
 				// fill in the server message
 				Card noCard = new Card(CardSuite.NOT_SET, CardValue.NOT_SET);
 				
@@ -80,39 +85,46 @@ public class TexasHoldemModel {
 			            this.iAnte, noCard, noCard, noCard, noCard, noCard, noCard, noCard, noCard, noCard, Winner.NOT_SET, this.lPotSize, this.lBetAmount, this.lBankAmount);
 				
 				// update latest request
-				prevGamePlayRequest.setGamePlayRequest(GamePlayRequest.INIT.getGamePlayRequest());
+				prevGamePlayState.setPlayState(PlayState.INIT);
 				this.model.getLogger().info(this.model.uniqueID + ": has sent game play init message.");
 			}
 			else
 			{
+				//System.out.println("FIRST-2");
 				// client sent the wrong message
 				this.model.getLogger().info(this.model.uniqueID + ": needs to send init message for game play, Ignoring Msg.");
 			}
 		}
-		else if (prevGamePlayRequest.isEqual(GamePlayRequest.INIT))
+		else if (prevGamePlayState.getPlayState().isEqual(PlayState.INIT))
 		{
+			//System.out.println("SECOND");
 			if (clientMsg.getGamePlayRequest().isEqual(GamePlayRequest.GET_HOLE))
 			{
+				//System.out.println("TEST: " + clientMsg.getBetAmount() + " " + this.iAnte + " " + clientMsg.getBetAmount() + " " + (this.lBankAmount / 3));
 				// client wants to get the cards. Check to make sure the ante is valid
 				if (clientMsg.getBetAmount() >= this.iAnte && clientMsg.getBetAmount() <= (this.lBankAmount / 3))
 				{
 					// update the ante amount to what the client gave
+					this.lPotSize += clientMsg.getBetAmount();
 					this.iAnte = (int)clientMsg.getBetAmount();
 					this.lBetAmount = clientMsg.getBetAmount();
 					// update the client's bank amount by subtracting the ante
-					this.lBankAmount -= this.iAnte;
+					this.lBankAmount -= (long)this.iAnte;
 					// fill in the server message
 					Card noCard = new Card(CardSuite.NOT_SET, CardValue.NOT_SET);
 					
 					serverMsg = this.model.getMessageParser().new ServerPlayGameMessage(clientMsg.getVersion(), clientMsg.getTypeCode(), clientMsg.getGameIndicator(), clientMsg.getGameTypeCode(), GamePlayResponse.GET_HOLE_ACK, 
 				            this.iAnte, oPlayerCards[0], oPlayerCards[1], noCard, noCard, noCard, noCard, noCard, noCard, noCard, Winner.NOT_SET, this.lPotSize, this.lBetAmount, this.lBankAmount);
+
 					
 					// update latest request
-					prevGamePlayRequest.setGamePlayRequest(GamePlayRequest.GET_HOLE.getGamePlayRequest());
+					prevGamePlayState.setPlayState(PlayState.GET_HOLE);
 					this.model.getLogger().info(this.model.uniqueID + ": has sent game play get hole cards message.");
 				}
 				else
 				{
+
+					
 					// invalid request
 					this.model.getLogger().info(this.model.uniqueID + ": has sent an invalid ante amount");
 					// fill in the server message
@@ -124,12 +136,17 @@ public class TexasHoldemModel {
 			}
 			else
 			{
+				System.out.println("OH OH");	
+				
 				// invalid request when in the init phase
 				this.model.getLogger().info(this.model.uniqueID + ": sent invalid request during Init phase");
 			}
 		}
-		else if (prevGamePlayRequest.isEqual(GamePlayRequest.GET_HOLE))
+		else if (prevGamePlayState.getPlayState().isEqual(PlayState.GET_HOLE))
 		{
+			
+			//System.out.println("THIRD");
+			
 			if (clientMsg.getGamePlayRequest().isEqual(GamePlayRequest.GET_FLOP))
 			{
 				// check to make sure the client's bet amount is twice the ante
@@ -139,6 +156,9 @@ public class TexasHoldemModel {
 					this.lPotSize += clientMsg.getBetAmount();
 					this.lBetAmount = clientMsg.getBetAmount();
 					this.lBankAmount -= clientMsg.getBetAmount();
+					
+					System.out.println("Account: " + clientMsg.getBetAmount());
+					System.out.println("Bank Account " + this.lBankAmount);
 					// fill in the server message
 					Card noCard = new Card(CardSuite.NOT_SET, CardValue.NOT_SET);
 					
@@ -146,7 +166,7 @@ public class TexasHoldemModel {
 				            this.iAnte, oPlayerCards[0], oPlayerCards[1], noCard, noCard, oCommunityCards[0], oCommunityCards[1], oCommunityCards[2], noCard, noCard, Winner.NOT_SET, this.lPotSize, this.lBetAmount, this.lBankAmount);
 					
 					// update latest request
-					prevGamePlayRequest.setGamePlayRequest(GamePlayRequest.GET_FLOP.getGamePlayRequest());
+					prevGamePlayState.setPlayState(PlayState.GET_FLOP);
 					this.model.getLogger().info(this.model.uniqueID + ": has sent game play get flop cards message.");
 					
 				}
@@ -163,6 +183,8 @@ public class TexasHoldemModel {
 			}
 			else if (clientMsg.getGamePlayRequest().isEqual(GamePlayRequest.FOLD))
 			{
+				
+				
 				// client has sent a fold request. ReInitialize the model and send back an acknowledgment
 				Reset();
 				this.model.getLogger().info(this.model.uniqueID + ": has sent a fold request");
@@ -180,8 +202,9 @@ public class TexasHoldemModel {
 				this.model.getLogger().info(this.model.uniqueID + ": sent invalid request during Hole phase");
 			}
 		}
-		else if (prevGamePlayRequest.isEqual(GamePlayRequest.GET_FLOP))
+		else if (prevGamePlayState.getPlayState().isEqual(PlayState.GET_FLOP))
 		{
+			//System.out.println("FOURTH");
 			if (clientMsg.getGamePlayRequest().isEqual(GamePlayRequest.GET_TURN))
 			{
 				// check to make sure the client's bet amount is the ante or 0 (for a check) and they have that amount available
@@ -198,7 +221,7 @@ public class TexasHoldemModel {
 				            this.iAnte, oPlayerCards[0], oPlayerCards[1], noCard, noCard, oCommunityCards[0], oCommunityCards[1], oCommunityCards[2], oCommunityCards[3], noCard, Winner.NOT_SET, this.lPotSize, this.lBetAmount, this.lBankAmount);
 					
 					// update latest request
-					prevGamePlayRequest.setGamePlayRequest(GamePlayRequest.GET_TURN.getGamePlayRequest());
+					prevGamePlayState.setPlayState(PlayState.GET_TURN);
 					this.model.getLogger().info(this.model.uniqueID + ": has sent game play get turn card message.");
 					
 				}
@@ -232,8 +255,9 @@ public class TexasHoldemModel {
 				this.model.getLogger().info(this.model.uniqueID + ": sent invalid request during Turn phase");
 			}
 		}
-		else if (prevGamePlayRequest.isEqual(GamePlayRequest.GET_TURN))
+		else if (prevGamePlayState.getPlayState().isEqual(PlayState.GET_TURN))
 		{
+			//System.out.println("FIFTH");
 			if (clientMsg.getGamePlayRequest().isEqual(GamePlayRequest.GET_RIVER))
 			{
 				// check to make sure the client's bet amount is the ante or 0 (for a check) and they have that amount available
@@ -260,7 +284,7 @@ public class TexasHoldemModel {
 				            this.iAnte, oPlayerCards[0], oPlayerCards[1], oDealerCards[0], oDealerCards[1], oCommunityCards[0], oCommunityCards[1], oCommunityCards[2], oCommunityCards[3], oCommunityCards[4], winner, this.lPotSize, this.lBetAmount, this.lBankAmount);
 					
 					// update latest request
-					prevGamePlayRequest.setGamePlayRequest(GamePlayRequest.GET_RIVER.getGamePlayRequest());
+					prevGamePlayState.setPlayState(PlayState.GET_RIVER);
 					this.model.getLogger().info(this.model.uniqueID + ": has sent game play get river card message.");
 					// reinitialize the model for the next hand
 					Reset();
@@ -298,11 +322,12 @@ public class TexasHoldemModel {
 		}
 		else
 		{
+			//System.out.println("SIXTH");
 			// entered an invalid state
 			// this is here just for validating the program
 			this.model.getLogger().info(this.model.uniqueID + ": Error entered invalid Game Play Phase!");
 		}
-		
+		//System.out.println("SEVENTH");
 		return serverMsg;
 	}
 	

@@ -23,10 +23,13 @@ public class Deck {
 			for (CardValue value : CardValue.values()) 
 			{
 				// need to make sure it is a valid card, otherwise skip it
-				if (!suit.isEqual(CardSuite.NOT_SET) && !value.isEqual(CardValue.NOT_SET))
+				if (!suit.isEqual(CardSuite.NOT_SET))
 				{
-					deck[iI] = new Card(suit, value);
-					iI++;
+					if (!value.isEqual(CardValue.NOT_SET))
+					{
+						deck[iI] = new Card(suit, value);
+						iI++;
+					}
 				}
 			}
 		}

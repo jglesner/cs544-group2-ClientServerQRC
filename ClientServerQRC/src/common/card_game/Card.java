@@ -40,6 +40,40 @@ public class Card {
 			}
 			return cVal;
 		}
+		public static CardValue getEnum(int value)
+		{
+			if (value == NOT_SET.getCardValue()) 
+	            return NOT_SET;
+			else if (value == CARD_ACE.getCardValue()) 
+				return CARD_ACE;
+			else if (value == CARD_2.getCardValue()) 
+				return CARD_2;
+			else if (value == CARD_3.getCardValue()) 
+				return CARD_3;
+			else if (value == CARD_4.getCardValue()) 
+				return CARD_4;
+			else if (value == CARD_5.getCardValue()) 
+				return CARD_5;
+			else if (value == CARD_6.getCardValue()) 
+				return CARD_6;
+			else if (value == CARD_7.getCardValue()) 
+				return CARD_7;
+			else if (value == CARD_8.getCardValue()) 
+				return CARD_8;
+			else if (value == CARD_9.getCardValue()) 
+				return CARD_9;
+			else if (value == CARD_10.getCardValue()) 
+				return CARD_10;
+			else if (value == CARD_JACK.getCardValue()) 
+				return CARD_JACK;
+			else if (value == CARD_QUEEN.getCardValue()) 
+				return CARD_QUEEN;
+			else if (value == CARD_KING.getCardValue()) 
+				return CARD_KING;	
+			
+			return NOT_SET;
+		}		
+		
 	}
    
    /*
@@ -66,39 +100,65 @@ public class Card {
 		{
 			return (int)(Math.log10(cardSuite) / Math.log10(2.0));
 		}
+		public static String getEnum(int value)
+		{
+			
+			if (value == NOT_SET.getCardSuite()) 
+	            return "NOT_SET";
+			else if (value == CLUB.getCardSuite()) 
+				return "CLUB";
+			else if (value == SPADE.getCardSuite()) 
+				return "SPADE";
+			else if (value == DIAMOND.getCardSuite()) 
+				return "DIAMOND";
+			else if (value == HEART.getCardSuite()) 
+				return "HEART";
+			
+			return "NOT_SET";
+		}
 	}
    
    /* set the private variables */
    private CardSuite eSuite;
    private CardValue eValue;
+   int val;
+   int sui;
    
    public Card(CardSuite eSuite, CardValue eValue)
    {
       this.eSuite = eSuite;
       this.eValue = eValue;
+      val = eValue.getCardValue();
+      sui = eSuite.getCardSuite();
    }
    
    public void setCardValue(CardValue eValue)
    {
       this.eValue = eValue;
+      val = eValue.getCardValue();
+ 
    }
    public CardValue getCardValue()
    {
+	  eValue.setCardValue(val);
       return eValue;
+      
    }
    
    public void setCardSuite(CardSuite eSuite)
    {
       this.eSuite = eSuite;
+      sui = eSuite.getCardSuite();
    }
    public CardSuite getCardSuite()
    {
+	   eSuite.setCardSuite(sui);
       return eSuite;
    }
    
    public String toString()
    {
-	   String ret = "(" + this.getCardSuite() + " " + this.getCardValue() + ")";
+	   String ret = "(" + CardSuite.getEnum(sui) + " " + CardValue.getEnum(val) + ")";
 	   return ret;
    }
 

@@ -38,6 +38,7 @@ import common.MessageParser.GamePlayRequest;
 import common.MessageParser.GameTypeCode;
 import common.MessageParser.TypeIndicator;
 import common.MessageParser.VersionIndicator;
+import common.card_game.*;
 import common.findServer.EchoFinder;
 import common.*;
 
@@ -65,6 +66,7 @@ public class SecureClientController implements Runnable {
 	private boolean connected;
 	private LogAndPublish logAndPublish;
 	private long bankAmount;
+	private long betAmount;
 	
 	/* connectivity mechanisms */    
 	private SecureClientController c = null;
@@ -186,12 +188,12 @@ public class SecureClientController implements Runnable {
 		} catch (IOException e) 
 		{
 			/* Log and Publish */
-			logAndPublish.write(e, true, true);
+			logAndPublish.write(e, true, false);
 		}
 		
 		/* find server using ICMP/TCP methods */
 		if (!c.connected) {
-			System.out.println("PROBLEM");
+
 			
 			try {
 				c.findConnect(ssf, port);
@@ -264,12 +266,14 @@ public class SecureClientController implements Runnable {
 
         	}
     	   connected = false;
-		
+    	   System.exit(0);
 		}
 		catch(Exception e)
 		{
       		/* Log and Publish */
       		logAndPublish.write(e, true, true); 
+      		this.disconnect();
+      		System.exit(0);
 		}	    		   
         finally { connected = false; }
     }
@@ -277,13 +281,18 @@ public class SecureClientController implements Runnable {
     /**
      * ClosingState method gracefully closes the connection
      * and disconnects
+     * @throws IOException 
      */
-	private void ClosingState() 
+	private void ClosingState() throws IOException 
 	{
 		//TODO: ADD MESSAGE TO GRACEFULLY CLOSE THE CONNECTION//
+		MessageParser.ClientGetGameMessage msg = this.messageParser.new ClientGetGameMessage(1, TypeIndicator.CLOSE_CONNECTION, GameIndicator.GET_GAME);  
+        this.sendMessage(this.messageParser.CreateClientGetGameMessage(msg));
+		
 		this.gameState.setState(State.CLOSED);	
 		this.disconnect();
 		connected = false;
+		
 	}
 	
 	/**
@@ -305,9 +314,9 @@ public class SecureClientController implements Runnable {
 				
 				/* minimum ante allowable */
 				int min_ante = Integer.parseInt(this.xmlParser.getServerTagValue("MIN_ANTE"));
+				int orig_ante = 0;
 				
-				
-				/* sub-state: Verify player has enough money to play */
+				/* sub-state: Verify player has enough money to play and send NOT_SET*/
 				{
 					
 					if (this.bankAmount < min_ante)
@@ -318,10 +327,8 @@ public class SecureClientController implements Runnable {
 					}
 					MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, TypeIndicator.GAME, GameIndicator.PLAY_GAME, GameTypeCode.TEXAS_HOLDEM, GamePlayRequest.NOT_SET, (long)0);  
 			        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));					
-				    
-			        
+
 				}
-				
 				
 				/* sub-state: Begin Playing A Game Of Texas Holdem? */
 				{
@@ -330,6 +337,7 @@ public class SecureClientController implements Runnable {
 					
 					/* loop to handle user command line input */
 					command = UserSelection("Enter 1 to begin, and 2 to return to game list.", 1, 2);
+					
 					
 					/* handle user selection */
 					if (command == 1){
@@ -350,20 +358,29 @@ public class SecureClientController implements Runnable {
 				}
 				
 				
+				/* server response */
+				{
+			        /* get server response */
+			        ServerResponse sr = this.receiveMessage();			        
+			        PrintGamePlayMessage(sr);
+			            
+			        //TODO: ADD ERROR HANDLING AND STATE CHANGES USING SERVER RESPONSE//
+				}
+				
+				
 				/* sub-state: Player puts down an ante */
 				{
 
 					/* sub-state: place your bet */
 					logAndPublish.write("Place your bet.", false, true);
 					
-
-					
 					/* loop to handle user command line input */
-					command = UserSelection("Enter any amount greater than " + min_ante + " to begin, and 2 to return to game list.", min_ante, (int)this.bankAmount);
-					
+					command = UserSelection("Enter any amount greater than or equal to " + min_ante + " to begin. \n(suggested amount is 10):", min_ante, (int)this.bankAmount);
+					orig_ante = command;
+
 					/* handle user selection */
 					
-						/* send init message */
+						/* send GET_HOLE message */
 						MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, TypeIndicator.GAME, GameIndicator.PLAY_GAME, GameTypeCode.TEXAS_HOLDEM, GamePlayRequest.GET_HOLE, (long)command);  
 				        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));						
 						
@@ -371,26 +388,274 @@ public class SecureClientController implements Runnable {
 						this.gameState.setState(State.GAMEPLAY);
 					
 				}
-			
-				/* Dealer will give the player two cards */
+				
+				/* server response: Receive 2 player cards */
 				{
-					
 			        /* get server response */
 			        ServerResponse sr = this.receiveMessage();
+			        PrintGamePlayMessage(sr);
+			            
+			        //TODO: ADD ERROR HANDLING AND STATE CHANGES USING SERVER RESPONSE//
+				}								
+				
+				/* Player will decide to play or fold */
+				/* a) if the player plays they must bet twice their ante amount
+				/* b) if they fold they have to go back to 1) */
+				{
 					
-
+					
+					logAndPublish.write("Do you wish to play this hand or fold?  To Play, you must bet twice your ante amount.", false, true);
+					
+					/* loop to handle user command line input */
+					command = UserSelection("Enter 1 to continue, and 2 to return to fold.", 1, 2);
+					
+					/* handle user selection */
+					if (command == 1){
+					
+						if ((orig_ante*2) > bankAmount)
+						{
+							logAndPublish.write("You do not have enough money to keep playing.  Goodbye.", false, true);
+							this.gameState.setState(State.GAMELIST);
+							command=2;
+						}		
+						else
+						{
+							/* send GET_FLOP message */
+							MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, TypeIndicator.GAME, GameIndicator.PLAY_GAME, GameTypeCode.TEXAS_HOLDEM, GamePlayRequest.GET_FLOP, (long)(orig_ante*2));
+					        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));						
+							
+							/* proceed to the next step */
+							this.gameState.setState(State.GAMEPLAY);
+						}
+					}
+					if (command == 2) {
+						
+						MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, TypeIndicator.GAME, GameIndicator.PLAY_GAME, GameTypeCode.TEXAS_HOLDEM, GamePlayRequest.FOLD, (long)0);
+				        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));							
+						
+				        /* get server response */
+				        ServerResponse sr = this.receiveMessage();
+				        PrintGamePlayMessage(sr);
+				        
+						/* transition to closing state */
+						this.gameState.setState(State.GAMELIST);
+						break;
+					}		
+					
 				}
+				
+				/* server response: If player bets then the dealer gives 3 flop cards */
+				{
+			        /* get server response */
+			        ServerResponse sr = this.receiveMessage();
+			        PrintGamePlayMessage(sr);
+			            
+			        //TODO: ADD ERROR HANDLING AND STATE CHANGES USING SERVER RESPONSE//
+				}	
+				
+				/* Player can bet (only can bet the ante amount) , check, or fold */
+				{
+					
+					
+					logAndPublish.write("Do you wish to bet, check or fold?  To bet, you may only bet the original ante amount.", false, true);
+					
+					/* loop to handle user command line input */
+					command = UserSelection("Enter 1 to bet, 2 to check, and 3 to return to fold.", 1, 3);
+					
+					/* handle user selection */
+					if (command == 1) {
+					
+						if ((orig_ante) > bankAmount)
+						{
+							logAndPublish.write("You do not have enough money to keep playing.  Goodbye.", false, true);
+							this.gameState.setState(State.GAMELIST);
+							command = 2;
+						} else {				
+							/* send GET_TURN message */
+							MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, TypeIndicator.GAME, GameIndicator.PLAY_GAME, GameTypeCode.TEXAS_HOLDEM, GamePlayRequest.GET_TURN, (long)orig_ante);
+					        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));						
+							
+							/* proceed to the next step */
+							this.gameState.setState(State.GAMEPLAY);
+						}
+					}
+					
+					if (command == 2) {	
 
-			
+						/* send GET_TURN message */
+						MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, TypeIndicator.GAME, GameIndicator.PLAY_GAME, GameTypeCode.TEXAS_HOLDEM, GamePlayRequest.GET_TURN, (long)0);
+				        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));						
+						
+						/* proceed to the next step */
+						this.gameState.setState(State.GAMEPLAY);
+					}	
+					if (command == 3) {
+						
+						MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, TypeIndicator.GAME, GameIndicator.PLAY_GAME, GameTypeCode.TEXAS_HOLDEM, GamePlayRequest.FOLD, (long)0);
+				        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));	
+						
+				        /* get server response */
+				        ServerResponse sr = this.receiveMessage();
+				        PrintGamePlayMessage(sr);
+				        
+						/* transition to closing state */
+						this.gameState.setState(State.GAMELIST);
+						break;
+					}		
+					
+				}				
+				
+				/* server response: If player bets or checks the dealer gives a turn card */
+				{
+			        /* get server response */
+			        ServerResponse sr = this.receiveMessage();
+			        PrintGamePlayMessage(sr);
+			            
+			        //TODO: ADD ERROR HANDLING AND STATE CHANGES USING SERVER RESPONSE//
+				}	
+				
+				/* Player can bet (only can bet the ante amount) , check, or fold */
+				{
+					logAndPublish.write("Do you wish to bet, check or fold?  To bet, you may only bet the original ante amount.", false, true);
+					
+					/* loop to handle user command line input */
+					command = UserSelection("Enter 1 to bet, 2 to check, and 3 to return to fold.", 1, 3);
+					
+					/* handle user selection */
+					if (command == 1) {
+					
+						if ((orig_ante) > bankAmount)
+						{
+							logAndPublish.write("You do not have enough money to keep playing.  Goodbye.", false, true);
+							this.gameState.setState(State.GAMELIST);
+							command = 2;
+						} else {				
+							/* send GET_RIVER message */
+							MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, TypeIndicator.GAME, GameIndicator.PLAY_GAME, GameTypeCode.TEXAS_HOLDEM, GamePlayRequest.GET_RIVER, (long)orig_ante);
+					        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));						
+							
+							/* proceed to the next step */
+							this.gameState.setState(State.GAMEPLAY);
+						}
+					}
+					if (command == 2) {	
+
+						/* send GET_RIVER message */
+						MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, TypeIndicator.GAME, GameIndicator.PLAY_GAME, GameTypeCode.TEXAS_HOLDEM, GamePlayRequest.GET_RIVER, (long)0);
+				        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));						
+						
+						/* proceed to the next step */
+						this.gameState.setState(State.GAMEPLAY);
+						
+					}
+					if (command==3) {
+						
+						MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, TypeIndicator.GAME, GameIndicator.PLAY_GAME, GameTypeCode.TEXAS_HOLDEM, GamePlayRequest.FOLD, (long)0);
+				        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));	
+						
+				        /* get server response */
+				        ServerResponse sr = this.receiveMessage();
+				        PrintGamePlayMessage(sr);
+				        
+						/* transition to closing state */
+						this.gameState.setState(State.GAMELIST);
+						break;
+					}		
+					
+				}				
+
+				/* server response: If player checks or bets the dealer determines the winner and updates the players bank amount, etc. */
+				{
+			        /* get server response */
+			        ServerResponse sr = this.receiveMessage();
+			        PrintGamePlayMessage(sr);
+			            
+			        //TODO: ADD ERROR HANDLING AND STATE CHANGES USING SERVER RESPONSE//
+				}				
+				
 			}
 			catch(Exception e)
 			{
 				logAndPublish.write(e,true,true);
 				this.disconnect();
+				System.exit(0);
 			}
 		}
 		
 	}
+	
+	/**
+	 * Format and Print ServerGamePlayMessage to the screen
+	 * @param msg
+	 */
+	private void PrintGamePlayMessage (ServerResponse sr) 
+	{
+	    try
+	    {
+	        /* verify type as GAME */
+	        if (this.messageParser.GetTypeIndicator(sr.getMessage(), sr.getSize()).isEqual(TypeIndicator.GAME)) 
+	        {
+	        	MessageParser.ServerPlayGameMessage msg = this.messageParser.GetServerPlayGameMessage(sr.getMessage(), sr.getSize());
+	    		
+	        	  bankAmount = msg.getBankAmount();
+	        	  
+	        	  betAmount = msg.getBetAmount();
+				  int gamePlayResponse = msg.getGamePlayResponse().getGamePlayResponse();
+		          int ante = msg.getAnte();
+		          int potSize = (int)msg.getPotSize();
+		          
+		          Card pcard1 = msg.getPlayerCard1();
+		          Card pcard2 = msg.getPlayerCard2();
+		          Card dcard1 = msg.getDealerCard1();
+		          Card dcard2 = msg.getDealerCard2();
+		          
+		          Card fcard1 = msg.getFlopCard1();
+		          Card fcard2 = msg.getFlopCard2();
+		          Card fcard3 = msg.getFlopCard3();
+		          
+		          Card tcard = msg.getTurnCard();
+		          Card rcard = msg.getRiverCard();
+		          
+		          int winner = msg.getWinner().getWinner();
+	
+		    	  String message = "";
+		    	  message += "Response: " + gamePlayResponse + "\n";  
+		    	  message += "\n";
+		    	  message += "Your Bank Amount: " + bankAmount + "\n";
+		    	  message += "Current Ante: " + ante + ". Current Bet Amount: " + betAmount + "\n";
+		    	  message += "Current Pot Size: " + potSize + "\n";
+		    	  message += "\n";
+		    	  message += "Table Status:----------------------------------------------------------\n";
+		    	  message += "Player Card 1: " + pcard1.toString() + "\n";
+		    	  message += "Player Card 2: " + pcard2.toString() + "\n";
+		    	  message += "\n";
+		    	  message += "Dealer Card 1: " + dcard1.toString() + "\n";
+		    	  message += "Dealer Card 2: " + dcard2.toString() + "\n";
+		    	  message += "\n";	    	 
+		    	  message += "Flop Card 1: " + fcard1.toString() + "\n";
+		    	  message += "Flop Card 2: " + fcard2.toString() + "\n";
+		    	  message += "Flop Card 3: " + fcard3.toString() + "\n";
+		    	  message += "\n";
+		    	  message += "Turn Card: " + tcard.toString() + "\n";
+		    	  message += "River Card: " + rcard.toString() + "\n";
+		    	  message += "-----------------------------------------------------------------------\n";
+		    	  message += "Winner: " + MessageParser.Winner.getEnum(winner) + "\n";
+	        	
+	        	/* Log and Publish */
+	    		logAndPublish.write(message, false, true);  
+	        }
+	        else
+	        {
+	           	//TODO: ADD ERROR HANDLING AND STATE CHANGES USING SERVER RESPONSE//
+	        }	
+	    }catch (Exception e) 
+	    {
+	    	logAndPublish.write(e,true,true);
+	    	this.disconnect();
+	    }
+	    
+	}
+	
 	
 	/**
 	 * GameSetState method simply informs the client which game has been set
@@ -628,9 +893,7 @@ public class SecureClientController implements Runnable {
    		 	outputStream = new ObjectOutputStream(oOutputStream); 
    		 	inputstream = new ObjectInputStream(oInputStream); 
    		 	this.connected = true;
-   		 	
-   			/* Log and Publish */
-   			logAndPublish.write("'connect' status: " + connected, false, false);   		 	
+    		 	
    		 	
    		 	/* Spawn thread with 'this' instance.  Initiate reading from server. */
    		 	Thread t = new Thread(this);
@@ -654,7 +917,6 @@ public class SecureClientController implements Runnable {
     	
     	if(!connected)
         { 	
-    		System.out.println("PROBLEM2");
     		
     		/* set variables */
         	this.port = port;

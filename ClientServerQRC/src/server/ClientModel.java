@@ -94,7 +94,7 @@ public class ClientModel extends Observable implements Runnable {
         this.messageParser = new MessageParser();
         this.m_iVersion = Integer.parseInt(this.xmlParser.getServerTagValue("VERSION"));
         this.m_iMinorVersion = (short)Integer.parseInt(this.xmlParser.getServerTagValue("MINOR_VERSION"));
-        this.m_lClientBankAmount = Integer.parseInt(this.xmlParser.getServerTagValue("CLIENT_BANK_AMOUNT"));
+        this.m_lClientBankAmount = (long)Integer.parseInt(this.xmlParser.getServerTagValue("CLIENT_BANK_AMOUNT"));
         this.m_lOpTimer = Integer.parseInt((this.xmlParser.getServerTagValue("OPERATION_TIMER")));
         this.timeoutTimer = new TimeoutTimer(this);
         this.oTHModel = new TexasHoldemModel(this);
@@ -158,10 +158,7 @@ public class ClientModel extends Observable implements Runnable {
     }
 
     public void run() {
-        //byte[] inputBuffer = new byte[100];
-        //int iByteCount = -1;
-        
-        //start listening message from client//
+
         try 
         {
         	this.timeoutTimer.schedule(this.m_lOpTimer);
@@ -170,19 +167,6 @@ public class ClientModel extends Observable implements Runnable {
         	while (running && !this.socket.isClosed() && this.gameState.getState() != State.CLOSED && !this.m_bSendClose ) // && (iByteCount = oInputStream.read(inputBuffer)) > 0)
         	{
         		
-        		//ByteArrayInputStream baos = new ByteArrayInputStream(oInputStream);
-        		//int bytesWritten = 0;
-//        		while(true){
-//        			iByteCount = oInputStream.read(inputBuffer);
-//        			//baos.write(inputBuffer, bytesWritten, iByteCount);
-//        			baos.write(inputBuffer);
-//        			//bytesWritten += iByteCount;
-//        			
-//        			if (this.messageParser.GetVersion(baos.toByteArray(), baos.size()) == this.m_iVersion)
-//        			{
-//        				break;
-//        			}		
-//        		}
         		 
         		byte iByteCount = inputstream.readByte();
         		byte [] inputBuffer = new byte[iByteCount];
@@ -190,33 +174,30 @@ public class ClientModel extends Observable implements Runnable {
         		
         		if (this.gameState.getState().isEqual(State.AUTHENTICATE))
         		{
-        			System.out.println("entering authenticate");
+        			//System.out.println("entering authenticate");
         			AuthenticateState(inputBuffer, iByteCount);
         		}
         		else if (this.gameState.getState().isEqual(State.GAMELIST))
         		{
-        			System.out.println("entering list");
+        			//System.out.println("entering list");
         			GameListState(inputBuffer, iByteCount);
         		}
         		else if (this.gameState.getState().isEqual(State.GAMESET))
         		{
-        			System.out.println("entering set");
+        			//System.out.println("entering set");
         			GameSetState(inputBuffer, iByteCount);
         		}        		
         		
         		else if (this.gameState.getState().isEqual(State.GAMEPLAY))
         		{
-        			System.out.println("entering play");
+        			//System.out.println("entering play");
         			GamePlayState(inputBuffer, iByteCount);
         		}
         		else if (this.gameState.getState().isEqual(State.CLOSING))
         		{
-        			System.out.println("entering closing");
+        			//System.out.println("entering closing");
         			ClosingState(inputBuffer, iByteCount);
         		}
-        		System.out.println(running);
-        		System.out.println(this.gameState.getState());
-        		System.out.println(this.m_bSendClose);
         	}
         	
         	
@@ -284,9 +265,7 @@ public class ClientModel extends Observable implements Runnable {
 		// The server should never be receiving a message in this state
 		// It should be in the wait state and then transition to the game state to complete the request
 		// but then transition back once it is done
-		//this.fLogger.info(this.uniqueID + ": Error Server Caught in Game State!");
-		//this.fLogger.info(this.uniqueID + ": Trying to fix by switching to Wait State");
-		//this.gameState.setState(State.GAMELIST);	
+
 		if (this.messageParser.GetVersion(inputBuffer, iByteCount) != this.m_iVersion)
 		{
 			this.fLogger.info(this.uniqueID + ": has sent an invalid version number, Ignoring Msg");
@@ -313,6 +292,7 @@ public class ClientModel extends Observable implements Runnable {
 			}
 			if (this.m_eGameTypeCode.isEqual(GameTypeCode.TEXAS_HOLDEM))
 			{
+
 				MessageParser.ServerPlayGameMessage svrMsg = oTHModel.updateModel(msg);
 				// update client bank account
 				if (svrMsg != null)
@@ -320,13 +300,20 @@ public class ClientModel extends Observable implements Runnable {
 					this.m_lClientBankAmount = svrMsg.getBankAmount();
 					this.timeoutTimer.reschedule(m_lOpTimer);
 					try	{
-						oOutputStream.write(this.messageParser.CreateServerPlayGameMessage(svrMsg));
+						//oOutputStream.write(this.messageParser.CreateServerPlayGameMessage(svrMsg));
+						outputStream.writeByte((byte)this.messageParser.CreateServerPlayGameMessage(svrMsg).length);
+				        outputStream.write(this.messageParser.CreateServerPlayGameMessage(svrMsg)); 
+				        outputStream.flush();						
 						this.gameState.setState(State.GAMEPLAY);
 					} catch (Exception e) {
 						e.printStackTrace();
 						this.timeoutTimer.stop();
 						this.gameState.setState(State.CLOSED);
 					}
+				}
+				else
+				{
+					//System.out.println("PROBLEM");
 				}
 			}
 		}
@@ -472,37 +459,6 @@ public class ClientModel extends Observable implements Runnable {
 		}
 	}
 
-	
-//		if (this.messageParser.GetTypeIndicator(inputBuffer, iByteCount).isEqual(TypeIndicator.CHALLENGE_CONNECTION))
-//		{
-//			MessageParser.ChallengeMessage msg = this.messageParser.GetChallengeMessage(inputBuffer, iByteCount);
-//			if (msg.getChallengeCode().isEqual(ChallengeIndicator.CHALLENGE_CONNECTION))
-//			{
-//				// server needs to send an ack
-//				this.fLogger.info(this.uniqueID + ": has sent a Challenge Connection Msg, Sending Ack");
-//				this.timeoutTimer.reschedule(m_lOpTimer);
-//				msg.setChallengeCode(ChallengeIndicator.CHALLENGE_CONNECTION_ACK);
-//				try	{
-//					oOutputStream.write(this.messageParser.CreateChallengeMessage(msg));
-//				} catch (Exception e) {
-//					e.printStackTrace();
-//					this.timeoutTimer.stop();
-//					this.gameState.setState(State.CLOSED);
-//				}
-//			}
-//			else if (msg.getChallengeCode().isEqual(ChallengeIndicator.CHALLENGE_CONNECTION_ACK) && this.bSentChallenge)
-//			{
-//				// received the challenge ack
-//				this.fLogger.info(this.uniqueID + ": has sent back the Challenge Connection Ack!");
-//				this.bSentChallenge = false;
-//				this.timeoutTimer.reschedule(m_lOpTimer);
-//			}
-//			else
-//			{
-//				this.fLogger.info(this.uniqueID + ": has sent an invalid Challenge Connection Message, Ignoring");
-//			}
-//		}
-
 	private void AuthenticateState(byte[] inputBuffer, int iByteCount) throws IOException {
 		/*
 		 *  During this state the client has to authenticate itself by giving its version to the server
@@ -576,37 +532,6 @@ public class ClientModel extends Observable implements Runnable {
 				}
 			}
 		}
-//		else if (this.messageParser.GetTypeIndicator(inputBuffer, iByteCount).isEqual(TypeIndicator.CLOSE_CONNECTION))
-//		{
-//			MessageParser.ConnectionMessage msg = this.messageParser.GetConnectionMessage(inputBuffer, iByteCount);
-//			if (msg.getConnectionCode().isEqual(ConnectionIndicator.CLOSE_CONNECTION))
-//			{
-//				/*
-//				 *  Client wishes to close the connection. The server will gracefully close the connection
-//				 *  Indicate that we are transitioning to the closing state and that the server was not the
-//				 *  one to issue the request
-//				 */
-//				this.fLogger.info(this.uniqueID + ": Close connection message received");
-//				this.timeoutTimer.reschedule(this.m_lOpTimer);
-//				this.gameState.setState(State.CLOSING);
-//				this.m_bSendClose = true;
-//			}
-//			else
-//			{
-//				/*
-//				 * This was an erroneous close connection acknowledgment message, ignore it and require a login
-//				 */
-//				this.fLogger.info(this.uniqueID + ": Need to finish authentication of version, got a different message");
-//				MessageParser.VersionMessage vmsg = this.messageParser.new VersionMessage(this.m_iVersion, TypeIndicator.VERSION, VersionIndicator.VERSION_REQUIREMENT, this.m_iMinorVersion,(long)0);
-//				try {
-//					oOutputStream.write(this.messageParser.CreateVersionMessage(vmsg));
-//				} catch (Exception e) {
-//					e.printStackTrace();
-//					this.timeoutTimer.stop();
-//					this.gameState.setState(State.CLOSED);
-//				}
-//			}
-//		}	
 		else
 		{
 			// client did not send the right message, server needs to force a version message
