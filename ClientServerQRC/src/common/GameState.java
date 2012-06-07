@@ -1,39 +1,29 @@
 package common;
 
 public class GameState {
-	private State state;
+	private int state;
+	public static int LISTENING = 0;
+	public static int AUTHENTICATE = 1;
+	public static int GAMELIST = 2;
+	public static int GAMESET = 3;
+	public static int GAMEPLAY = 4;
+	public static int CLOSED = 5;
 	public GameState()
 	{
-		this.state = State.LISTENING;
+		this.state = LISTENING;
 	}
 	
-	public enum State {
-		LISTENING(0), AUTHENTICATE(1), GAMELIST(2), GAMESET(3), GAMEPLAY(4), CLOSING(5), CLOSED(6);
-		private int state;
-		State(int state)
-		{
-			this.setState(state);
-		}
-		public int getState() {
-			return state;
-		}
-		public void setState(int state) {
-			this.state = state;
-		}
-		public boolean isEqual(State rhs)
-		{
-			return (this.state == rhs.getState());
-		}
-	}
-	
-	public State getState()
+	public int getState()
 	{
 		return this.state;
 	}
 	
-	public void setState(State state)
+	public void setState(int state)
 	{
-		this.state = state;
+		if (state >= 0 && state < 6)
+		{
+			this.state = state;
+		}
 	}
 
 }

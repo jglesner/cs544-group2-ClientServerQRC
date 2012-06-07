@@ -1,40 +1,30 @@
 package common;
 
 public class GamePlayState {
-	private PlayState state;
+	public static int NOT_SET = 0;
+	public static int INIT = 1;
+	public static int GET_HOLE = 2;
+	public static int GET_FLOP = 3;
+	public static int GET_TURN = 4;
+	public static int GET_RIVER = 5;
+	public static int FOLD = 6;
+	private int state;
 	public GamePlayState()
 	{
-		this.state = PlayState.NOT_SET;
+		this.state = NOT_SET;
 	}
 	
-	public enum PlayState {
-      NOT_SET(0), INIT(1), GET_HOLE(2), GET_FLOP(3), GET_TURN(4), GET_RIVER(5), FOLD(6);
-		private int state;
-		PlayState(int state)
-		{
-			this.setPlayState(state);
-		}
-		public int getPlayState() {
-			return state;
-		}
-		public void setPlayState(int state) {
-			this.state = state;
-		}
-		public boolean isEqual(PlayState rhs)
-		{
-			return (this.state == rhs.getPlayState());
-		}
-	}
-
-	
-	public PlayState getPlayState()
+	public int getPlayState()
 	{
 		return this.state;
 	}
 	
-	public void setPlayState(PlayState state)
+	public void setPlayState(int state)
 	{
-		this.state = state;
+		if (state >= 0 && state < 7)
+		{
+			this.state = state;
+		}
 	}
 
 }

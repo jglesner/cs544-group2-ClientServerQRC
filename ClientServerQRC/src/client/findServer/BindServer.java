@@ -1,4 +1,4 @@
-package common.findServer;
+package client.findServer;
 
 import java.io.IOException;
 import java.net.InetAddress;
