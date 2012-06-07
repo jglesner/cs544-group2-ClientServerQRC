@@ -73,13 +73,14 @@ public class TexasHoldemHandEval
 
 		   for (int i = 0; i < h.length; i++) 
 		   {
-			   if (h[i].getCardSuite().getSuitValue() == major_suit) 
+			   if (h[i].getSuitValue() == major_suit) 
 			   {
-				   present[h[i].getCardValue().getRankValue()] = true;
+				   present[h[i].getRankValue()] = true;
 	        
 			   }	     
 		   }
-		   int straight = present[Card.CardValue.CARD_ACE.getRankValue()] ? 1 : 0;
+		   Card ace = new Card(Card.HEART, Card.CARD_ACE);
+		   int straight = present[ace.getRankValue()] ? 1 : 0;
 		   byte high = 0;
 		   for (int i = 0; i < Card.NUM_RANKS; i++)
 		   {
@@ -103,7 +104,8 @@ public class TexasHoldemHandEval
 	   // returns ident value
 	   private final static int ID_KickerValue(byte[] paired, int kickers, byte[] not_allowed) 
 	   {
-		   int i = Card.CardValue.CARD_ACE.getRankValue();
+		   Card ace = new Card(Card.HEART, Card.CARD_ACE);
+		   int i = ace.getRankValue();
 		   int value = 0;
 		   while (kickers != 0) 
 		   {
@@ -122,19 +124,20 @@ public class TexasHoldemHandEval
 	   {
 		   int i;
 		   int value = 0;
+		   Card ace = new Card(Card.HEART, Card.CARD_ACE);
 
 		   boolean[] present = new boolean[Card.NUM_RANKS];
 		   // for (i=0;i<Card.NUM_RANKS;i++) present[i] = false;
 
 		   for (i = 0; i < h.length; i++)
 		   {
-			   if (h[i].getCardSuite().getSuitValue() == suit)
+			   if (h[i].getSuitValue() == suit)
 			   {
-				   present[h[i].getCardValue().getRankValue()] = true;
+				   present[h[i].getRankValue()] = true;
 			   }
 		   }
 
-		   i = Card.CardValue.CARD_ACE.getRankValue();
+		   i = ace.getRankValue();
 		   while (kickers != 0) 
 		   {
 			   while (present[i] == false)
@@ -166,6 +169,7 @@ public class TexasHoldemHandEval
 		   boolean straight = false;
 		   boolean flush = false;
 		   byte max_hand = (byte) (h.length >= POKER_HAND ? POKER_HAND : h.length);
+		   Card ace = new Card(Card.HEART, Card.CARD_ACE);
 		   int r, c;
 		   byte rank, suit;
 
@@ -186,8 +190,8 @@ public class TexasHoldemHandEval
 		   // for (r=0;r<=POKER_HAND;r++) group_size[r] = 0;
 		   for (r = 0; r < h.length; r++) 
 		   {
-			   rank = (byte)h[r].getCardValue().getRankValue();
-			   suit = (byte)h[r].getCardSuite().getSuitValue();
+			   rank = (byte)h[r].getRankValue();
+			   suit = (byte)h[r].getSuitValue();
 			   paired[rank]++;            // Add rank of card to paired array to track the pairs we have.	       
 			   group_size[paired[rank]]++;   // keep track of the groups in our hand (1-pair, 2-pair, 1-trips, 1-trips 1-pair)
 	        
@@ -203,7 +207,7 @@ public class TexasHoldemHandEval
 			   }	     
 		   }
 		   // Card.ACE low?  Add to straight_size if so.
-		   straight_size = (byte) (paired[Card.CardValue.CARD_ACE.getRankValue()] != 0 ? 1 : 0);
+		   straight_size = (byte) (paired[ace.getRankValue()] != 0 ? 1 : 0);
 
 		   for (int i = 0; i < (POKER_HAND + 1); i++) 
 		   {

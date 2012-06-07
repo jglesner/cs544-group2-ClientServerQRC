@@ -1,10 +1,7 @@
 package common;
 
 import java.util.ArrayList;
-import java.util.List;
 import common.card_game.Card;
-import common.card_game.Card.CardSuite;
-import common.card_game.Card.CardValue;
 
 /* This class will be used by all classes to parse the incoming message or to create the outgoing messages
  * 
@@ -12,228 +9,70 @@ import common.card_game.Card.CardValue;
 public class MessageParser {
 	
 	/*
-	 * This is the different possible type indicators
+	 * This is the different possible indicators for the messages
 	 */
-	public enum TypeIndicator{
-		NOT_SET(0), VERSION(1), LIST(2), SET(3), GAME(4), CLOSE_CONNECTION(5), CHALLENGE_CONNECTION(6);
-		private int indicator;
-		TypeIndicator(int indicator)
-		{
-			this.setIndicator(indicator);
-		}
-		public int getIndicator() {
-			return indicator;
-		}
-		public void setIndicator(int indicator) {
-			this.indicator = indicator;
-		}
-		public boolean isEqual(TypeIndicator rhs)
-		{
-			return (this.indicator == rhs.getIndicator());
-		}
-	}
-	
-   /*
-   * This is the different possible version indicators
-   */
-	public enum VersionIndicator{
-		NOT_SET(0), CLIENT_VERSION(1), VERSION_REQUIREMENT(2), VERSION_ACK(3), VERSION_UPGRADE(4);
-		private int indicator;
-		VersionIndicator(int indicator)
-		{
-			this.setIndicator(indicator);
-		}
-		public int getIndicator() {
-			return indicator;
-		}
-		public void setIndicator(int indicator) {
-			this.indicator = indicator;
-		}
-		public boolean isEqual(VersionIndicator rhs)
-		{
-			return (this.indicator == rhs.getIndicator());
-		}
-	}
-	
-   /*
-   * This is the different possible game indicators
-   */
-	public enum GameIndicator{
-		NOT_SET(0), GET_GAME(1), SET_GAME(2), PLAY_GAME(3);
-		private int indicator;
-		GameIndicator(int indicator)
-		{
-			this.setIndicator(indicator);
-		}
-		public int getIndicator() {
-			return indicator;
-		}
-		public void setIndicator(int indicator) {
-			this.indicator = indicator;
-		}
-		public boolean isEqual(GameIndicator rhs)
-		{
-			return (this.indicator == rhs.getIndicator());
-		}
-	}
-   
-   /*
-   * These are the different possible game type codes
-   */
-   public enum GameTypeCode{
-		NOT_SET(0), TEXAS_HOLDEM(1);
-		private int gameTypeCode;
-		GameTypeCode(int gameTypeCode)
-		{
-			this.setGameTypeCode(gameTypeCode);
-		}
-		public int getGameTypeCode() {
-			return gameTypeCode;
-		}
-		public void setGameTypeCode(int gameTypeCode) {
-			this.gameTypeCode = gameTypeCode;
-		}
-		public boolean isEqual(GameTypeCode rhs)
-		{
-			return (this.gameTypeCode == rhs.getGameTypeCode());
-		}
-	}
-   
-   /* 
-   * These are the different possible game type responses
-   */
-   public enum GameTypeResponse{
-		NOT_SET(0), ACK(1), INVALID(2);
-		private int gameTypeResponse;
-		GameTypeResponse(int gameTypeResponse)
-		{
-			this.setGameTypeResponse(gameTypeResponse);
-		}
-		public int getGameTypeResponse() {
-			return gameTypeResponse;
-		}
-		public void setGameTypeResponse(int gameTypeResponse) {
-			this.gameTypeResponse = gameTypeResponse;
-		}
-		public boolean isEqual(GameTypeResponse rhs)
-		{
-			return (this.gameTypeResponse == rhs.getGameTypeResponse());
-		}
-	}
-   
-   /*
-   * These are the different possible game play requests
-   */
-   public enum GamePlayRequest{
-      NOT_SET(0), INIT(1), GET_HOLE(2), GET_FLOP(3), GET_TURN(4), GET_RIVER(5), FOLD(6);
-      private int gamePlayRequest;
-		GamePlayRequest(int gamePlayRequest)
-		{
-			this.setGamePlayRequest(gamePlayRequest);
-		}
-		public int getGamePlayRequest() {
-			return gamePlayRequest;
-		}
-		public void setGamePlayRequest(int gamePlayRequest) {
-			this.gamePlayRequest = gamePlayRequest;
-		}
-		public boolean isEqual(GamePlayRequest rhs)
-		{
-			return (this.gamePlayRequest == rhs.getGamePlayRequest());
-		}
-	}
-   
-   /*
-   * These are the different possible server game responses
-   */
-   public enum GamePlayResponse{
-      NOT_SET(0), INIT_ACK(1), GET_HOLE_ACK(2), GET_FLOP_ACK(3), GET_TURN_ACK(4), GET_RIVER_ACK(5), FOLD_ACK(6),
-      INVALID_ANTE_BET(7), INVALID_HOLE_BET(8), INVALID_FLOP_BET(9), INVALID_TURN_BET(10);
-      private int gamePlayResponse;
-		GamePlayResponse(int gamePlayResponse)
-		{
-			this.setGamePlayResponse(gamePlayResponse);
-		}
-		public int getGamePlayResponse() {
-			return gamePlayResponse;
-		}
-		public void setGamePlayResponse(int gamePlayResponse) {
-			this.gamePlayResponse = gamePlayResponse;
-		}
-		public boolean isEqual(GamePlayResponse rhs)
-		{
-			return (this.gamePlayResponse == rhs.getGamePlayResponse());
-		}
-	}
-   
-   /* Card Values and Suites are in Card.java */
-         
-   /*
-   * These are the different winners for the game
-   */
-   public enum Winner{
-      NOT_SET(0), DEALER(1), PLAYER(2), DRAW(3);
-      private int winner;
-		Winner(int winner)
-		{
-			this.setWinner(winner);
-		}
-		public int getWinner() {
-			return winner;
-		}
-		public void setWinner(int winner) {
-			this.winner = winner;
-		}
-		public boolean isEqual(Winner rhs)
-		{
-			return (this.winner == rhs.getWinner());
-		}
-	}
-   
-   /*
-   * This indicates the possible connection indicators
-   * It is currently used for closing the connection
-   */
-   public enum ConnectionIndicator{
-      NOT_SET(0), CLOSE_CONNECTION(1), CLOSE_CONNECTION_ACK(2);
-      private int conindicator;
-		ConnectionIndicator(int conindicator)
-		{
-			this.setConnectionIndicator(conindicator);
-		}
-		public int getConnectionIndicator() {
-			return conindicator;
-		}
-		public void setConnectionIndicator(int conindicator) {
-			this.conindicator = conindicator;
-		}
-		public boolean isEqual(ConnectionIndicator rhs)
-		{
-			return (this.conindicator == rhs.getConnectionIndicator());
-		}
-	}
-   
-   /*
-   * This indicates the possible challenge indicators
-   */
-   public enum ChallengeIndicator{
-      NOT_SET(0), CHALLENGE_CONNECTION(1), CHALLENGE_CONNECTION_ACK(2);
-      private int challndicator;
-		ChallengeIndicator(int challndicator)
-		{
-			this.setChallengeIndicator(challndicator);
-		}
-		public int getChallengeIndicator() {
-			return challndicator;
-		}
-		public void setChallengeIndicator(int challndicator) {
-			this.challndicator = challndicator;
-		}
-		public boolean isEqual(ChallengeIndicator rhs)
-		{
-			return (this.challndicator == rhs.getChallengeIndicator());
-		}
-	}      
+	public static int NOT_SET = 0;
+	/*
+	 * These are the valid type indicators
+	 */
+	public static int TYPE_INDICATOR_VERSION = 1;
+	public static int TYPE_INDICATOR_GAME = 2;
+	public static int TYPE_INDICATOR_CLOSE_CONNECTION = 3;
+	/*
+	 * These are the valid version indicators
+	 */
+	public static int VERSION_INDICATOR_CLIENT_VERSION = 1;
+	public static int VERSION_INDICATOR_VERSION_REQUIREMENT = 2;
+	public static int VERSION_INDICATOR_VERSION_ACK = 3;
+	public static int VERSION_INDICATOR_VERSION_UPGRADE = 4;
+	/*
+	 * These are the valid game indicators
+	 */
+	public static int GAME_INDICATOR_GET_GAME = 1;
+	public static int GAME_INDICATOR_SET_GAME = 2;
+	public static int GAME_INDICATOR_PLAY_GAME = 3;
+	/*
+	 * These are the valid game types
+	 */
+	public static int GAME_TYPE_TEXAS_HOLDEM = 1;
+	/*
+	 * These are the valid game type responses
+	 */
+	public static int GAME_TYPE_RESPONSE_ACK = 1;
+	public static int GAME_TYPE_RESPONSE_INVALID = 2;
+	/*
+	 * These are the valid GAME_PLAY_REQUEST
+	 */
+	public static int GAME_PLAY_REQUEST_INIT = 1;
+	public static int GAME_PLAY_REQUEST_GET_HOLE = 2;
+	public static int GAME_PLAY_REQUEST_GET_FLOP = 3;
+	public static int GAME_PLAY_REQUEST_GET_TURN = 4;
+	public static int GAME_PLAY_REQUEST_GET_RIVER = 5;
+	public static int GAME_PLAY_REQUEST_FOLD = 6;
+	/*
+	 * These are the valid server game play responses
+	 */
+	public static int GAME_PLAY_RESPONSE_INIT_ACK = 1;
+	public static int GAME_PLAY_RESPONSE_GET_HOLE_ACK = 2;
+	public static int GAME_PLAY_RESPONSE_GET_FLOP_ACK = 3;
+	public static int GAME_PLAY_RESPONSE_GET_TURN_ACK = 4;
+	public static int GAME_PLAY_RESPONSE_GET_RIVER_ACK = 5;
+	public static int GAME_PLAY_RESPONSE_FOLD_ACK = 6;
+	public static int GAME_PLAY_RESPONSE_INVALID_ANTE_BET = 7;
+	public static int GAME_PLAY_RESPONSE_INVALID_HOLE_BET = 8;
+	public static int GAME_PLAY_RESPONSE_INVALID_FLOP_BET = 9;
+	public static int GAME_PLAY_RESPONSE_INVALID_TURN_BET = 10;
+	/*
+	 * These are the valid Winner choices
+	 */
+	public static int WINNER_DEALER = 1;
+	public static int WINNER_PLAYER = 2;
+	public static int WINNER_DRAW = 3;
+	/*
+	 * These are the valid connection indicators
+	 */
+	public static int CONNECTION_INDICATOR_CLOSE_CONNECTION = 1;
+	public static int CONNECTION_INDICATOR_CLOSE_CONNECTION_ACK = 2;
    
    /*
    * This class represents the message structure for the version message
@@ -241,45 +80,81 @@ public class MessageParser {
    public class VersionMessage
    {
       private int iVersion;
-      private TypeIndicator eTypeCode;
-      private VersionIndicator eVersionType;
+      private int iTypeCode;
+      private int iVersionType;
       private short nMinorVersion;
       private long  lBankAmount;
-      public VersionMessage(int version, TypeIndicator typecode, VersionIndicator versiontype, short minorversion, long bankamount)
+      public VersionMessage(int version, int typecode, int versiontype, short minorversion, long bankamount)
       {
-         this.iVersion = version;
-         this.eTypeCode = typecode;
-         this.eVersionType = versiontype;
-         this.nMinorVersion = minorversion;
-         this.lBankAmount = bankamount;
+         this.iVersion = 0;
+         if (version >= 0)
+         {
+        	 this.iVersion = version;
+         }
+         this.iTypeCode = 0;
+         if (typecode == 1 || typecode == 2 || typecode == 3)
+         {
+        	 this.iTypeCode = typecode;
+         }
+         this.iVersionType = 0;
+         if (versiontype == 1 || versiontype == 2 || versiontype == 3 || versiontype == 4)
+         {
+        	 this.iVersionType = versiontype;
+         }
+         this.nMinorVersion = 0;
+         if (minorversion >= 0)
+         {
+        	 this.nMinorVersion = minorversion;
+         }
+         this.lBankAmount = 0;
+         if (bankamount >= 0)
+         {
+        	 this.lBankAmount = bankamount;
+         }
       }
       public void setVersion(int version)
       {
-         this.iVersion = version;
+    	  this.iVersion = 0;
+    	  if (version >= 0)
+    	  {
+    		  this.iVersion = version;
+    	  }
       }
       public int getVersion()
       {
          return iVersion;
       }
-      public void setTypeCode(TypeIndicator typecode)
+      public void setTypeCode(int typecode)
       {
-         this.eTypeCode = typecode;
+    	  this.iTypeCode = 0;
+          if (typecode == 1 || typecode == 2 || typecode == 3)
+          {
+         	 this.iTypeCode = typecode;
+          }
       }
-      public TypeIndicator getTypeCode()
+      public int getTypeCode()
       {
-         return eTypeCode;
+         return iTypeCode;
       }
-      public void setVersionType(VersionIndicator versiontype)
+      public void setVersionType(int versiontype)
       {
-         this.eVersionType = versiontype;
+    	  this.iVersionType = 0;
+          if (versiontype == 1 || versiontype == 2 || versiontype == 3 || versiontype == 4)
+          {
+         	 this.iVersionType = versiontype;
+          }
       }
-      public VersionIndicator getVersionType()
+      public int getVersionType()
       {
-         return eVersionType;
+         return iVersionType;
       }
       public void setMinorVersion(short minorversion)
       {
-         this.nMinorVersion = minorversion;
+    	  this.nMinorVersion = 0;
+          if (minorversion >= 0)
+          {
+         	 this.nMinorVersion = minorversion;
+          }
       }
       public short getMinorVersion()
       {
@@ -287,7 +162,11 @@ public class MessageParser {
       }
       public void setBankAmount(long bankamount)
       {
-         this.lBankAmount = bankamount;
+    	  this.lBankAmount = 0;
+          if (bankamount >= 0)
+          {
+         	 this.lBankAmount = bankamount;
+          }
       }
       public long getBankAmount()
       {
@@ -296,9 +175,48 @@ public class MessageParser {
       
       public String toString()
       {
+    	  String sTypeCode = "UNKNOWN";
+    	  if (iTypeCode == 0)
+    	  {
+    		  sTypeCode = "NOT_SET";
+    	  }
+    	  else if (iTypeCode == 1)
+    	  {
+    		  sTypeCode = "VERSION";
+    	  }
+    	  else if (iTypeCode == 2)
+    	  {
+    		  sTypeCode = "GAME";
+    	  }
+    	  else if (iTypeCode == 3)
+    	  {
+    		  sTypeCode = "CLOSE_CONNECTION";
+    	  }
+    	  
+    	  String sVersionCode = "UNKNOWN";
+    	  if (iVersionType == 0)
+    	  {
+    		  sVersionCode = "NOT_SET";
+    	  }
+    	  else if (iVersionType == 1)
+    	  {
+    		  sVersionCode = "CLIENT_VERSION";
+    	  }
+    	  else if (iVersionType == 2)
+    	  {
+    		  sVersionCode = "VERSION_REQUIRED";
+    	  }
+    	  else if (iVersionType == 3)
+    	  {
+    		  sVersionCode = "VERSION_ACK";
+    	  }
+    	  else if (iVersionType == 4)
+    	  {
+    		  sVersionCode = "VERSION_UPGRADE";
+    	  }
     	  String message = "";
-    	  message += "Type Indicator: " + eTypeCode.getIndicator() + "\n";
-    	  message += "Version Type: " + eVersionType.getIndicator() + "\n";
+    	  message += "Type Indicator: " + sTypeCode + "\n";
+    	  message += "Version Type: " + sVersionCode + "\n";
     	  message += "Your bank account value is: " + this.lBankAmount + "\n";
     	  return message;
     	  
@@ -312,37 +230,61 @@ public class MessageParser {
    public class ClientGetGameMessage
    {
       private int iVersion;
-      private TypeIndicator eTypeCode;
-      private GameIndicator eGameIndicator;
-      public ClientGetGameMessage(int version, TypeIndicator typecode, GameIndicator gameindicator)
+      private int iTypeCode;
+      private int iGameIndicator;
+      public ClientGetGameMessage(int version, int typecode, int gameindicator)
       {
-         this.iVersion = version;
-         this.eTypeCode = typecode;
-         this.eGameIndicator = gameindicator;
+         this.iVersion = 0;
+         if (version >= 0)
+         {
+        	 this.iVersion = version;
+         }
+         this.iTypeCode = 0;
+         if (typecode == 1 || typecode == 2 || typecode == 3)
+         {
+        	 this.iTypeCode = typecode; 
+         }
+         this.iGameIndicator = 0;
+         if (gameindicator == 1 || gameindicator == 2 || gameindicator == 3)
+         {
+        	 this.iGameIndicator = gameindicator;
+         }
       }
       public void setVersion(int version)
       {
-         this.iVersion = version;
+    	  this.iVersion = 0;
+    	  if (version >= 0)
+    	  {
+    		  this.iVersion = version;
+    	  }
       }
       public int getVersion()
       {
          return iVersion;
       }
-      public void setTypeCode(TypeIndicator typecode)
+      public void setTypeCode(int typecode)
       {
-         this.eTypeCode = typecode;
+    	  this.iTypeCode = 0;
+          if (typecode == 1 || typecode == 2 || typecode == 3)
+          {
+         	 this.iTypeCode = typecode; 
+          }
       }
-      public TypeIndicator getTypeCode()
+      public int getTypeCode()
       {
-         return eTypeCode;
+         return iTypeCode;
       }
-      public void setGameIndicator(GameIndicator gameindicator)
+      public void setGameIndicator(int gameindicator)
       {
-         this.eGameIndicator = gameindicator;
+    	  this.iGameIndicator = 0;
+          if (gameindicator == 1 || gameindicator == 2 || gameindicator == 3)
+          {
+         	 this.iGameIndicator = gameindicator;
+          }
       }
-      public GameIndicator getGameIndicator()
+      public int getGameIndicator()
       {
-         return eGameIndicator;
+         return iGameIndicator;
       }      
    }
    
@@ -353,55 +295,96 @@ public class MessageParser {
    public class ServerGetGameMessage
    {
       private int iVersion;
-      private TypeIndicator eTypeCode;
-      private GameIndicator eGameIndicator;
+      private int iTypeCode;
+      private int iGameIndicator;
       private long lMessageLength;
-      private List<GameTypeCode> oGameTypeCodeList;
-      public ServerGetGameMessage(int version, TypeIndicator typecode, GameIndicator gameindicator, long length, List<GameTypeCode> gametypecodelist)
+      private ArrayList<Integer> oGameTypeCodeList;
+      public ServerGetGameMessage(int version, int typecode, int gameindicator, long length, ArrayList<Integer> gametypecodelist)
       {
-         this.iVersion = version;
-         this.eTypeCode = typecode;
-         this.eGameIndicator = gameindicator;
-         this.lMessageLength = length;
-         this.oGameTypeCodeList = gametypecodelist;
+    	  this.iVersion = 0;
+          if (version >= 0)
+          {
+         	 this.iVersion = version;
+          }
+          this.iTypeCode = 0;
+          if (typecode == 1 || typecode == 2 || typecode == 3)
+          {
+         	 this.iTypeCode = typecode; 
+          }
+          this.iGameIndicator = 0;
+          if (gameindicator == 1 || gameindicator == 2 || gameindicator == 3)
+          {
+         	 this.iGameIndicator = gameindicator;
+          }
+          this.lMessageLength = 0;
+          if (length >= 0)
+          {
+        	  this.lMessageLength = length;
+          }
+          this.oGameTypeCodeList = new ArrayList<Integer>();
+          this.oGameTypeCodeList.clear();
+          if (gametypecodelist.size() >= 0)
+          {
+        	  this.oGameTypeCodeList = gametypecodelist;
+          }
       }
       public void setVersion(int version)
       {
-         this.iVersion = version;
+    	  this.iVersion = 0;
+          if (version >= 0)
+          {
+         	 this.iVersion = version;
+          }
       }
       public int getVersion()
       {
          return iVersion;
       }
-      public void setTypeCode(TypeIndicator typecode)
+      public void setTypeCode(int typecode)
       {
-         this.eTypeCode = typecode;
+    	  this.iTypeCode = 0;
+          if (typecode == 1 || typecode == 2 || typecode == 3)
+          {
+         	 this.iTypeCode = typecode; 
+          }
       }
-      public TypeIndicator getTypeCode()
+      public int getTypeCode()
       {
-         return eTypeCode;
+         return iTypeCode;
       }
-      public void setGameIndicator(GameIndicator gameindicator)
+      public void setGameIndicator(int gameindicator)
       {
-         this.eGameIndicator = gameindicator;
+    	  this.iGameIndicator = 0;
+          if (gameindicator == 1 || gameindicator == 2 || gameindicator == 3)
+          {
+         	 this.iGameIndicator = gameindicator;
+          }
       }
-      public GameIndicator getGameIndicator()
+      public int getGameIndicator()
       {
-         return eGameIndicator;
+         return iGameIndicator;
       }   
       public void setMessageLength(long length)
       {
-         this.lMessageLength = length;
+    	  this.lMessageLength = 0;
+          if (length >= 0)
+          {
+        	  this.lMessageLength = length;
+          }
       }
       public long getMessageLength()
       {
          return lMessageLength;
       } 
-      public void setGameTypeCodeList(List<GameTypeCode> gametypecodelist)
+      public void setGameTypeCodeList(ArrayList<Integer> gametypecodelist)
       {
-         this.oGameTypeCodeList = gametypecodelist;
+    	  this.oGameTypeCodeList.clear();
+          if (gametypecodelist.size() >= 0)
+          {
+        	  this.oGameTypeCodeList = gametypecodelist;
+          }
       }
-      public List<GameTypeCode> getGameTypeCodeList()
+      public ArrayList<Integer> getGameTypeCodeList()
       {
          return oGameTypeCodeList;
       } 
@@ -410,10 +393,10 @@ public class MessageParser {
       {
     	  String message = "";
     	  int i=0;
-    	  for (GameTypeCode gameList : oGameTypeCodeList)
+    	  for (Integer gameList : oGameTypeCodeList)
     	  {
     		  i++;
-    		  message += "Option " + i + ": " + gameList.getGameTypeCode();
+    		  message += "Option " + i + ": " + gameList.intValue();
     	  }
 		return message;
     	  
@@ -428,47 +411,79 @@ public class MessageParser {
    public class ClientSetGameMessage
    {
       private int iVersion;
-      private TypeIndicator eTypeCode;
-      private GameIndicator eGameIndicator;
-      private GameTypeCode  eGameTypeCode;
-      public ClientSetGameMessage(int version, TypeIndicator typecode, GameIndicator gameindicator, GameTypeCode gametypecode)
+      private int iTypeCode;
+      private int iGameIndicator;
+      private int  iGameTypeCode;
+      public ClientSetGameMessage(int version, int typecode, int gameindicator, int gametypecode)
       {
-         this.iVersion = version;
-         this.eTypeCode = typecode;
-         this.eGameIndicator = gameindicator;
-         this.eGameTypeCode = gametypecode;
+    	  this.iVersion = 0;
+          if (version >= 0)
+          {
+         	 this.iVersion = version;
+          }
+          this.iTypeCode = 0;
+          if (typecode == 1 || typecode == 2 || typecode == 3)
+          {
+         	 this.iTypeCode = typecode; 
+          }
+          this.iGameIndicator = 0;
+          if (gameindicator == 1 || gameindicator == 2 || gameindicator == 3)
+          {
+         	 this.iGameIndicator = gameindicator;
+          }
+          this.iGameTypeCode = 0;
+          if (gametypecode == 1)
+          {
+        	  this.iGameTypeCode = gametypecode;
+          }
       }
       public void setVersion(int version)
       {
-         this.iVersion = version;
+    	  this.iVersion = 0;
+          if (version >= 0)
+          {
+         	 this.iVersion = version;
+          }
       }
       public int getVersion()
       {
          return iVersion;
       }
-      public void setTypeCode(TypeIndicator typecode)
+      public void setTypeCode(int typecode)
       {
-         this.eTypeCode = typecode;
+    	  this.iTypeCode = 0;
+          if (typecode == 1 || typecode == 2 || typecode == 3)
+          {
+         	 this.iTypeCode = typecode; 
+          }
       }
-      public TypeIndicator getTypeCode()
+      public int getTypeCode()
       {
-         return eTypeCode;
+         return iTypeCode;
       }
-      public void setGameIndicator(GameIndicator gameindicator)
+      public void setGameIndicator(int gameindicator)
       {
-         this.eGameIndicator = gameindicator;
+    	  this.iGameIndicator = 0;
+          if (gameindicator == 1 || gameindicator == 2 || gameindicator == 3)
+          {
+         	 this.iGameIndicator = gameindicator;
+          }
       }
-      public GameIndicator getGameIndicator()
+      public int getGameIndicator()
       {
-         return eGameIndicator;
+         return iGameIndicator;
       }  
-      public void setGameTypeCode(GameTypeCode gametypecode)
+      public void setGameTypeCode(int gametypecode)
       {
-         this.eGameTypeCode = gametypecode;
+    	  this.iGameTypeCode = 0;
+          if (gametypecode == 1)
+          {
+        	  this.iGameTypeCode = gametypecode;
+          }
       }
-      public GameTypeCode getGameTypeCode()
+      public int getGameTypeCode()
       {
-         return eGameTypeCode;
+         return iGameTypeCode;
       }
    }
    
@@ -479,63 +494,116 @@ public class MessageParser {
    public class ServerSetGameMessage
    {
       private int iVersion;
-      private TypeIndicator eTypeCode;
-      private GameIndicator eGameIndicator;
-      private GameTypeCode  eGameTypeCode;
-      private GameTypeResponse eGameTypeResponse;
-      public ServerSetGameMessage(int version, TypeIndicator typecode, GameIndicator gameindicator, GameTypeCode gametypecode, GameTypeResponse gametyperesponse)
+      private int iTypeCode;
+      private int iGameIndicator;
+      private int  iGameTypeCode;
+      private int iGameTypeResponse;
+      public ServerSetGameMessage(int version, int typecode, int gameindicator, int gametypecode, int gametyperesponse)
       {
-         this.iVersion = version;
-         this.eTypeCode=typecode;
-         this.eGameIndicator = gameindicator;
-         this.eGameTypeCode = gametypecode;
-         this.eGameTypeResponse = gametyperesponse;
+    	  this.iVersion = 0;
+          if (version >= 0)
+          {
+         	 this.iVersion = version;
+          }
+          this.iTypeCode = 0;
+          if (typecode == 1 || typecode == 2 || typecode == 3)
+          {
+         	 this.iTypeCode = typecode; 
+          }
+          this.iGameIndicator = 0;
+          if (gameindicator == 1 || gameindicator == 2 || gameindicator == 3)
+          {
+         	 this.iGameIndicator = gameindicator;
+          }
+          this.iGameTypeCode = 0;
+          if (gametypecode == 1)
+          {
+        	  this.iGameTypeCode = gametypecode;
+          }
+          this.iGameTypeResponse = 0;
+          if (gametyperesponse == 1 || gametyperesponse == 2)
+          {
+        	  this.iGameTypeResponse = gametyperesponse;
+          }
       }
       public void setVersion(int version)
       {
-         this.iVersion = version;
+    	  this.iVersion = 0;
+          if (version >= 0)
+          {
+         	 this.iVersion = version;
+          }
       }
       public int getVersion()
       {
          return iVersion;
       }
-      public void setTypeCode(TypeIndicator typecode)
+      public void setTypeCode(int typecode)
       {
-         this.eTypeCode = typecode;
+    	  this.iTypeCode = 0;
+          if (typecode == 1 || typecode == 2 || typecode == 3)
+          {
+         	 this.iTypeCode = typecode; 
+          }
       }
-      public TypeIndicator getTypeCode()
+      public int getTypeCode()
       {
-         return eTypeCode;
+         return iTypeCode;
       }
-      public void setGameIndicator(GameIndicator gameindicator)
+      public void setGameIndicator(int gameindicator)
       {
-         this.eGameIndicator = gameindicator;
+    	  this.iGameIndicator = 0;
+          if (gameindicator == 1 || gameindicator == 2 || gameindicator == 3)
+          {
+         	 this.iGameIndicator = gameindicator;
+          }
       }
-      public GameIndicator getGameIndicator()
+      public int getGameIndicator()
       {
-         return eGameIndicator;
+         return iGameIndicator;
       }  
-      public void setGameTypeCode(GameTypeCode gametypecode)
+      public void setGameTypeCode(int gametypecode)
       {
-         this.eGameTypeCode = gametypecode;
+    	  this.iGameTypeCode = 0;
+          if (gametypecode == 1)
+          {
+        	  this.iGameTypeCode = gametypecode;
+          }
       }
-      public GameTypeCode getGameTypeCode()
+      public int getGameTypeCode()
       {
-         return eGameTypeCode;
+         return iGameTypeCode;
       }
-      public void setGameTypeResponse(GameTypeResponse gametyperesponse)
+      public void setGameTypeResponse(int gametyperesponse)
       {
-         this.eGameTypeResponse = gametyperesponse;
+    	  this.iGameTypeResponse = 0;
+          if (gametyperesponse == 1 || gametyperesponse == 2)
+          {
+        	  this.iGameTypeResponse = gametyperesponse;
+          }
       }
-      public GameTypeResponse getGameTypeResponse()
+      public int getGameTypeResponse()
       {
-         return eGameTypeResponse;
+         return iGameTypeResponse;
       }
       
       public String toString()
       {
+    	  String sGameResponse = "ERROR";
+    	  if (iGameTypeResponse == 0)
+    	  {
+    		  sGameResponse = "NOT_SET";
+    	  }
+    	  else if (iGameTypeResponse == 1)
+    	  {
+    		  sGameResponse = "ACK";
+    	  }
+    	  else if (iGameTypeResponse == 2)
+    	  {
+    		  sGameResponse = "INVALID";
+    	  }
     	  String message = "";
-    	  message += "Response: " + eGameTypeResponse.getGameTypeResponse() + "\n";
+    	  message += "Response: " + sGameResponse + "\n";
     	  return message;
     	  
       }      
@@ -549,63 +617,111 @@ public class MessageParser {
    public class ClientPlayGameMessage
    {
       private int iVersion;
-      private TypeIndicator eTypeCode;
-      private GameIndicator eGameIndicator;
-      private GameTypeCode  eGameTypeCode;
-      private GamePlayRequest eGamePlayRequest;
+      private int iTypeCode;
+      private int iGameIndicator;
+      private int  iGameTypeCode;
+      private int iGamePlayRequest;
       private long lBetAmount;
-      public ClientPlayGameMessage(int version, TypeIndicator typecode, GameIndicator gameindicator, GameTypeCode gametypecode, GamePlayRequest gameplayrequest, long betamount)
+      public ClientPlayGameMessage(int version, int typecode, int gameindicator, int gametypecode, int gameplayrequest, long betamount)
       {
-         this.iVersion = version;
-         this.eTypeCode = typecode;
-         this.eGameIndicator = gameindicator;
-         this.eGameTypeCode = gametypecode;
-         this.eGamePlayRequest = gameplayrequest;
-         this.lBetAmount = betamount;
+    	  this.iVersion = 0;
+          if (version >= 0)
+          {
+         	 this.iVersion = version;
+          }
+          this.iTypeCode = 0;
+          if (typecode == 1 || typecode == 2 || typecode == 3)
+          {
+         	 this.iTypeCode = typecode; 
+          }
+          this.iGameIndicator = 0;
+          if (gameindicator == 1 || gameindicator == 2 || gameindicator == 3)
+          {
+         	 this.iGameIndicator = gameindicator;
+          }
+          this.iGameTypeCode = 0;
+          if (gametypecode == 1)
+          {
+        	  this.iGameTypeCode = gametypecode;
+          }
+          this.iGamePlayRequest = 0;
+          if (gameplayrequest > 0 && gameplayrequest < 7)
+          {
+        	  this.iGamePlayRequest = gameplayrequest;
+          }
+          this.lBetAmount = 0;
+          if (betamount >= 0)
+          {
+        	  this.lBetAmount = betamount;
+          }
       }
       public void setVersion(int version)
       {
-         this.iVersion = version;
+    	  this.iVersion = 0;
+          if (version >= 0)
+          {
+         	 this.iVersion = version;
+          }
       }
       public int getVersion()
       {
          return iVersion;
       }
-      public void setTypeCode(TypeIndicator typecode)
+      public void setTypeCode(int typecode)
       {
-         this.eTypeCode = typecode;
+    	  this.iTypeCode = 0;
+          if (typecode == 1 || typecode == 2 || typecode == 3)
+          {
+         	 this.iTypeCode = typecode; 
+          }
       }
-      public TypeIndicator getTypeCode()
+      public int getTypeCode()
       {
-         return eTypeCode;
+         return iTypeCode;
       }
-      public void setGameIndicator(GameIndicator gameindicator)
+      public void setGameIndicator(int gameindicator)
       {
-         this.eGameIndicator = gameindicator;
+    	  this.iGameIndicator = 0;
+          if (gameindicator == 1 || gameindicator == 2 || gameindicator == 3)
+          {
+         	 this.iGameIndicator = gameindicator;
+          }
       }
-      public GameIndicator getGameIndicator()
+      public int getGameIndicator()
       {
-         return eGameIndicator;
+         return iGameIndicator;
       }  
-      public void setGameTypeCode(GameTypeCode gametypecode)
+      public void setGameTypeCode(int gametypecode)
       {
-         this.eGameTypeCode = gametypecode;
+    	  this.iGameTypeCode = 0;
+          if (gametypecode == 1)
+          {
+        	  this.iGameTypeCode = gametypecode;
+          }
       }
-      public GameTypeCode getGameTypeCode()
+      public int getGameTypeCode()
       {
-         return eGameTypeCode;
+         return iGameTypeCode;
       }
-      public void setGamePlayRequest(GamePlayRequest gameplayrequest)
+      public void setGamePlayRequest(int gameplayrequest)
       {
-         this.eGamePlayRequest = gameplayrequest;
+    	  this.iGamePlayRequest = 0;
+          if (gameplayrequest > 0 && gameplayrequest < 7)
+          {
+        	  this.iGamePlayRequest = gameplayrequest;
+          }
       }
-      public GamePlayRequest getGamePlayRequest()
+      public int getGamePlayRequest()
       {
-         return eGamePlayRequest;
+         return iGamePlayRequest;
       }
       public void setBetAmount(long betamount)
       {
-         this.lBetAmount = betamount;
+    	  this.lBetAmount = 0;
+          if (betamount >= 0)
+          {
+        	  this.lBetAmount = betamount;
+          }
       }
       public long getBetAmount()
       {
@@ -620,10 +736,10 @@ public class MessageParser {
    public class ServerPlayGameMessage
    {
       private int iVersion;
-      private TypeIndicator eTypeCode;
-      private GameIndicator eGameIndicator;
-      private GameTypeCode  eGameTypeCode;
-      private GamePlayResponse eGamePlayResponse;
+      private int iTypeCode;
+      private int iGameIndicator;
+      private int  iGameTypeCode;
+      private int iGamePlayResponse;
       private int iAnte;
       private Card ePlayerCard1;
       private Card ePlayerCard2;
@@ -634,76 +750,140 @@ public class MessageParser {
       private Card eFlopCard3;
       private Card eTurnCard;
       private Card eRiverCard;
-      private Winner eWinner;
+      private int iWinner;
       private long lPotSize;
       private long lBetAmount;
       private long lBankAmount;
-      public ServerPlayGameMessage(int version, TypeIndicator typecode, GameIndicator gameindicator, GameTypeCode gametypecode, GamePlayResponse gameplayresponse, 
-            int ante, Card p1, Card p2, Card d1, Card d2, Card f1, Card f2, Card f3, Card turn, Card river, Winner winner, long potsize, long betamount, long bankamount)
+      public ServerPlayGameMessage(int version, int typecode, int gameindicator, int gametypecode, int gameplayresponse, 
+            int ante, Card p1, Card p2, Card d1, Card d2, Card f1, Card f2, Card f3, Card turn, Card river, int winner, long potsize, long betamount, long bankamount)
       {
-         this.iVersion = version;
-         this.eTypeCode = typecode;
-         this.eGameIndicator = gameindicator;
-         this.eGameTypeCode = gametypecode;
-         this.eGamePlayResponse = gameplayresponse;
-         this.iAnte = ante;
-         this.ePlayerCard1 = p1;
-         this.ePlayerCard2 = p2;
-         this.eDealerCard1 = d1;
-         this.eDealerCard2 = d2;
-         this.eFlopCard1 = f1;
-         this.eFlopCard2 = f2;
-         this.eFlopCard3 = f3;
-         this.eTurnCard = turn;
-         this.eRiverCard = river;
-         this.eWinner = winner;
-         this.lPotSize = potsize;
-         this.lBetAmount = betamount;
-         this.lBankAmount = bankamount;
+    	  this.iVersion = 0;
+    	  if (version >= 0)
+    	  {
+    		  this.iVersion = version;
+    	  }
+    	  this.iTypeCode = 0;
+    	  if (typecode > 0 && typecode < 4)
+    	  {
+    		  this.iTypeCode = typecode;
+    	  }
+    	  this.iGameIndicator = 0;
+    	  if (gameindicator > 0 && gameindicator < 4)
+    	  {
+    		  this.iGameIndicator = gameindicator;
+    	  }
+    	  this.iGameTypeCode = 0;
+    	  if (gametypecode == 1)
+    	  {
+    		  this.iGameTypeCode = gametypecode;
+    	  }
+    	  this.iGamePlayResponse = 0;
+    	  if (gameplayresponse > 0 && gameplayresponse < 11)
+    	  {
+    		  this.iGamePlayResponse = gameplayresponse;
+    	  }
+    	  this.iAnte = 0;
+    	  if (ante >= 0)
+    	  {
+    		  this.iAnte = ante;
+    	  }
+    	  this.ePlayerCard1 = p1;
+    	  this.ePlayerCard2 = p2;
+    	  this.eDealerCard1 = d1;
+    	  this.eDealerCard2 = d2;
+    	  this.eFlopCard1 = f1;
+    	  this.eFlopCard2 = f2;
+    	  this.eFlopCard3 = f3;
+    	  this.eTurnCard = turn;
+    	  this.eRiverCard = river;
+    	  this.iWinner = 0;
+    	  if (winner > 0 && winner < 4)
+    	  {
+    		  this.iWinner = winner;
+    	  }
+    	  this.lPotSize = 0;
+    	  if (potsize >= 0)
+    	  {
+    		  this.lPotSize = potsize;
+    	  }
+    	  this.lBetAmount = 0;
+    	  if (betamount >= 0)
+    	  {
+    		  this.lBetAmount = betamount;
+    	  }
+    	  this.lBankAmount = 0;
+    	  if (bankamount >= 0)
+    	  {
+    		  this.lBankAmount = bankamount;
+    	  }
       }
       public void setVersion(int version)
       {
-         this.iVersion = version;
+    	  this.iVersion = 0;
+    	  if (version >= 0)
+    	  {
+    		  this.iVersion = version;
+    	  }
       }
       public int getVersion()
       {
          return iVersion;
       }
-      public void setTypeCode(TypeIndicator typecode)
+      public void setTypeCode(int typecode)
       {
-         this.eTypeCode = typecode;
+    	  this.iTypeCode = 0;
+    	  if (typecode > 0 && typecode < 4)
+    	  {
+    		  this.iTypeCode = typecode;
+    	  }
       }
-      public TypeIndicator getTypeCode()
+      public int getTypeCode()
       {
-         return eTypeCode;
+         return iTypeCode;
       }
-      public void setGameIndicator(GameIndicator gameindicator)
+      public void setGameIndicator(int gameindicator)
       {
-         this.eGameIndicator = gameindicator;
+    	  this.iGameIndicator = 0;
+    	  if (gameindicator > 0 && gameindicator < 4)
+    	  {
+    		  this.iGameIndicator = gameindicator;
+    	  }
       }
-      public GameIndicator getGameIndicator()
+      public int getGameIndicator()
       {
-         return eGameIndicator;
+         return iGameIndicator;
       }  
-      public void setGameTypeCode(GameTypeCode gametypecode)
+      public void setGameTypeCode(int gametypecode)
       {
-         this.eGameTypeCode = gametypecode;
+    	  this.iGameTypeCode = 0;
+    	  if (gametypecode == 1)
+    	  {
+    		  this.iGameTypeCode = gametypecode;
+    	  }
       }
-      public GameTypeCode getGameTypeCode()
+      public int getGameTypeCode()
       {
-         return eGameTypeCode;
+         return iGameTypeCode;
       }
-      public void setGamePlayResponse(GamePlayResponse gameplayresponse)
+      public void setGamePlayResponse(int gameplayresponse)
       {
-         this.eGamePlayResponse = gameplayresponse;
+    	  this.iGamePlayResponse = 0;
+    	  if (gameplayresponse > 0 && gameplayresponse < 12)
+    	  {
+    		  this.iGamePlayResponse = gameplayresponse;
+    	  }
       }
-      public GamePlayResponse getGamePlayResponse()
+      public int getGamePlayResponse()
       {
-         return eGamePlayResponse;
+         return iGamePlayResponse;
       }
       public void setAnte(int ante)
       {
-         this.iAnte = ante;
+    	  this.iAnte = 0;
+    	  if (ante > 0)
+    	  {
+    		  this.iAnte = ante;
+    	  }
       }
       public int getAnte()
       {
@@ -781,17 +961,25 @@ public class MessageParser {
       {
          return eRiverCard;
       }
-      public void setWinner(Winner winner)
+      public void setWinner(int winner)
       {
-         this.eWinner = winner;
+    	  this.iWinner = 0;
+    	  if (winner > 0 && winner < 4)
+    	  {
+    		  this.iWinner = winner;
+    	  }
       }
-      public Winner getWinner()
+      public int getWinner()
       {
-         return eWinner;
+         return iWinner;
       }
       public void setPotSize(long potsize)
       {
-         this.lPotSize = potsize;
+    	  this.lPotSize = 0;
+    	  if (potsize >= 0)
+    	  {
+    		  this.lPotSize = potsize;
+    	  }
       }
       public long getPotSize()
       {
@@ -799,7 +987,11 @@ public class MessageParser {
       }
       public void setBetAmount(long betamount)
       {
-         this.lBetAmount = betamount;
+    	  this.lBetAmount = 0;
+    	  if (betamount >= 0)
+    	  {
+    		  this.lBetAmount = betamount;
+    	  }
       }
       public long getBetAmount()
       {
@@ -807,12 +999,19 @@ public class MessageParser {
       }
       public void setBankAmount(long bankamount)
       {
-         this.lBankAmount = bankamount;
+    	  this.lBankAmount = 0;
+    	  if (bankamount >= 0)
+    	  {
+    		  this.lBankAmount = bankamount;
+    	  }
       }
       public long getBankAmount()
       {
          return lBankAmount;
       }
+      
+
+      
    }
    
    /*
@@ -821,80 +1020,64 @@ public class MessageParser {
    public class ConnectionMessage
    {
       private int iVersion;
-      private TypeIndicator eTypeCode;
-      private ConnectionIndicator eConnectionCode;
-      public ConnectionMessage(int version, TypeIndicator typecode, ConnectionIndicator concode)
+      private int iTypeCode;
+      private int iConnectionCode;
+      public ConnectionMessage(int version, int typecode, int concode)
       {
-         this.iVersion = version;
-         this.eTypeCode = typecode;
-         this.eConnectionCode = concode;
+    	  this.iVersion = 0;
+    	  if (version > 0)
+    	  {
+    		  this.iVersion = version;
+    	  }
+    	  this.iTypeCode = 0;
+    	  if (typecode > 0 && typecode < 4)
+    	  {
+    		  this.iTypeCode = typecode;
+    	  }
+    	  this.iConnectionCode = 0;
+    	  if (concode > 0 && concode < 3)
+    	  {
+    		  this.iConnectionCode = concode;
+    	  }
       }
       public void setVersion(int version)
       {
-         this.iVersion = version;
+    	  this.iVersion = 0;
+    	  if (version >= 0)
+    	  {
+    		  this.iVersion = version;
+    	  }
       }
       public int getVersion()
       {
          return iVersion;
       }
-      public void setTypeCode(TypeIndicator typecode)
+      public void setTypeCode(int typecode)
       {
-         this.eTypeCode = typecode;
+    	  this.iTypeCode = 0;
+    	  if (typecode > 0 && typecode < 4)
+    	  {
+    		  this.iTypeCode = typecode;
+    	  }
       }
-      public TypeIndicator getTypeCode()
+      public int getTypeCode()
       {
-         return eTypeCode;
+         return iTypeCode;
       }
-      public void setConnectionCode(ConnectionIndicator concode)
+      public void setConnectionCode(int concode)
       {
-         this.eConnectionCode = concode;
+    	  this.iConnectionCode = 0;
+    	  if (concode > 0 && concode < 3)
+    	  {
+    		  this.iConnectionCode = concode;
+    	  }
       }
-      public ConnectionIndicator getConnectionCode()
+      public int getConnectionCode()
       {
-         return eConnectionCode;
-      }
-   }
-   
-   /*
-   * This class is for the Challenge Message
-   */
-   public class ChallengeMessage
-   {
-      private int iVersion;
-      private TypeIndicator eTypeCode;
-      private ChallengeIndicator eChallengeCode;
-      public ChallengeMessage(int version, TypeIndicator typecode, ChallengeIndicator chalcode)
-      {
-         this.iVersion = version;
-         this.eTypeCode = typecode;
-         this.eChallengeCode = chalcode;
-      }
-      public void setVersion(int version)
-      {
-         this.iVersion = version;
-      }
-      public int getVersion()
-      {
-         return iVersion;
-      }
-      public void setTypeCode(TypeIndicator typecode)
-      {
-         this.eTypeCode = typecode;
-      }
-      public TypeIndicator getTypeCode()
-      {
-         return eTypeCode;
-      }
-      public void setChallengeCode(ChallengeIndicator chalcode)
-      {
-         this.eChallengeCode = chalcode;
-      }
-      public ChallengeIndicator getChallengeCode()
-      {
-         return eChallengeCode;
+         return iConnectionCode;
       }
    }
-      
+       
       
 	/*
    * This function will return the version of the message
@@ -914,12 +1097,12 @@ public class MessageParser {
    * This function will return the type indicator of the message
    * It will be -1 if the message is not the correct size
    */  
-	public TypeIndicator GetTypeIndicator(byte[] buffer, int iSize)
+	public int GetTypeIndicator(byte[] buffer, int iSize)
 	{
-		TypeIndicator Indicator = TypeIndicator.NOT_SET;
+		int Indicator = NOT_SET;
 		if (iSize >= 4)
 		{
-			Indicator.setIndicator((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
+			Indicator = ((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
 			return Indicator;
 		}
       return Indicator;  
@@ -932,24 +1115,24 @@ public class MessageParser {
 	public VersionMessage GetVersionMessage(byte[] buffer, int iSize)
 	{
 		int version = -1;
-		TypeIndicator indicator = TypeIndicator.NOT_SET;
-		VersionIndicator verType = VersionIndicator.NOT_SET;
+		int indicator = NOT_SET;
+		int verType = NOT_SET;
 		short minorversion = -1;
 		long bankamount = -1;
 		if (iSize == 12)
 		{
 			version = (int)(((buffer[0] << 8) | buffer[1]) & 0xFFFF ); //FFFF
-			indicator.setIndicator((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF)); //FFFF
-			verType.setIndicator((short)(buffer[4] & 0xFF));
+			indicator = ((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF)); //FFFF
+			verType = ((int)(buffer[4] & 0xFF));
 			minorversion = (short)(buffer[5] & 0xFF);
 			short byte1 = (short)(buffer[8] & 0xFF);
 			short byte2 = (short)(buffer[9] & 0xFF);
 			short byte3 = (short)(buffer[10] & 0xFF);
 			short byte4 = (short)(buffer[11] & 0xFF);
-			bankamount = (long)(((byte1 << 24) |
-							(byte2 << 16) |
-							(byte3 << 8) |
-							byte4) & 0xFFFFFFFF);
+			bankamount = (long)(((long)(byte1 << 24) |
+							(long)(byte2 << 16) |
+							(long)(byte3 << 8) |
+							(long)byte4) & 0xFFFFFFFF);
 		}
 		VersionMessage message = new VersionMessage(version, indicator, verType, minorversion, bankamount);
 		return message;
@@ -963,9 +1146,9 @@ public class MessageParser {
 		byte[] buffer = new byte[12];
 		buffer[0] = (byte)((message.getVersion() & 0xFF00) >> 8);
 		buffer[1] = (byte)(message.getVersion() & 0xFF);
-		buffer[2] = (byte)((message.getTypeCode().getIndicator() & 0xFF00) >> 8);
-		buffer[3] = (byte)(message.getTypeCode().getIndicator() & 0xFF);
-		buffer[4] = (byte)(message.getVersionType().getIndicator() & 0xFF);
+		buffer[2] = (byte)((message.getTypeCode() & 0xFF00) >> 8);
+		buffer[3] = (byte)(message.getTypeCode() & 0xFF);
+		buffer[4] = (byte)(message.getVersionType() & 0xFF);
 		buffer[5] = (byte)(message.getMinorVersion() & 0xFF);
 		buffer[6] = 0;
 		buffer[7] = 0;
@@ -980,12 +1163,12 @@ public class MessageParser {
 	 * Function to get the GameIndicator
     * Value will be -1 if the message is not the right size
 	 */
-	public GameIndicator GetGameIndicator(byte[] buffer, int iSize)
+	public int GetGameIndicator(byte[] buffer, int iSize)
 	{
-		GameIndicator indicator = GameIndicator.NOT_SET;
+		int indicator = NOT_SET;
 		if (iSize >= 5)
 		{
-			indicator.setIndicator((short)(buffer[4] & 0xFF));
+			indicator = ((short)(buffer[4] & 0xFF));
 		}
 		return indicator;
 	}
@@ -997,13 +1180,13 @@ public class MessageParser {
    public ClientGetGameMessage GetClientGetGameMessage(byte[] buffer, int iSize)
    {
 	   int version = -1;
-	   TypeIndicator typecode = TypeIndicator.NOT_SET;
-	   GameIndicator gameindicator = GameIndicator.NOT_SET;
+	   int typecode = NOT_SET;
+	   int gameindicator = NOT_SET;
       if (iSize == 8)
       {
          version = (int)(((buffer[0] << 8) | buffer[1]) & 0xFFFF );
-         typecode.setIndicator((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
-         gameindicator.setIndicator((short)(buffer[4] & 0xFF));
+         typecode = ((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
+         gameindicator = ((int)(buffer[4] & 0xFF));
       }
       
       ClientGetGameMessage message = new ClientGetGameMessage(version, typecode, gameindicator);
@@ -1018,9 +1201,9 @@ public class MessageParser {
       byte[] buffer = new byte[8];
 		buffer[0] = (byte)((message.getVersion() & 0xFF00) >> 8);
 		buffer[1] = (byte)(message.getVersion() & 0xFF);
-		buffer[2] = (byte)((message.getTypeCode().getIndicator() & 0xFF00) >> 8);
-		buffer[3] = (byte)(message.getTypeCode().getIndicator() & 0xFF);
-		buffer[4] = (byte)(message.getGameIndicator().getIndicator() & 0xFF);
+		buffer[2] = (byte)((message.getTypeCode() & 0xFF00) >> 8);
+		buffer[3] = (byte)(message.getTypeCode() & 0xFF);
+		buffer[4] = (byte)(message.getGameIndicator() & 0xFF);
 		buffer[5] = 0;
 		buffer[6] = 0;
 		buffer[7] = 0;
@@ -1033,24 +1216,24 @@ public class MessageParser {
     public ServerGetGameMessage GetServerGetGameMessage(byte[] buffer, int iSize)
     {
     	int version = -1;
-    	TypeIndicator typecode = TypeIndicator.NOT_SET;
-    	GameIndicator gameindicator = GameIndicator.NOT_SET;
+    	int typecode = NOT_SET;
+    	int gameindicator = NOT_SET;
     	long length = -1;
-    	GameTypeCode eGameCode = GameTypeCode.NOT_SET;
-    	List<GameTypeCode> GameTypeCodes = new ArrayList<GameTypeCode>();
+    	ArrayList<Integer> GameTypeCodes = new ArrayList<Integer>();
+    	GameTypeCodes.clear();
     	if ((iSize >= 16) && ((iSize % 4) == 0))
     	{
     		version = (int)(((buffer[0] << 8) | buffer[1]) & 0xFFFF );
-    		typecode.setIndicator((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
-    		gameindicator.setIndicator((short)(buffer[4] & 0xFF));
+    		typecode = ((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
+    		gameindicator = ((int)(buffer[4] & 0xFF));
             byte byte1 = (byte)(buffer[8] & 0xFF);
             byte byte2 = (byte)(buffer[9] & 0xFF);
             byte byte3 = (byte)(buffer[10] & 0xFF);
             byte byte4 = (byte)(buffer[11] & 0xFF);
-            length = (long)(((byte1 << 24) |
-						    (byte2 << 16) |
-						    (byte3 << 8)  |
-						    (byte4)) & 0xFFFFFFFF);
+            length = (long)(((long)(byte1 << 24) |
+						    (long)(byte2 << 16) |
+						    (long)(byte3 << 8)  |
+						   (long)(byte4)) & 0xFFFFFFFF);
             if (length != iSize)
             {
                length = (long)iSize;
@@ -1060,8 +1243,7 @@ public class MessageParser {
                short gameCode = (short)(buffer[iI] & 0xFF);
                if (gameCode > 0)
                {
-            	   eGameCode.setGameTypeCode(gameCode);
-            	   GameTypeCodes.add(eGameCode);
+            	   GameTypeCodes.add((int)gameCode);
                }
             }
          }
@@ -1080,9 +1262,9 @@ public class MessageParser {
 		byte[] buffer = new byte[length];
 		buffer[0] = (byte)((message.getVersion() & 0xFF00) >> 8);
 		buffer[1] = (byte)(message.getVersion() & 0xFF);
-		buffer[2] = (byte)((message.getTypeCode().getIndicator() & 0xFF00) >> 8);
-		buffer[3] = (byte)(message.getTypeCode().getIndicator() & 0xFF);
-		buffer[4] = (byte)(message.getGameIndicator().getIndicator() & 0xFF);
+		buffer[2] = (byte)((message.getTypeCode() & 0xFF00) >> 8);
+		buffer[3] = (byte)(message.getTypeCode() & 0xFF);
+		buffer[4] = (byte)(message.getGameIndicator() & 0xFF);
 		buffer[5] = 0;
 		buffer[6] = 0;
 		buffer[7] = 0;
@@ -1094,8 +1276,8 @@ public class MessageParser {
 		{
 			if (iI < (12 + message.getGameTypeCodeList().size()))
 			{
-				GameTypeCode gameCode = message.getGameTypeCodeList().get((iI-12));
-				buffer[iI] = (byte)((short)gameCode.getGameTypeCode() & 0xFF);
+				int gameCode = message.getGameTypeCodeList().get((iI-12)).intValue();
+				buffer[iI] = (byte)((short)gameCode & 0xFF);
 			}
 			else
 			{
@@ -1111,15 +1293,15 @@ public class MessageParser {
 	public ClientSetGameMessage GetClientSetGameMessage(byte[] buffer, int iSize)
 	{
 		int version = -1;
-		TypeIndicator typecode = TypeIndicator.NOT_SET;
-		GameIndicator gameindicator = GameIndicator.NOT_SET;
-		GameTypeCode gamecode = GameTypeCode.NOT_SET;
+		int typecode = NOT_SET;
+		int gameindicator = NOT_SET;
+		int gamecode = NOT_SET;
 		if (iSize == 8)
 		{
 			version = (int)(((buffer[0] << 8) | buffer[1]) & 0xFFFF );
-    		typecode.setIndicator((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
-    		gameindicator.setIndicator((short)(buffer[4] & 0xFF));
-    		gamecode.setGameTypeCode((short)(buffer[5] & 0xFF));
+    		typecode = ((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
+    		gameindicator = ((short)(buffer[4] & 0xFF));
+    		gamecode = (int)((buffer[5] & 0xFF));
 		}
 		
 		ClientSetGameMessage message = new ClientSetGameMessage(version, typecode, gameindicator, gamecode);
@@ -1134,10 +1316,10 @@ public class MessageParser {
 		byte[] buffer = new byte[8];
 		buffer[0] = (byte)((message.getVersion() & 0xFF00) >> 8);
 		buffer[1] = (byte)(message.getVersion() & 0xFF);
-		buffer[2] = (byte)((message.getTypeCode().getIndicator() & 0xFF00) >> 8);
-		buffer[3] = (byte)(message.getTypeCode().getIndicator() & 0xFF);
-		buffer[4] = (byte)(message.getGameIndicator().getIndicator() & 0xFF);
-		buffer[5] = (byte)(message.getGameTypeCode().getGameTypeCode() & 0xFF);
+		buffer[2] = (byte)((message.getTypeCode() & 0xFF00) >> 8);
+		buffer[3] = (byte)(message.getTypeCode() & 0xFF);
+		buffer[4] = (byte)(message.getGameIndicator() & 0xFF);
+		buffer[5] = (byte)(message.getGameTypeCode() & 0xFF);
 		buffer[6] = 0;
 		buffer[7] = 0;
 		
@@ -1150,17 +1332,17 @@ public class MessageParser {
 	public ServerSetGameMessage GetServerSetGameMessage(byte[] buffer, int iSize)
 	{
 		int version = -1;
-		TypeIndicator typecode = TypeIndicator.NOT_SET;
-		GameIndicator gameindicator = GameIndicator.NOT_SET;
-		GameTypeCode gamecode = GameTypeCode.NOT_SET;
-		GameTypeResponse gameresponse = GameTypeResponse.NOT_SET;
+		int typecode = NOT_SET;
+		int gameindicator = NOT_SET;
+		int gamecode = NOT_SET;
+		int gameresponse = NOT_SET;
 		if (iSize == 8)
 		{
 			version = (int)(((buffer[0] << 8) | buffer[1]) & 0xFFFF );
-    		typecode.setIndicator((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
-    		gameindicator.setIndicator((short)(buffer[4] & 0xFF));
-    		gamecode.setGameTypeCode((short)(buffer[5] & 0xFF));
-    		gameresponse.setGameTypeResponse((short)(buffer[6] & 0xFF));
+    		typecode = ((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
+    		gameindicator = ((int)(buffer[4] & 0xFF));
+    		gamecode = ((int)(buffer[5] & 0xFF));
+    		gameresponse = ((int)(buffer[6] & 0xFF));
 		}
 		
 		ServerSetGameMessage message = new ServerSetGameMessage(version, typecode, gameindicator, gamecode, gameresponse);
@@ -1174,17 +1356,12 @@ public class MessageParser {
 	{
 		byte[] buffer = new byte[8];
 		buffer[0] = (byte)((message.getVersion() & 0xFF00) >> 8);
-//		System.out.println(buffer[0]);
 		buffer[1] = (byte)(message.getVersion() & 0xFF);
-//		System.out.println(buffer[1]);
-//		System.out.println(message.getTypeCode().getIndicator());
-		buffer[2] = (byte)((message.getTypeCode().getIndicator() & 0xFF00) >> 8);
-//		System.out.println(buffer[2]);
-		buffer[3] = (byte)(message.getTypeCode().getIndicator() & 0xFF);
-//		System.out.println(buffer[3]);
-		buffer[4] = (byte)(message.getGameIndicator().getIndicator() & 0xFF);
-		buffer[5] = (byte)(message.getGameTypeCode().getGameTypeCode() & 0xFF);
-		buffer[6] = (byte)(message.getGameTypeResponse().getGameTypeResponse() & 0xFF);
+		buffer[2] = (byte)((message.getTypeCode() & 0xFF00) >> 8);
+		buffer[3] = (byte)(message.getTypeCode() & 0xFF);
+		buffer[4] = (byte)(message.getGameIndicator() & 0xFF);
+		buffer[5] = (byte)(message.getGameTypeCode() & 0xFF);
+		buffer[6] = (byte)(message.getGameTypeResponse() & 0xFF);
 		buffer[7] = 0;
 		
 		return buffer;
@@ -1196,26 +1373,22 @@ public class MessageParser {
 	public ClientPlayGameMessage GetClientPlayGameMessage(byte[] buffer, int iSize)
 	{
 		int version = -1;
-		TypeIndicator typecode = TypeIndicator.NOT_SET;
-		GameIndicator gameindicator = GameIndicator.NOT_SET;
-		GameTypeCode gamecode = GameTypeCode.NOT_SET;
-		GamePlayRequest gamerequest = GamePlayRequest.NOT_SET;
+		int typecode = NOT_SET;
+		int gameindicator = NOT_SET;
+		int gamecode = NOT_SET;
+		int gamerequest = NOT_SET;
 		long betamount = -1;
 		if (iSize == 12)
 		{
 			version = (int)(((buffer[0] << 8) | buffer[1]) & 0xFFFF );
-    		typecode.setIndicator((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
-    		gameindicator.setIndicator((short)(buffer[4] & 0xFF));
-    		gamecode.setGameTypeCode((short)(buffer[5] & 0xFF));
-    		gamerequest.setGamePlayRequest((short)(buffer[6] & 0xFF));
-    		byte byte1 = (byte)(buffer[8] & 0xFF);
-    		byte byte2 = (byte)(buffer[9] & 0xFF);
-    		byte byte3 = (byte)(buffer[10] & 0xFF);
-    		byte byte4 = (byte)(buffer[11] & 0xFF);
-    		betamount = (long)(((byte1 << 24) & 0xFF000000) |
-    						   ((byte2 << 16) & 0xFF0000) |
-    						   ((byte3 << 8) & 0xFF00) |
-    						   (byte4));
+    		typecode = ((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
+    		gameindicator = ((int)(buffer[4] & 0xFF));
+    		gamecode = ((int)(buffer[5] & 0xFF));
+    		gamerequest = ((int)(buffer[6] & 0xFF));
+    		betamount = (long)((long)(0xff & buffer[8]) << 24 |
+    					(long)(0xff & buffer[9]) << 16 |
+    					(long)(0xff & buffer[10]) << 8 |
+    					(long)(0xff & buffer[11]) << 0);
 		}
 		
 		ClientPlayGameMessage message = new ClientPlayGameMessage(version, typecode, gameindicator, gamecode, gamerequest, betamount);
@@ -1230,11 +1403,11 @@ public class MessageParser {
 		byte[] buffer = new byte[12];
 		buffer[0] = (byte)((message.getVersion() & 0xFF00) >> 8);
 		buffer[1] = (byte)(message.getVersion() & 0xFF);
-		buffer[2] = (byte)((message.getTypeCode().getIndicator() & 0xFF00) >> 8);
-		buffer[3] = (byte)(message.getTypeCode().getIndicator() & 0xFF);
-		buffer[4] = (byte)(message.getGameIndicator().getIndicator() & 0xFF);
-		buffer[5] = (byte)(message.getGameTypeCode().getGameTypeCode() & 0xFF);
-		buffer[6] = (byte)(message.getGamePlayRequest().getGamePlayRequest() & 0xFF);
+		buffer[2] = (byte)((message.getTypeCode() & 0xFF00) >> 8);
+		buffer[3] = (byte)(message.getTypeCode() & 0xFF);
+		buffer[4] = (byte)(message.getGameIndicator() & 0xFF);
+		buffer[5] = (byte)(message.getGameTypeCode() & 0xFF);
+		buffer[6] = (byte)(message.getGamePlayRequest() & 0xFF);
 		buffer[7] = 0;
 		buffer[8] = (byte)((message.getBetAmount() & 0xFF000000) >> 24);
 		buffer[9] = (byte)((message.getBetAmount() & 0xFF0000) >> 16);
@@ -1250,95 +1423,84 @@ public class MessageParser {
 	public ServerPlayGameMessage GetServerPlayGameMessage(byte[] buffer, int iSize)
 	{
 		int version = -1;
-		TypeIndicator typecode = TypeIndicator.NOT_SET;
-		GameIndicator gameindicator = GameIndicator.NOT_SET;
-		GameTypeCode gamecode = GameTypeCode.NOT_SET;
-		GamePlayResponse gameresponse = GamePlayResponse.NOT_SET;
+		int typecode = NOT_SET;
+		int gameindicator = NOT_SET;
+		int gamecode = NOT_SET;
+		int gameresponse = NOT_SET;
 		int ante = -1;
-		Card p1 = new Card(CardSuite.NOT_SET, CardValue.NOT_SET);
-		Card p2 = new Card(CardSuite.NOT_SET, CardValue.NOT_SET);
-		Card d1 = new Card(CardSuite.NOT_SET, CardValue.NOT_SET);
-		Card d2 = new Card(CardSuite.NOT_SET, CardValue.NOT_SET);
-		Card f1 = new Card(CardSuite.NOT_SET, CardValue.NOT_SET);
-		Card f2 = new Card(CardSuite.NOT_SET, CardValue.NOT_SET);
-		Card f3 = new Card(CardSuite.NOT_SET, CardValue.NOT_SET);
-		Card t1 = new Card(CardSuite.NOT_SET, CardValue.NOT_SET);
-		Card r1 = new Card(CardSuite.NOT_SET, CardValue.NOT_SET);
-		Winner winner = Winner.NOT_SET;
+		int winner = NOT_SET;
 		long potsize = -1;
 		long betamount = -1;
 		long bankamount = -1;
-		CardSuite suite = CardSuite.NOT_SET;
-		CardValue value = CardValue.NOT_SET;
+		int suite = 0;
+		int value = 0;
+		Card p1 = new Card(Card.NOT_SET, Card.NOT_SET);
+		Card p2 = new Card(Card.NOT_SET, Card.NOT_SET);
+		Card d1 = new Card(Card.NOT_SET, Card.NOT_SET);
+		Card d2 = new Card(Card.NOT_SET, Card.NOT_SET);
+		Card f1 = new Card(Card.NOT_SET, Card.NOT_SET);
+		Card f2 = new Card(Card.NOT_SET, Card.NOT_SET);
+		Card f3 = new Card(Card.NOT_SET, Card.NOT_SET);
+		Card t1 = new Card(Card.NOT_SET, Card.NOT_SET);
+		Card r1 = new Card(Card.NOT_SET, Card.NOT_SET);
 		if (iSize == 32)
 		{
 			version = (int)(((buffer[0] << 8) | buffer[1]) & 0xFFFF );
-    		typecode.setIndicator((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
-    		gameindicator.setIndicator((short)(buffer[4] & 0xFF));
-    		gamecode.setGameTypeCode((short)(buffer[5] & 0xFF));
-    		gameresponse.setGamePlayResponse((short)(buffer[6] & 0xFF));
+    		typecode = ((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
+    		gameindicator = ((int)(buffer[4] & 0xFF));
+    		gamecode = ((int)(buffer[5] & 0xFF));
+    		gameresponse = ((int)(buffer[6] & 0xFF));
     		ante = (int)(((buffer[8] << 8) | buffer[9]) & 0xFFFF);
-    		suite.setCardSuite((buffer[10] & 0xF0) >> 4);
+    		suite = ((int)((buffer[10] & 0xF0) >> 4));
     		p1.setCardSuite(suite);
-    		value.setCardValue(buffer[10] & 0x0F);
+    		value = ((int)(buffer[10] & 0x0F));
     		p1.setCardValue(value);
-    		suite.setCardSuite((buffer[11] & 0xF0) >> 4);
+    		suite = ((int)((buffer[11] & 0xF0) >> 4));
     		p2.setCardSuite(suite);
-    		value.setCardValue(buffer[11] & 0x0F);
+    		value = ((int)(buffer[11] & 0x0F));
     		p2.setCardValue(value);
-    		suite.setCardSuite((buffer[12] & 0xF0) >> 4);
+    		suite = ((int)((buffer[12] & 0xF0) >> 4));
     		d1.setCardSuite(suite);
-    		value.setCardValue(buffer[12] & 0x0F);
+    		value = ((int)(buffer[12] & 0x0F));
     		d1.setCardValue(value);
-    		suite.setCardSuite((buffer[13] & 0xF0) >> 4);
+    		suite = ((int)((buffer[13] & 0xF0) >> 4));
     		d2.setCardSuite(suite);
-    		value.setCardValue(buffer[13] & 0x0F);
+    		value = ((int)(buffer[13] & 0x0F));
     		d2.setCardValue(value);
-    		suite.setCardSuite((buffer[14] & 0xF0) >> 4);
+    		suite = ((int)((buffer[14] & 0xF0) >> 4));
     		f1.setCardSuite(suite);
-    		value.setCardValue(buffer[14] & 0x0F);
+    		value = ((int)(buffer[14] & 0x0F));
     		f1.setCardValue(value);
-    		suite.setCardSuite((buffer[15] & 0xF0) >> 4);
+    		suite = ((int)((buffer[15] & 0xF0) >> 4));
     		f2.setCardSuite(suite);
-    		value.setCardValue(buffer[15] & 0x0F);
+    		value = ((int)(buffer[15] & 0x0F));
     		f2.setCardValue(value);
-    		suite.setCardSuite((buffer[16] & 0xF0) >> 4);
+    		suite = ((int)((buffer[16] & 0xF0) >> 4));
     		f3.setCardSuite(suite);
-    		value.setCardValue(buffer[16] & 0x0F);
+    		value = ((int)(buffer[16] & 0x0F));
     		f3.setCardValue(value);
-    		suite.setCardSuite((buffer[17] & 0xF0) >> 4);
+    		suite = ((int)((buffer[17] & 0xF0) >> 4));
     		t1.setCardSuite(suite);
-    		value.setCardValue(buffer[17] & 0x0F);
+    		value = ((int)(buffer[17] & 0x0F));
     		t1.setCardValue(value);
-    		suite.setCardSuite((buffer[18] & 0xF0) >> 4);
+    		suite = ((int)((buffer[18] & 0xF0) >> 4));
     		r1.setCardSuite(suite);
-    		value.setCardValue(buffer[18] & 0x0F);
+    		value = ((int)(buffer[18] & 0x0F));
     		r1.setCardValue(value);
-    		winner.setWinner((buffer[19] & 0xF0) >> 4);
-    		byte byte1 = (byte)(buffer[20] & 0xFF);
-    		byte byte2 = (byte)(buffer[21] & 0xFF);
-    		byte byte3 = (byte)(buffer[22] & 0xFF);
-    		byte byte4 = (byte)(buffer[23] & 0xFF);
-    		potsize = (long)(((byte1 << 24) & 0xFF000000) |
-    						   ((byte2 << 16) & 0xFF0000) |
-    						   ((byte3 << 8) & 0xFF00) |
-    						   (byte4));
-    		byte1 = (byte)(buffer[24] & 0xFF);
-    		byte2 = (byte)(buffer[25] & 0xFF);
-    		byte3 = (byte)(buffer[26] & 0xFF);
-    		byte4 = (byte)(buffer[27] & 0xFF);
-    		betamount = (long)(((byte1 << 24) & 0xFF000000) |
-    						   ((byte2 << 16) & 0xFF0000) |
-    						   ((byte3 << 8) & 0xFF00) |
-    						   (byte4));
-    		byte1 = (byte)(buffer[28] & 0xFF);
-    		byte2 = (byte)(buffer[29] & 0xFF);
-    		byte3 = (byte)(buffer[30] & 0xFF);
-    		byte4 = (byte)(buffer[31] & 0xFF);
-    		bankamount = (long)(((byte1 << 24) & 0xFF000000) |
-    						   ((byte2 << 16) & 0xFF0000) |
-    						   ((byte3 << 8) & 0xFF00) |
-    						   (byte4));
+    		winner = (int)((buffer[19] & 0xF0) >> 4);
+    		potsize = ((long)(0xff & buffer[20]) << 24 |
+    				(long)(0xff & buffer[21]) << 16 |
+    				(long)(0xff & buffer[22]) << 8 |
+    				(long)(0xff & buffer[23]) << 0);
+    		betamount = ((long)(0xff & buffer[24]) << 24 |
+    				(long)(0xff & buffer[25]) << 16 |
+    				(long)(0xff & buffer[26]) << 8 |
+    				(long)(0xff & buffer[27]) << 0);
+    		bankamount = ((long)(0xff & buffer[28]) << 24 |
+    				(long)(0xff & buffer[29]) << 16 |
+    				(long)(0xff & buffer[30]) << 8 |
+    				(long)(0xff & buffer[31]) << 0);
+
 		}
 		
 		ServerPlayGameMessage message = new ServerPlayGameMessage(version, typecode, gameindicator, gamecode, gameresponse, 
@@ -1354,24 +1516,24 @@ public class MessageParser {
 		byte[] buffer = new byte[32];
 		buffer[0] = (byte)((message.getVersion() & 0xFF00) >> 8);
 		buffer[1] = (byte)(message.getVersion() & 0xFF);
-		buffer[2] = (byte)((message.getTypeCode().getIndicator() & 0xFF00) >> 8);
-		buffer[3] = (byte)(message.getTypeCode().getIndicator() & 0xFF);
-		buffer[4] = (byte)(message.getGameIndicator().getIndicator() & 0xFF);
-		buffer[5] = (byte)(message.getGameTypeCode().getGameTypeCode() & 0xFF);
-		buffer[6] = (byte)(message.getGamePlayResponse().getGamePlayResponse() & 0xFF);
+		buffer[2] = (byte)((message.getTypeCode() & 0xFF00) >> 8);
+		buffer[3] = (byte)(message.getTypeCode() & 0xFF);
+		buffer[4] = (byte)(message.getGameIndicator() & 0xFF);
+		buffer[5] = (byte)(message.getGameTypeCode() & 0xFF);
+		buffer[6] = (byte)(message.getGamePlayResponse() & 0xFF);
 		buffer[7] = 0;
 		buffer[8] = (byte)((message.getAnte() & 0xFF00) >> 8);
 		buffer[9] = (byte)(message.getAnte() & 0xFF);
-		buffer[10] = (byte)(((message.getPlayerCard1().getCardSuite().getCardSuite() & 0x0F) << 4) | (message.getPlayerCard1().getCardValue().getCardValue() & 0x0F)); 
-		buffer[11] = (byte)(((message.getPlayerCard2().getCardSuite().getCardSuite() & 0x0F) << 4) | (message.getPlayerCard2().getCardValue().getCardValue() & 0x0F));
-		buffer[12] = (byte)(((message.getDealerCard1().getCardSuite().getCardSuite() & 0x0F) << 4) | (message.getDealerCard1().getCardValue().getCardValue() & 0x0F)); 
-		buffer[13] = (byte)(((message.getDealerCard2().getCardSuite().getCardSuite() & 0x0F) << 4) | (message.getDealerCard2().getCardValue().getCardValue() & 0x0F));
-		buffer[14] = (byte)(((message.getFlopCard1().getCardSuite().getCardSuite() & 0x0F) << 4) | (message.getFlopCard1().getCardValue().getCardValue() & 0x0F));
-		buffer[15] = (byte)(((message.getFlopCard2().getCardSuite().getCardSuite() & 0x0F) << 4) | (message.getFlopCard2().getCardValue().getCardValue() & 0x0F));
-		buffer[16] = (byte)(((message.getFlopCard3().getCardSuite().getCardSuite() & 0x0F) << 4) | (message.getFlopCard3().getCardValue().getCardValue() & 0x0F));
-		buffer[17] = (byte)(((message.getTurnCard().getCardSuite().getCardSuite() & 0x0F) << 4) | (message.getTurnCard().getCardValue().getCardValue() & 0x0F));
-		buffer[18] = (byte)(((message.getRiverCard().getCardSuite().getCardSuite() & 0x0F) << 4) | (message.getRiverCard().getCardValue().getCardValue() & 0x0F));
-		buffer[19] = (byte)(((message.getWinner().getWinner() & 0x0F) << 4) & 0xF0);
+		buffer[10] = (byte)(((message.getPlayerCard1().getCardSuite() & 0x0F) << 4) | (message.getPlayerCard1().getCardValue() & 0x0F)); 		
+		buffer[11] = (byte)(((message.getPlayerCard2().getCardSuite() & 0x0F) << 4) | (message.getPlayerCard2().getCardValue() & 0x0F));
+		buffer[12] = (byte)(((message.getDealerCard1().getCardSuite() & 0x0F) << 4) | (message.getDealerCard1().getCardValue() & 0x0F)); 
+		buffer[13] = (byte)(((message.getDealerCard2().getCardSuite() & 0x0F) << 4) | (message.getDealerCard2().getCardValue() & 0x0F));
+		buffer[14] = (byte)(((message.getFlopCard1().getCardSuite() & 0x0F) << 4) | (message.getFlopCard1().getCardValue() & 0x0F));
+		buffer[15] = (byte)(((message.getFlopCard2().getCardSuite() & 0x0F) << 4) | (message.getFlopCard2().getCardValue() & 0x0F));
+		buffer[16] = (byte)(((message.getFlopCard3().getCardSuite() & 0x0F) << 4) | (message.getFlopCard3().getCardValue() & 0x0F));
+		buffer[17] = (byte)(((message.getTurnCard().getCardSuite() & 0x0F) << 4) | (message.getTurnCard().getCardValue() & 0x0F));
+		buffer[18] = (byte)(((message.getRiverCard().getCardSuite() & 0x0F) << 4) | (message.getRiverCard().getCardValue() & 0x0F));
+		buffer[19] = (byte)(((message.getWinner() & 0x0F) << 4) & 0xF0);
 		buffer[20] = (byte)((message.getPotSize() & 0xFF000000) >> 24);
 		buffer[21] = (byte)((message.getPotSize() & 0xFF0000) >> 16);
 		buffer[22] = (byte)((message.getPotSize() & 0xFF00) >> 8);
@@ -1384,7 +1546,7 @@ public class MessageParser {
 		buffer[29] = (byte)((message.getBankAmount() & 0xFF0000) >> 16);
 		buffer[30] = (byte)((message.getBankAmount() & 0xFF00) >> 8);
 		buffer[31] = (byte)(message.getBankAmount() & 0xFF);
-		
+				
 		return buffer;
 	}
 	
@@ -1394,13 +1556,13 @@ public class MessageParser {
 	public ConnectionMessage GetConnectionMessage(byte[] buffer, int iSize)
 	{
 		int version = -1;
-		TypeIndicator typecode = TypeIndicator.NOT_SET;
-		ConnectionIndicator concode = ConnectionIndicator.NOT_SET;
+		int typecode = NOT_SET;
+		int concode = NOT_SET;
 		if (iSize == 8)
 		{
 			version = (int)(((buffer[0] << 8) | buffer[1]) & 0xFFFF );
-    		typecode.setIndicator((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
-    		concode.setConnectionIndicator((buffer[4] & 0xFF));
+    		typecode = ((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
+    		concode = (int)((buffer[4] & 0xFF));
 		}
 		
 		ConnectionMessage message = new ConnectionMessage(version, typecode, concode);
@@ -1415,46 +1577,9 @@ public class MessageParser {
 		byte[] buffer = new byte[8];
 		buffer[0] = (byte)((message.getVersion() & 0xFF00) >> 8);
 		buffer[1] = (byte)(message.getVersion() & 0xFF);
-		buffer[2] = (byte)((message.getTypeCode().getIndicator() & 0xFF00) >> 8);
-		buffer[3] = (byte)(message.getTypeCode().getIndicator() & 0xFF);
-		buffer[4] = (byte)(message.getConnectionCode().getConnectionIndicator() & 0xFF);
-		buffer[5] = 0;
-		buffer[6] = 0;
-		buffer[7] = 0;
-		
-		return buffer;
-	}
-	
-	/*
-	 * Function to get the Challenge Message
-	 */
-	public ChallengeMessage GetChallengeMessage(byte[] buffer, int iSize)
-	{
-		int version = -1;
-		TypeIndicator typecode = TypeIndicator.NOT_SET;
-		ChallengeIndicator challcode = ChallengeIndicator.NOT_SET;
-		if (iSize == 8)
-		{
-			version = (int)(((buffer[0] << 8) | buffer[1]) & 0xFFFF );
-    		typecode.setIndicator((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
-    		challcode.setChallengeIndicator((buffer[4] & 0xFF));
-		}
-		
-		ChallengeMessage message = new ChallengeMessage(version, typecode, challcode);
-		return message;
-	}
-	
-	/*
-	 *  Function to create the Challenge Message
-	 */
-	public byte[] CreateChallengeMessage(ChallengeMessage message)
-	{
-		byte[] buffer = new byte[8];
-		buffer[0] = (byte)((message.getVersion() & 0xFF00) >> 8);
-		buffer[1] = (byte)(message.getVersion() & 0xFF);
-		buffer[2] = (byte)((message.getTypeCode().getIndicator() & 0xFF00) >> 8);
-		buffer[3] = (byte)(message.getTypeCode().getIndicator() & 0xFF);
-		buffer[4] = (byte)(message.getChallengeCode().getChallengeIndicator() & 0xFF);
+		buffer[2] = (byte)((message.getTypeCode() & 0xFF00) >> 8);
+		buffer[3] = (byte)(message.getTypeCode() & 0xFF);
+		buffer[4] = (byte)(message.getConnectionCode() & 0xFF);
 		buffer[5] = 0;
 		buffer[6] = 0;
 		buffer[7] = 0;

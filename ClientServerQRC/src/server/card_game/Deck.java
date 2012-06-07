@@ -3,8 +3,6 @@ package server.card_game;
 import java.util.Random;
 
 import common.card_game.Card;
-import common.card_game.Card.CardSuite;
-import common.card_game.Card.CardValue;
 
 /*
  * This code was obtained with help from http://www.cs.uga.edu/~gtb/1302/Project1/Deck.java
@@ -17,17 +15,14 @@ public class Deck {
 	
 	public Deck() {
 		deck = new Card[52];
-		int iI = 0;
-		for (CardSuite suit : CardSuite.values()) 
+		int kK = 0;
+		for (int iI = 0; iI < Card.NUM_SUITS; iI++)
 		{
-			for (CardValue value : CardValue.values()) 
+			for (int jJ = 1; jJ <= Card.NUM_RANKS; jJ++)
 			{
-				// need to make sure it is a valid card, otherwise skip it
-				if (!suit.isEqual(CardSuite.NOT_SET) && !value.isEqual(CardValue.NOT_SET))
-				{
-					deck[iI] = new Card(suit, value);
-					iI++;
-				}
+				int suite = (int)Math.pow(2.0, (double)iI);
+				deck[kK] = new Card(suite, jJ);
+            kK++;
 			}
 		}
 		curIndex = 0;

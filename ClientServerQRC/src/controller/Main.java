@@ -24,16 +24,16 @@
 
 package controller;
 
-import common.XmlParser;
 import client.*;
 import server.*;
+import common.*;
 
 /**
  *  Main Class initiates either the SecureClientController or the SecureServerController 
  *  based on command line arguments.
  */
 public class Main {
-
+	
 	/**
 	 *  main method initiates either the SecureClientController or the SecureServerController 
 	 *  based on command line arguments.
@@ -44,15 +44,18 @@ public class Main {
 		try
 		{
 			final XmlParser xmlParser = new XmlParser();
+			
 
 			if (args[0].equalsIgnoreCase("secureClient"))
 			{
-				SecureClientController scc = new SecureClientController(xmlParser, null,null);
+				final LogAndPublish logAndPublish = new LogAndPublish(xmlParser, "client");
+				SecureClientController scc = new SecureClientController(xmlParser, logAndPublish);
 				scc.start();
 			}
 			else if (args[0].equalsIgnoreCase("secureServer"))
 			{
-				SecureServerController ssc = new SecureServerController(xmlParser);
+				final LogAndPublish logAndPublish = new LogAndPublish(xmlParser, "server");
+				SecureServerController ssc = new SecureServerController(xmlParser, logAndPublish);
 				ssc.start();
 			}
 			

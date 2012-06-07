@@ -23,14 +23,10 @@
  */
 package client;
 
-import java.util.List;
 import java.io.*;
 import java.security.*;
 import java.util.ArrayList;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.FileHandler;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
+
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -39,33 +35,19 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
-import client.card_game.ClientPokerModel;
-import client.view.TexasGame;
-import client.view.TexasGame.InputState;
-import client.view.Welcome;
-import common.GamePhase;
-import common.GamePhase.Phase;
-import common.GameState;
-import common.MessageParser;
-import common.GameState.State;
-import common.MessageParser.ConnectionIndicator;
-import common.MessageParser.GameIndicator;
-import common.MessageParser.GamePlayRequest;
-import common.MessageParser.GamePlayResponse;
-import common.MessageParser.GameTypeCode;
-import common.MessageParser.GameTypeResponse;
-import common.MessageParser.TypeIndicator;
-import common.MessageParser.VersionIndicator;
-import common.MessageParser.Winner;
-import common.card_game.Card;
-import common.findServer.EchoFinder;
-import common.XmlParser;
-import common.MessageParser.GameTypeCode;
+import client.findServer.EchoFinder;
+import common.card_game.*;
+import common.*;
+
 
 /**
- * SecureClientController class manages the logic for the client side
- * within the AGMP example application.
- * 
+ *  SecureClientController class manages the logic for the client side
+ *  within the AGMP example application.
+ *   
+ *  @author GROUP 2, CS544-900-SPRING12, DREXEL UNIVERSITY
+ *  Members: Jeremy Glesner, Dustin Overmiller, Yiqi Ju, Lei Yuan
+ *  Project: Advanced Game Message Protocol Implementation
+ *  
  */
 public class SecureClientController implements Runnable {
 
@@ -75,13 +57,13 @@ public class SecureClientController implements Runnable {
 	private String keyStore=null;
 	private String keyStorePassword=null; 
 	
-	/* logging utility */
-	private final Logger fLogger; 
-	
 	/* management mechanisms */
     private GameState gameState;
     private MessageParser messageParser;
 	private boolean connected;
+	private LogAndPublish logAndPublish;
+	private long bankAmount;
+	private long betAmount;
 	
 	/* connectivity mechanisms */    
 	private SecureClientController c = null;
@@ -96,74 +78,26 @@ public class SecureClientController implements Runnable {
 	private ObjectInputStream inputstream;     
     private int port = 0; 
     private String hostName= null;
-
-    public String uniqueID;
-    private GamePhase gamePhase;
+    /* Game parameters */
     private int m_iVersion = -1;
-    private short m_iMinorVersion = -1;
-    private long m_lClientBankAmount = -1;
-    private int m_lClientAnte=-1;
-    private long m_lClientBetAmount=-1;
-    private boolean m_bGotGames = false;
-    private boolean m_bSetGames = false;
-    private boolean m_bPlayGames= false;
-    private boolean m_bGetHole = false;
-    private boolean m_bGetFlog =false;
-    private boolean m_bGetTurn = false;
-    private boolean m_bGetRiver =false;
-    
-    private ClientPokerModel holdemModel= null;
-    
-   
-    private GameTypeCode m_eGameTypeCode = GameTypeCode.NOT_SET;
-        
-        //GUI methods
-     public TexasGame TG = new TexasGame();
-     private Welcome welcome=null;
-     
-	public Welcome getWelcome() {
-		return welcome;
-	}
-
-	public void setWelcome(Welcome welcome) {
-		this.welcome = welcome;
-	}
-	private ArrayList<MessageParser.GameTypeCode> oGameTypeList;
+    private int m_iMinorVersion = -1;
+    private GamePlayState gamePlayState = null;
     
     /**
      * Constructor for this class.
      * @param xmlParser Incoming XML Parser
      * @param fLogger Incoming Logger
      */
-    public SecureClientController(XmlParser xmlParser, Logger fLogger,Welcome welcome) {
+    public SecureClientController(XmlParser xmlParser, LogAndPublish logAndPublish) 
+    {
         
 		/* setup parser */
     	this.xmlParser = xmlParser;
-    	
-		/* setup logger */
-    	if (fLogger != null)
-    	{
-    		this.fLogger = fLogger;
-    	}
-    	else
-    	{
-    		System.out.println("instantiate scc");
-    		this.fLogger = Logger.getLogger(this.xmlParser.getClientTagValue("LOG_FILE"));
-    		this.fLogger.setUseParentHandlers(false);
-    		this.fLogger.removeHandler(new ConsoleHandler());
-    		try {
-    			FileHandler fh = new FileHandler(this.xmlParser.getClientTagValue("LOG_FILE"), true);
-    			fh.setFormatter(new SimpleFormatter());
-    			this.fLogger.addHandler(fh);
-    		} catch (Exception e) {
-    			e.printStackTrace();
-    			System.exit(1);
-    		}
-    	}    	
+    	this.logAndPublish = logAndPublish;
     	
     	/* instantiate remaining variables */
     	this.gameState = new GameState();
-        this.gameState.setState(State.AUTHENTICATE);
+        this.gameState.setState(GameState.LISTENING);
         this.messageParser = new MessageParser();
         this.isr = new InputStreamReader(System.in);
         this.br = new BufferedReader(isr);
@@ -174,10 +108,16 @@ public class SecureClientController implements Runnable {
 		this.keyStore=this.xmlParser.getClientTagValue("DEFAULT_KEYSTORE");
 		this.keyStorePassword=this.xmlParser.getClientTagValue("DEFAULT_KEYSTORE_PASSWORD");    
 		this.hostName = this.xmlParser.getClientTagValue("HOSTNAME");
-		this.fLogger.info("Setting port number to:" + this.port);
-		this.fLogger.info("Using TrustStore: " + this.trustStore);
-		this.fLogger.info("Setting KeyStore: " + this.keyStore);   
-		this.welcome=welcome;
+		this.m_iVersion = Integer.parseInt(this.xmlParser.getClientTagValue("VERSION"));
+		this.m_iMinorVersion = Integer.parseInt(this.xmlParser.getClientTagValue("MINOR_VERSION"));
+		this.bankAmount = 0;
+		this.gamePlayState = new GamePlayState();
+		
+		// log this information to the log file
+		logAndPublish.write("Setting port number to:" + this.port, true, false);
+		logAndPublish.write("Using TrustStore: " + this.trustStore, true, false);
+		logAndPublish.write("Setting KeyStore: " + this.keyStore, true, false);
+	
     }    
     
     /**
@@ -232,18 +172,18 @@ public class SecureClientController implements Runnable {
 	public void start()
 	{
 		
-		/* Log and Publish */
-		logAndPublish("Client connecting to server...", true, true);
-//        System.out.println("in controller start");
+		/* Print to console and log file */
+		logAndPublish.write("Client connecting to server...", true, true);
+
 		/* instantiate a new SecureClientController */
 		try {
-			c = new SecureClientController(this.xmlParser, this.fLogger,this.welcome);
+			c = new SecureClientController(this.xmlParser, logAndPublish);
 	        ssf=getSSLSocketFactory();
 		}
 		catch(Exception e)
 		{
-			/* Log and Publish */
-			logAndPublish(e, true, true);			
+			/* Print to console and log file */
+			logAndPublish.write(e, true, true);			
 		}		
         
 		/* Connect to server identified in configuration settings */
@@ -253,24 +193,24 @@ public class SecureClientController implements Runnable {
 		} catch (IOException e) 
 		{
 			/* Log and Publish */
-			logAndPublish(e, true, true);
+			logAndPublish.write(e, true, false);
 		}
 		
 		/* find server using ICMP/TCP methods */
 		if (!c.connected) {
-			System.out.println("PROBLEM");
+
 			
 			try {
 				c.findConnect(ssf, port);
 			} catch (Exception e) 
 			{
 				/* Log and Publish */
-				logAndPublish(e, true, true);				
+				logAndPublish.write(e, true, true);				
 			}
 		}
 		
 		/* Log and Publish */
-		logAndPublish("Client connected.", true, true);
+		logAndPublish.write("Client connected.", true, true);
 
 	}
 
@@ -278,743 +218,670 @@ public class SecureClientController implements Runnable {
      * run method executes when a new SecureClientController thread, 
      * complete with socket is started 
      */
-    @SuppressWarnings("unchecked")
-	public void run() {
+    public void run() {
        try 
        {
-    	   
-    	   
     	   /* Game loop */
-    		this.m_iVersion=Integer.parseInt(this.xmlParser.getClientTagValue("VERSION"));
-	    	this.m_iMinorVersion=Short.parseShort(xmlParser.getClientTagValue("MINOR_VERSION"));
-	    	
-    	   while(connected && this.gameState.getState() != State.CLOSED) 
+    	   while(connected && this.gameState.getState() != GameState.CLOSED) 
     	   {
-   		    
-    		   	if (this.gameState.getState().isEqual(State.AUTHENTICATE))
-    		   	{
-    				/* Log and Publish */
-    				logAndPublish("Enter Authentication State.", false, true);
-    				
-    				versionNegotiate();
+    		   if (this.gameState.getState() == GameState.LISTENING)
+    		   {
+    			   /* Enter the Listening state */
+    			   logAndPublish.write("Enter Listening State.", false, false);
+    			   GameListeningState();
+    		   }
+    		   else if (this.gameState.getState() == GameState.AUTHENTICATE)
+    		   {
+    				/* Enter the Connection Negotiation state */
+    				logAndPublish.write("Enter Authentication State.", false, false);
+    				GameAuthenticateState();
     		   	}
  
-    		   	else if (this.gameState.getState().isEqual(State.GAMELIST))
+    		   	else if (this.gameState.getState() == GameState.GAMELIST)
 	       		{
-    				/* Log and Publish */
-    				logAndPublish("Enter List State.", false, true);
-    				
-    				getGame();
+    				/* Enter the Game List State */
+    				logAndPublish.write("Enter List State.", false, false);    				
+	       			GameListState();
 	       		}    	        		
-    		   	else if (this.gameState.getState().isEqual(State.GAMESET))
+    		   	else if (this.gameState.getState() == GameState.GAMESET)
         		{
-    				/* Log and Publish */
-    				logAndPublish("Enter Set State.", false, true);
-//    				UI render game list 
-//    				UI	if user click TexasHoldem Button : SetGames=true, gametypecode=1
-    				       welcome.setList(true);
-    	                   welcome.initComponents();
-    	                   this.m_bSetGames=welcome.isSetGames();
-    	                   this.m_eGameTypeCode.setGameTypeCode(welcome.getGametypecode());
-    	                   
-    					if(this.m_bSetGames==true){
-    						this.TG=welcome.getTexasGame();
-    						if(this.TG!=null)
-    							System.out.println("right poker");
-    						setGame();
-    						this.holdemModel=new ClientPokerModel();
-    						this.gamePhase=new GamePhase();
-    						this.gamePhase.setPhase(Phase.INIT);
-    						this.m_bPlayGames=true;
-    						this.m_bSetGames=false;
-    					}
-    					else{
-//    						UI pop out "need to choose an available game"
-    						System.out.println("need to choose an availabe game");
-    					}
+    				/* Enter the Game Set State */
+    				logAndPublish.write("Enter Set State.", false, false);    				
+        			GameSetState();
         		}        		
         		
-        		else if (this.gameState.getState().isEqual(State.GAMEPLAY))
+        		else if (this.gameState.getState() == GameState.GAMEPLAY)
         		{
-    				/* Log and Publish */
-    				logAndPublish("Enter Play State.", false, true);
-    				
-        			playGame();
+    				/* Enter the Game Play State */
+    				logAndPublish.write("Enter Play State.", false, false);    				
+        			GamePlayGameState();
         		}
-        		else if (this.gameState.getState().isEqual(State.CLOSING))
-        		{
-    				/* Log and Publish */
-    				logAndPublish("Enter Closing State.", false, true);
-    				
-        			ClosingState();
-        			break;
-        		}
-				/* Log and Publish */
-				logAndPublish("Connection status: " + connected, false, false);
+				/* Log and Publish - currently disabled */
+				logAndPublish.write("Connection status: " + connected, false, false);
 				
-				/* Log and Publish */
-				logAndPublish("Game state: " + this.gameState.getState(), false, false);				
+				/* Log and Publish - currently disabled*/
+				logAndPublish.write("Game state: " + this.gameState.getState(), false, false);				
 
         	}
+    	   /* Connection was closed */
     	   connected = false;
-		
+    	   System.exit(0);
 		}
 		catch(Exception e)
 		{
       		/* Log and Publish */
-      		logAndPublish(e, true, true); 
+      		logAndPublish.write(e, true, false); 
+      		logAndPublish.write("Closing Connection", true, true);
+      		this.disconnect();
+      		System.exit(0);
 		}	    		   
         finally { connected = false; }
-
     }
 	
-	
-	  
-	public void versionNegotiate() throws IOException {
-	//  send client Version Message
-		  sendClientVersionMsg();
-//			waiting for server Ack Message if receive Version Requirement then send client Version message again.
-		  while(!recvServerVersionAck())
-			  sendClientVersionMsg();
-	       this.gameState.setState(State.GAMELIST);
-			
-		}
-	public void sendClientVersionMsg(){
-//			construct client's version message
-			System.out.println("start of sending client version message");
-			int version=this.m_iVersion;
-			TypeIndicator typecode=TypeIndicator.VERSION;
-			VersionIndicator versiontype=VersionIndicator.CLIENT_VERSION;
-			short minorversion=this.m_iMinorVersion;
-			long bankamount=0;
-			MessageParser.VersionMessage clientVersionMsg=this.messageParser.new VersionMessage(version, typecode, versiontype, minorversion, bankamount);
-//			send to the server
-			byte[] outputBuffer=this.messageParser.CreateVersionMessage(clientVersionMsg);
-			
-				try {
-					sendMessage(outputBuffer);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			
-		}
-	public boolean recvServerVersionAck() throws IOException{
-			System.out.println("start of receiving server verison ACK");
-//			recieving message from server
-			while(true){
-				     ServerResponse sr = this.receiveMessage();
-					 if(this.messageParser.GetTypeIndicator(sr.getMessage(), sr.getSize()).isEqual(TypeIndicator.VERSION)){
-						MessageParser.VersionMessage serverVersionMsg=this.messageParser.GetVersionMessage(sr.getMessage(), sr.getSize());
-			    		logAndPublish(serverVersionMsg.toString(), false, true); 
-						if(serverVersionMsg.getVersionType().isEqual(VersionIndicator.VERSION_ACK)){
-								this.fLogger.info(this.uniqueID+": recieve server version Ack");
-								this.m_lClientBankAmount=serverVersionMsg.getBankAmount();
-								return true;
-							}
-						else if(serverVersionMsg.getVersionType().isEqual(VersionIndicator.VERSION_REQUIREMENT)){
-							   this.fLogger.info(this.uniqueID+": receive server version requirement");
-							   return false;
-						}
-						else if(serverVersionMsg.getVersionType().isEqual(VersionIndicator.VERSION_UPGRADE)){
-							   this.fLogger.info(this.uniqueID+": recieve server update");
-							   System.exit(0);
-						}
-					 }
-			 }
-		}
-
-		
-	public void getGame() throws IOException{
-			sendGetGamelistMsg();
-			if(recvServerGamelistMsg())
-//			should rendering gamelist in GUI 
-			this.gameState.setState(State.GAMESET);
-		}
-	public void sendGetGamelistMsg() throws IOException{
-//			construct client get game list message
-			int version=this.m_iVersion;
-			TypeIndicator typecode=TypeIndicator.LIST;
-			GameIndicator gameIndicator=GameIndicator.GET_GAME;
-			MessageParser.ClientGetGameMessage getGameMsg= this.messageParser.new ClientGetGameMessage(version, typecode, gameIndicator);
-//	      send it to the server
-			System.out.print(getGameMsg.toString());
-			byte[]outputBuffer=this.messageParser.CreateClientGetGameMessage(getGameMsg);
-			sendMessage(outputBuffer);
-		}
-		
-	public boolean recvServerGamelistMsg() throws IOException{
-			
-			while(true){
-				 ServerResponse sr = this.receiveMessage();
-				 System.out.println(sr.getMessage().toString());
-				 TypeIndicator typecode=this.messageParser.GetTypeIndicator(sr.getMessage(), sr.getSize());
-				 GameIndicator gameIndicator=this.messageParser.GetGameIndicator(sr.getMessage(),sr.getSize());
-				 if(typecode.isEqual(TypeIndicator.LIST)
-					 && gameIndicator.isEqual(GameIndicator.GET_GAME)){
-					 System.out.println("right message");
-					MessageParser.ServerGetGameMessage serverGamelistMsg=this.messageParser.GetServerGetGameMessage(sr.getMessage(), sr.getSize());
-					this.fLogger.info(uniqueID+": receive server game List");
-					this.oGameTypeList=(ArrayList<GameTypeCode>) serverGamelistMsg.getGameTypeCodeList();
-					return true;
-			    }
-			}
-		}
-	public void setGame() throws IOException{
-			sendSetGameMsg();
-			if(recvServerSetGameMsg()){
-				this.gameState.setState(State.GAMEPLAY);
-			}
-			else{
-				this.m_eGameTypeCode=GameTypeCode.NOT_SET;
-				this.m_bSetGames=false;
-				this.gameState.setState(State.GAMESET);
-//				UI send error and ask client to reclick the game
-	             
-			}
-			
-		}
-	public void sendSetGameMsg() throws IOException{
-//			construct client set game message
-		   System.out.println("Send setgame message");
-			int version=this.m_iVersion;
-			TypeIndicator typecode=TypeIndicator.GAME;
-			GameIndicator gameIndicator=GameIndicator.SET_GAME;
-			GameTypeCode gameType=this.m_eGameTypeCode;
-			MessageParser.ClientSetGameMessage setGameMsg=this.messageParser.new ClientSetGameMessage(version, typecode, gameIndicator, gameType);
-//			send to server
-			byte[]outputBuffer=this.messageParser.CreateClientSetGameMessage(setGameMsg);
-			sendMessage(outputBuffer);
-		}
-	
-	public boolean recvServerSetGameMsg() throws IOException{
-			
-			   while(true){
-				   
-				    System.out.println("into recv Server set message");
-				    ServerResponse sr = this.receiveMessage();
-					TypeIndicator typecode=this.messageParser.GetTypeIndicator(sr.getMessage(), sr.getSize());
-					GameIndicator gameIndicator=this.messageParser.GetGameIndicator(sr.getMessage(), sr.getSize());
-					
-					System.out.println(typecode.getIndicator());
-					System.out.println(gameIndicator.getIndicator());
-					
-					if(typecode.getIndicator()==TypeIndicator.SET.getIndicator()
-						&& gameIndicator.getIndicator()== GameIndicator.SET_GAME.getIndicator()){
-						System.out.println("typecode and gameindicator right");
-						MessageParser.ServerSetGameMessage serverSetGameMsg=this.messageParser.GetServerSetGameMessage(sr.getMessage(), sr.getSize());
-						if(serverSetGameMsg.getGameTypeResponse().getGameTypeResponse()==GameTypeResponse.ACK.getGameTypeResponse()){
-							System.out.println("get respond from server setgame message");
-						  this.fLogger.info(uniqueID+": receive server gameType ACK");
-						  return true;
-						}
-						else{
-							this.fLogger.info(uniqueID+": gameType invalid ");
-							return false;
-						}
-					}
-					
-			}
-				
-	}
-		
-	public void playGame() throws IOException{
-		
-			while(m_bPlayGames){
-				
-				Phase currentPhase=this.gamePhase.getPhase();
-				if(currentPhase.isEqual(Phase.INIT)){
-					System.out.println("into Init phase");
-				    sendInitGameMsg();
-				    if(recvInitGameAckMsg()){
-				    	this.gamePhase.setPhase(Phase.HOLE);
-				    }
-				}
-				else if(currentPhase.isEqual(Phase.HOLE)){
-//					 Update UI
-		//			UI Pop out want to play game showing the minium Ante and bankamount
-		//			if client inputs Ante and click yes :  m_bGetHole=true m_lClientAnte=input
-		//			else click no                       :  m_bGetHole=false       
-					this.TG=new TexasGame();
-					System.out.println("into Hole phase");
-					System.out.println(this.m_lClientAnte);
-					if(holdemModel!=null)
-						System.out.println("right model");
-				     this.TG.setMinAnte(this.m_lClientAnte);
-	                 this.TG.setPokerModel(holdemModel);
-	                 System.out.println(this.TG.getPokerModel().getlBankAmount());
-	                 System.out.println(this.TG.getMinAnte());
-	                 this.TG.initComponents();
-	                 TG.setVisible(true);
-	                  while(this.TG.getbGetHole().getIndicator()==InputState.NOT_SET.getIndicator()){
-	                	  System.out.println("no input");
-	                  }
-	                  if(this.TG.getbGetHole().getIndicator()==InputState.YES.getIndicator())
-	                  {
-	                	  this.m_bGetHole=true;
-	                	  this.m_lClientAnte=this.TG.getUserAnte();
-	                  }
-	                  else
-	                      this.m_bGetHole=false;
-	                  
-					if(this.m_bGetHole){
-					  System.out.println(this.m_lClientAnte);
-			           sendHoleRequestMsg();
-			           if(recvHoleAckMsg()){
-			        	   this.gamePhase.setPhase(Phase.FLOP);
-			        	   this.m_bGetHole=false;
-			           }
-			           else{
-//			        	   UI Pop out "ante is invalid"  then go back to HOLE Phase
-			        	   this.gamePhase.setPhase(Phase.HOLE); 
-			           }
-					}
-					else{
-						this.gamePhase.setPhase(Phase.QUIT);
-						  this.m_bGetHole=false;
-					}
-				}
-				else if(currentPhase.isEqual(Phase.FLOP)){
-//					UpdateUI
-//					UI Pop out want to follow betting 2*Ante or Fold
-					//			if click follow : m_bGetFlop=true
-					//			else click fold : m_bGetFlop=false
-	                     
-					System.out.println("into Flop phase");              
-					if(this.m_bGetFlog){
-					    sendFlopRequestMsg();
-					    if(recvFlopAckMsg()){
-					    	this.gamePhase.setPhase(Phase.TURN);
-					    	this.m_bGetFlog=false;
-					    }
-					    else{
-//					    	UI pop out "flop bet"
-	                                        
-					    	this.gamePhase.setPhase(Phase.FLOP);
-					    }
-					}
-					else{
-						this.gamePhase.setPhase(Phase.FOLD);
-						this.m_bGetFlog=false;
-					}
-				}
-				else if(currentPhase.isEqual(Phase.TURN)){
-//					Update UI
-//					UI Pop out want to check 0*Ante, follow bet 1*Ante, or Fold
-//						if client clicks check :  m_bGetTurn=true m_lClientBetAmount=0
-//					    if client clicks folow  : m_bGetTurn=true  m_lClientBetAmount=m_lClientAnte;
-					//	else client clicks fold :	m_bGetTurn=false;
-					System.out.println("into Turn phase");
-					if(this.m_bGetTurn){
-						sendTurnRequestMsg();
-						if(recvTurnAckMsg()){
-							this.gamePhase.setPhase(Phase.RIVER);
-							this.m_bGetTurn=false;
-						}
-						else{
-//							UI pop out "Invalid Turn Bet"
-							this.gamePhase.setPhase(Phase.TURN);
-						}
-					}
-					else{
-						this.gamePhase.setPhase(Phase.FOLD);
-						this.m_bGetTurn=false;
-					}
-				}
-				else if(currentPhase.isEqual(Phase.RIVER)){
-//					Updtate UI
-//					UI Pop out want to check 0*Ante, follow bet 1*Ante, or Fold
-//					if client clicks check :  m_bGetRiver=true m_lClientBetAmount=0
-//				    if client clicks folow  : m_bGetRiver=true  m_lClientBetAmount=m_lClientAnte;
-				//	else client clicks fold :	m_bGetRiver=false;
-					System.out.println("into River phase");
-	                            
-					if(this.m_bGetRiver==true){
-						sendRiverRequestMsg();
-						if(recvRiverAckMsg()){
-//							UI should pop out the winner and update() the result
-	                                            
-							this.gamePhase.setPhase(Phase.INIT);
-							this.holdemModel.init();
-						    this.m_bGetRiver=false;
-						}
-						else{
-							this.gamePhase.setPhase(Phase.RIVER);
-						}
-					}
-					else{
-						this.gamePhase.setPhase(Phase.FOLD);
-						this.m_bGetRiver=false;
-					}
-				}
-				else if(currentPhase.isEqual(Phase.FOLD)){
-					System.out.println("into Fold phase");
-					sendFoldRequestMsg();
-					if(recvFoldAckMsg()){
-//					UI	Pop out the winner and update UI
-	                                   
-						this.gamePhase.setPhase(Phase.INIT);
-					}
-					else{
-//				    UI pop out "invalid FolD"
-	                                  
-					}
-				}
-				else if(currentPhase.isEqual(Phase.QUIT)){
-					System.out.println("into quit phase");
-					this.gameState.setState(State.CLOSING);
-					this.m_bPlayGames=false;
-				}
-					
-				
-			}
-		}
-	public void sendInitGameMsg() throws IOException{
-//			construct Init game message
-			int version=this.m_iVersion;
-			TypeIndicator typecode=TypeIndicator.GAME;
-			GameIndicator gameIndicator=GameIndicator.PLAY_GAME;
-			GameTypeCode gameType=GameTypeCode.TEXAS_HOLDEM;
-			GamePlayRequest gameRequest=GamePlayRequest.INIT;
-			long betamount=0;
-			MessageParser.ClientPlayGameMessage initGameMsg=this.messageParser.new ClientPlayGameMessage(version, typecode, gameIndicator, gameType,gameRequest ,betamount);
-//		    send to server 
-			byte[]outputBuffer=this.messageParser.CreateClientPlayGameMessage(initGameMsg);
-			sendMessage(outputBuffer);
-		}
-		
-	public boolean recvInitGameAckMsg() throws IOException{
-			
-			while(true){
-				    ServerResponse sr=this.receiveMessage();
-					TypeIndicator typecode=this.messageParser.GetTypeIndicator(sr.getMessage(), sr.getSize());
-					GameIndicator gameIndicator=this.messageParser.GetGameIndicator(sr.getMessage(), sr.getSize());
-					if(typecode.getIndicator()==TypeIndicator.GAME.getIndicator()
-						&& gameIndicator.getIndicator()==GameIndicator.PLAY_GAME.getIndicator()){
-						MessageParser.ServerPlayGameMessage initGameResponseMsg=this.messageParser.GetServerPlayGameMessage(sr.getMessage(), sr.getSize());
-						if(initGameResponseMsg.getGamePlayResponse().getGamePlayResponse()==GamePlayResponse.INIT_ACK.getGamePlayResponse()){
-						  this.fLogger.info(uniqueID+": receive server init game ACK");
-						  this.m_lClientBankAmount=initGameResponseMsg.getBankAmount();
-					      this.m_lClientAnte=initGameResponseMsg.getAnte();
-					      this.holdemModel.setlBankAmount(initGameResponseMsg.getBankAmount());
-					      System.out.println(this.holdemModel.getlBankAmount());
-					      System.out.println(initGameResponseMsg.getBankAmount());
-						  return true;
-						}
-				}
-			}
-		}
-    public void sendHoleRequestMsg() throws IOException{
-//	    	construct Hole request game message
-    	    System.out.println("send Hole requeset");
-			int version=this.m_iVersion;
-			TypeIndicator typecode=TypeIndicator.GAME;
-			GameIndicator gameIndicator=GameIndicator.PLAY_GAME;
-			GameTypeCode gameType=GameTypeCode.TEXAS_HOLDEM;
-			GamePlayRequest gameRequest=GamePlayRequest.GET_HOLE;
-			long betamount=this.m_lClientAnte;
-			MessageParser.ClientPlayGameMessage getHoleMsg=this.messageParser.new ClientPlayGameMessage(version, typecode, gameIndicator, gameType,gameRequest ,betamount);
-//		    send to server 
-			byte[]outputBuffer=this.messageParser.CreateClientPlayGameMessage(getHoleMsg);
-		    sendMessage(outputBuffer);
-	    }
-	public boolean recvHoleAckMsg() throws IOException{
-		
-			  while(true){
-				  System.out.println("into recieve Hole Card");
-				  ServerResponse sr=this.receiveMessage();
-				  TypeIndicator typecode=this.messageParser.GetTypeIndicator(sr.getMessage(), sr.getSize());
-				  GameIndicator gameIndicator=this.messageParser.GetGameIndicator(sr.getMessage(), sr.getSize());
-				  if(typecode.getIndicator()==TypeIndicator.GAME.getIndicator()
-					  && gameIndicator.getIndicator()==GameIndicator.PLAY_GAME.getIndicator()){
-					 MessageParser.ServerPlayGameMessage serverHoleMsg=this.messageParser.GetServerPlayGameMessage(sr.getMessage(), sr.getSize());
-					 if(serverHoleMsg.getGamePlayResponse().getGamePlayResponse()==GamePlayResponse.GET_HOLE_ACK.getGamePlayResponse()){
-						 this.fLogger.info(uniqueID+": receive server get Hole ACK");
-						 long bankamount=serverHoleMsg.getBankAmount();
-						 this.m_lClientAnte=serverHoleMsg.getAnte();
-						 Card []playerCards=new Card[2];
-						 playerCards[0]=serverHoleMsg.getPlayerCard1();
-						 playerCards[1]=serverHoleMsg.getPlayerCard2();
-						 Card []dealerCards=new Card[2];
-						 dealerCards[0]=serverHoleMsg.getDealerCard1();
-						 dealerCards[1]=serverHoleMsg.getDealerCard2();
-						 dealerCards[0].setIs_visible(false);
-						 dealerCards[1].setIs_visible(false);
-						 this.holdemModel.setlBankAmount(bankamount);
-						 this.holdemModel.setoPlayerCards(playerCards);
-						 this.holdemModel.setoDealerCards(dealerCards);
-						 this.holdemModel.setiAnte(this.m_lClientAnte);
-						 System.out.println("getresponse from server");
-						    return true;
-						}
-						else if(serverHoleMsg.getGamePlayResponse().isEqual(GamePlayResponse.INVALID_ANTE_BET)) {
-							this.fLogger.info(uniqueID+": receive invalid Ante Bet");
-							return false;
-						}
-					}
-			   }
-		}
-	public void sendFlopRequestMsg() throws IOException{
-//	    	construct Flop request game message
-			int version=this.m_iVersion;
-			TypeIndicator typecode=TypeIndicator.GAME;
-			GameIndicator gameIndicator=GameIndicator.PLAY_GAME;
-			GameTypeCode gameType=GameTypeCode.TEXAS_HOLDEM;
-			GamePlayRequest gameRequest=GamePlayRequest.GET_FLOP;
-			long betamount=this.m_lClientAnte*2;
-			MessageParser.ClientPlayGameMessage getFlopMsg=this.messageParser.new ClientPlayGameMessage(version, typecode, gameIndicator, gameType,gameRequest ,betamount);
-//		    send to server 
-			byte[]outputBuffer=this.messageParser.CreateClientPlayGameMessage(getFlopMsg);
-		    sendMessage(outputBuffer);
-		    
-	    }
-	public boolean recvFlopAckMsg() throws IOException{
-	
-			while(true){
-				    ServerResponse sr=this.receiveMessage();
-					TypeIndicator typecode=this.messageParser.GetTypeIndicator(sr.getMessage(), sr.getSize());
-					GameIndicator gameIndicator=this.messageParser.GetGameIndicator(sr.getMessage(), sr.getSize());
-					if(typecode.isEqual(TypeIndicator.GAME)
-						&& gameIndicator.isEqual(GameIndicator.PLAY_GAME)){
-						MessageParser.ServerPlayGameMessage serverFlopMsg=this.messageParser.GetServerPlayGameMessage(sr.getMessage(), sr.getSize());
-						if(serverFlopMsg.getGamePlayResponse().isEqual(GamePlayResponse.GET_FLOP_ACK)){
-						  this.fLogger.info(uniqueID+": receive server get FLOP ACK");
-						  
-						  Card []flopCards=new Card[3];
-						  flopCards[0]=serverFlopMsg.getFlopCard1();
-						  flopCards[1]=serverFlopMsg.getFlopCard2();
-						  flopCards[2]=serverFlopMsg.getFlopCard3();
-						  long pot=serverFlopMsg.getPotSize();
-						  long betamount=serverFlopMsg.getBetAmount();
-						  long bankamount=serverFlopMsg.getBankAmount();
-						  this.m_lClientAnte=serverFlopMsg.getAnte();
-						  
-						  this.holdemModel.setlBankAmount(bankamount);
-						  this.holdemModel.setoFlopCards(flopCards);
-						  this.holdemModel.setlPotSize(pot);
-						  this.holdemModel.setlBetAmount(betamount);
-						
-						  return true;
-						}
-						else if(serverFlopMsg.getGamePlayResponse().isEqual(GamePlayResponse.INVALID_FLOP_BET)) {
-							this.fLogger.info(uniqueID+": receive invalid Flop Bet");
-							return false;
-						}
-						
-					}
-			   }
-	    }
-	public void sendTurnRequestMsg() throws IOException{
-//	    	construct Turn request game message
-			int version=this.m_iVersion;
-			TypeIndicator typecode=TypeIndicator.GAME;
-			GameIndicator gameIndicator=GameIndicator.PLAY_GAME;
-			GameTypeCode gameType=GameTypeCode.TEXAS_HOLDEM;
-			GamePlayRequest gameRequest=GamePlayRequest.GET_TURN;
-			long betamount=this.m_lClientBetAmount;
-			MessageParser.ClientPlayGameMessage getTurnMsg=this.messageParser.new ClientPlayGameMessage(version, typecode, gameIndicator, gameType,gameRequest ,betamount);
-//		    send to server 
-			byte[]outputBuffer=this.messageParser.CreateClientPlayGameMessage(getTurnMsg);
-		    sendMessage(outputBuffer);
-	    }
-	public boolean recvTurnAckMsg() throws IOException{
-	    	
-			   while(true){
-			        ServerResponse sr=this.receiveMessage();
-					TypeIndicator typecode=this.messageParser.GetTypeIndicator(sr.getMessage(), sr.getSize());
-					GameIndicator gameIndicator=this.messageParser.GetGameIndicator(sr.getMessage(), sr.getSize());
-					if(typecode.isEqual(TypeIndicator.GAME)
-						&& gameIndicator.isEqual(GameIndicator.PLAY_GAME)){
-						
-						MessageParser.ServerPlayGameMessage serverTurnMsg=this.messageParser.GetServerPlayGameMessage(sr.getMessage(), sr.getSize());
-						if(serverTurnMsg.getGamePlayResponse().isEqual(GamePlayResponse.GET_TURN_ACK)){
-						  this.fLogger.info(uniqueID+": receive server get Turn ACK");
-						  Card turnCard=serverTurnMsg.getTurnCard();
-						  long betamount=serverTurnMsg.getBetAmount();
-						  long bankamount=serverTurnMsg.getBankAmount();
-						  long pot=serverTurnMsg.getPotSize();
-						  this.m_lClientAnte=serverTurnMsg.getAnte();
-						  
-						  this.holdemModel.setlBankAmount(bankamount);
-						  this.holdemModel.setoTurnCard(turnCard);
-						  this.holdemModel.setlPotSize(pot);
-						  this.holdemModel.setlBetAmount(betamount);
-						   return true;
-						}
-						else if(serverTurnMsg.getGamePlayResponse().isEqual(GamePlayResponse.INVALID_TURN_BET)) {
-							 this.fLogger.info(uniqueID+": receive invalid Turn Bet");
-							 return false;
-						}
-					}
-			}
-	    }
-	    
-    public void sendRiverRequestMsg() throws IOException{
-//	    	construct river request game message
-			int version=this.m_iVersion;
-			TypeIndicator typecode=TypeIndicator.GAME;
-			GameIndicator gameIndicator=GameIndicator.PLAY_GAME;
-			GameTypeCode gameType=GameTypeCode.TEXAS_HOLDEM;
-			GamePlayRequest gameRequest=GamePlayRequest.GET_RIVER;
-			long betamount=this.m_lClientBetAmount;
-			MessageParser.ClientPlayGameMessage getRiverMsg=this.messageParser.new ClientPlayGameMessage(version, typecode, gameIndicator, gameType,gameRequest ,betamount);
-//		    send to server 
-			byte[]outputBuffer=this.messageParser.CreateClientPlayGameMessage(getRiverMsg);
-			sendMessage(outputBuffer);
-	    }
-    public boolean recvRiverAckMsg() throws IOException{
-			while(true){
-				     ServerResponse sr=this.receiveMessage();
-					TypeIndicator typecode=this.messageParser.GetTypeIndicator(sr.getMessage(), sr.getSize());
-					GameIndicator gameIndicator=this.messageParser.GetGameIndicator(sr.getMessage(), sr.getSize());
-					if(typecode.isEqual(TypeIndicator.GAME)
-						&& gameIndicator.isEqual(GameIndicator.PLAY_GAME)){
-						
-						MessageParser.ServerPlayGameMessage serverRiverMsg=this.messageParser.GetServerPlayGameMessage(sr.getMessage(), sr.getSize());
-						if(serverRiverMsg.getGamePlayResponse().isEqual(GamePlayResponse.GET_RIVER_ACK)){
-						  this.fLogger.info(uniqueID+": receive server get Turn ACK");
-						  Card riverCard=serverRiverMsg.getRiverCard();
-						  long betamount=serverRiverMsg.getBetAmount();
-						  long bankamount=serverRiverMsg.getBankAmount();
-						  long pot=serverRiverMsg.getPotSize();
-						  Winner winner=serverRiverMsg.getWinner();
-						  this.m_lClientAnte=serverRiverMsg.getAnte();
-						  this.holdemModel.setlBankAmount(bankamount);
-						  this.holdemModel.setoRiverCard(riverCard);
-						  this.holdemModel.setlPotSize(pot);
-						  this.holdemModel.setlBetAmount(betamount);
-						  this.holdemModel.setOwinner(winner);
-						  return true;
-						}
-//						Have problem here there's no INVALID_RIVER_BET
-						else if(serverRiverMsg.getGamePlayResponse().isEqual(GamePlayResponse.INVALID_ANTE_BET)) {
-							this.fLogger.info(uniqueID+": receive invalid River Bet");
-							return false;
-						}
-					}
-			 }
-	    }
-	public void sendFoldRequestMsg() throws IOException{
-//	    	construct Fold request game message
-			int version=this.m_iVersion;
-			TypeIndicator typecode=TypeIndicator.GAME;
-			GameIndicator gameIndicator=GameIndicator.PLAY_GAME;
-			GameTypeCode gameType=GameTypeCode.TEXAS_HOLDEM;
-			GamePlayRequest gameRequest=GamePlayRequest.FOLD;
-			long betamount=0;
-			MessageParser.ClientPlayGameMessage sendFoldMsg=this.messageParser.new ClientPlayGameMessage(version, typecode, gameIndicator, gameType,gameRequest ,betamount);
-//		    send to server 
-			byte[]outputBuffer=this.messageParser.CreateClientPlayGameMessage(sendFoldMsg);
-			sendMessage(outputBuffer);
-	    }
-	public boolean recvFoldAckMsg() throws IOException{
-
-			while(true){
-			        ServerResponse sr=this.receiveMessage();
-					TypeIndicator typecode=this.messageParser.GetTypeIndicator(sr.getMessage(), sr.getSize());
-					GameIndicator gameIndicator=this.messageParser.GetGameIndicator(sr.getMessage(), sr.getSize());
-					if(typecode.isEqual(TypeIndicator.GAME)
-						&& gameIndicator.isEqual(GameIndicator.PLAY_GAME)){
-						
-						MessageParser.ServerPlayGameMessage foldAckMsg=this.messageParser.GetServerPlayGameMessage(sr.getMessage(), sr.getSize());
-						if(foldAckMsg.getGamePlayResponse().isEqual(GamePlayResponse.FOLD_ACK)){
-						  this.fLogger.info(uniqueID+": receive server get Fold ACK");
-						  long betamount=foldAckMsg.getBetAmount();
-						  long bankamount=foldAckMsg.getBankAmount();
-						  long pot=foldAckMsg.getPotSize();
-						  Winner winner=foldAckMsg.getWinner();
-						  this.m_lClientAnte=foldAckMsg.getAnte();
-						  this.holdemModel.setlBankAmount(bankamount);
-						  this.holdemModel.setlPotSize(pot);
-						  this.holdemModel.setlBetAmount(betamount);
-						  this.holdemModel.setOwinner(winner);
-						  this.holdemModel.getoDealerCards()[0].setIs_visible(true);
-						  this.holdemModel.getoDealerCards()[1].setIs_visible(true);
-						  return true;
-						}
-//						Have problem here there's no INVALID_Fold_BET
-						else if(foldAckMsg.getGamePlayResponse().isEqual(GamePlayResponse.INVALID_TURN_BET)) {
-							this.fLogger.info(uniqueID+": receive invalid fold bet");
-							return false;
-						}
-					}
-			}
-	    }
-	public void sendCloseMsg() throws IOException{
-//	    	construct close  message
-			int version=this.m_iVersion;
-			TypeIndicator typecode=TypeIndicator.CLOSE_CONNECTION;
-			ConnectionIndicator concode=ConnectionIndicator.CLOSE_CONNECTION;
-
-			MessageParser.ConnectionMessage closeMsg=this.messageParser.new ConnectionMessage(version, typecode, concode);
-//		    send to server 
-			byte[]outputBuffer=this.messageParser.CreateConnectionMessage(closeMsg);
-			sendMessage(outputBuffer);
-		}
-    /**
-     * ClosingState method gracefully closes the connection
-     * and disconnects
-     */
-	private void ClosingState() 
-	{
-		//TODO: ADD MESSAGE TO GRACEFULLY CLOSE THE CONNECTION//
-		this.gameState.setState(State.CLOSED);	
-		this.disconnect();
-		connected = false;
-	}
-	
 	/**
-	 * GamePlayState method contains all the logic to interface with the server
+	 * GamePlayGameState method contains all the logic to interface with the server
 	 * during game play
 	 */
-	private void GamePlayState() 
+	private void GamePlayGameState() 
 	{
 
 		/* set variables */
 		int command = 0;
-	
-		System.exit(0);
-		
-		DISPLAY:
-		while(true)
+		while(this.gameState.getState() == GameState.GAMEPLAY)
 		{
-		
 			try
 			{
-
-			//REQUIRES X SUB STATES
-			
-			//STATE1
-	//			1) Player puts down an ante
-			System.out.println("Place your bet using a whole integer: ");
-			//command = Integer.parseInt(br.readLine());
-			
-			//STATE2
-	//			2) Dealer will give the player two cards
-			//DISPLAY TWO CARDS
-	//			3) Player will decide to play or fold
-	//			a) if the player plays they must bet twice their ante amount
-	//			b) if they fold they have to go back to 1)
-			System.out.println("To play this hand, enter 1. To fold this hand, enter 2");
-			//command = Integer.parseInt(br.readLine());
-			if (command == 1) {
-				
-			}
-			
-	//			4) If player bets then the dealer gives 3 flop cards
-	//			5) Player can bet (only can bet the ante amount) , check, or fold
-	//			6) If Player bets or checks the dealer gives a turn card
-	//			7) Player can bet (only can bet the ante amount) check or fold
-	//			8) If player checks or bets the dealer determines the winner and updates the players bank amount, etc.			
-			
-			
-			}
-			catch(Exception e)
-			{
-				continue DISPLAY;
+				/* Get the server response message */
+				ServerResponse sr = this.receiveMessage();
+				/* Check to make sure it has the correct version number */
+				if (this.messageParser.GetVersion(sr.getMessage(), sr.getSize()) != this.m_iVersion)
+				{
+					logAndPublish.write("Ignoring message with incorrect version number", true, false);
+					break;
+				}
+				/* Verify the message received was a Play Game Message */
+				if (this.messageParser.GetTypeIndicator(sr.getMessage(), sr.getSize()) == MessageParser.TYPE_INDICATOR_GAME)
+				{
+					if (this.messageParser.GetGameIndicator(sr.getMessage(), sr.getSize()) == MessageParser.GAME_INDICATOR_PLAY_GAME)
+					{
+						/* Get the server message */
+						MessageParser.ServerPlayGameMessage svrPlayMsg = this.messageParser.GetServerPlayGameMessage(sr.getMessage(), sr.getSize());	
+						if (svrPlayMsg.getGameIndicator() != MessageParser.GAME_INDICATOR_PLAY_GAME)
+						{
+							/* May have received a client play game message but this is not the correct server msg, ignore it */
+							logAndPublish.write("Ignoring Incorrect Play Game Message", true, false);
+							break;
+						}
+						/* Handle the different Game Play States */
+						if (this.gamePlayState.getPlayState() == GamePlayState.INIT)
+						{
+							if (svrPlayMsg.getGamePlayResponse() == MessageParser.GAME_PLAY_RESPONSE_INIT_ACK)
+							{
+								/* minimum ante allowable */
+								int min_ante = svrPlayMsg.getAnte();
+								this.bankAmount = svrPlayMsg.getBankAmount();
+								/* sub-state: Verify player has enough money to play and send NOT_SET*/
+								if (this.bankAmount < min_ante)
+								{
+									logAndPublish.write("You are too poor to play this game.  Returning to game list...", false, true);
+									MessageParser.ClientGetGameMessage oMsg1 = this.messageParser.new ClientGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME);
+									this.sendMessage(this.messageParser.CreateClientGetGameMessage(oMsg1));
+									this.gameState.setState(GameState.GAMELIST); 
+									break;
+								}	
+							
+								// print the server response
+								PrintGamePlayMessage(sr);
+								// get the ante from the client
+								logAndPublish.write("Place your bet.", false, true);
+								// make sure the client wants to play
+								command = UserSelection("Enter 1 to play or 2 to go to the list of games", 1, 2);
+								if (command == 2)
+								{
+									logAndPublish.write("Sending Get GameList message.", true, false);
+									MessageParser.ClientGetGameMessage oMsg1 = this.messageParser.new ClientGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME);
+									this.sendMessage(this.messageParser.CreateClientGetGameMessage(oMsg1));
+									this.gameState.setState(GameState.GAMELIST); 
+									break;
+								}
+								/* loop to handle user command line input */
+								command = UserSelection("Enter any amount greater than or equal to " + min_ante + " to begin:", min_ante, (int)this.bankAmount);
+							
+								// send GET_HOLE message and transition to the next phase
+								MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_GET_HOLE, (long)command);  
+								this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));	
+								logAndPublish.write("Sending GET_HOLE request", true, false);
+								this.gamePlayState.setPlayState(GamePlayState.GET_HOLE);
+							}
+							else
+							{
+								/* write error to log file */
+								logAndPublish.write("Ignoring invalid gameplay response from server", true, false);
+							}
+						}
+						else if (this.gamePlayState.getPlayState() == GamePlayState.GET_HOLE)
+						{
+							if (svrPlayMsg.getGamePlayResponse() == MessageParser.GAME_PLAY_RESPONSE_GET_HOLE_ACK)
+							{
+								/* display server msg */
+								PrintGamePlayMessage(sr);
+								this.bankAmount = svrPlayMsg.getBankAmount();
+								logAndPublish.write("Do you wish to play this hand or fold?", false, true);
+								logAndPublish.write("To Play, you must bet twice your ante amount.", false, true);
+								/* loop to handle user command line input */
+								command = UserSelection("Enter 1 to continue, and 2 to fold.", 1, 2);
+								int orig_ante = svrPlayMsg.getAnte();
+					
+								/* handle user selection */
+								if (command == 1)
+								{
+									if ((orig_ante*2) > bankAmount)
+									{
+										logAndPublish.write("You do not have enough money to keep playing.  Goodbye.", false, true);
+										this.gameState.setState(GameState.GAMELIST);
+										MessageParser.ClientGetGameMessage getMsg = this.messageParser.new ClientGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME);
+										this.sendMessage(this.messageParser.CreateClientGetGameMessage(getMsg));
+										break;
+									}		
+									else
+									{
+										/* send GET_FLOP message */
+										MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_GET_FLOP, (long)(orig_ante*2));
+										this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));	
+										logAndPublish.write("Getting the Flop Cards", true, false);
+										this.gamePlayState.setPlayState(GamePlayState.GET_FLOP);
+									}
+								}
+								else
+								{
+									// send fold message and go to fold phase
+									logAndPublish.write("Sending a fold message", true, false);
+									MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_FOLD, (long)(orig_ante));
+									this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));	
+									this.gamePlayState.setPlayState(GamePlayState.FOLD);
+								}
+							}
+							else if (svrPlayMsg.getGamePlayResponse() == MessageParser.GAME_PLAY_RESPONSE_INVALID_ANTE_BET)
+							{
+								int min_ante = svrPlayMsg.getAnte();
+								this.bankAmount = svrPlayMsg.getBankAmount();
+								/* sub-state: Verify player has enough money to play and send NOT_SET*/
+								if (this.bankAmount < min_ante)
+								{
+									logAndPublish.write("You are too poor to play this game.  Returning to game list...", false, true);
+									MessageParser.ClientGetGameMessage oMsg1 = this.messageParser.new ClientGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME);
+									this.sendMessage(this.messageParser.CreateClientGetGameMessage(oMsg1));
+									this.gameState.setState(GameState.GAMELIST); 
+									break;
+								}	
+							
+								// print the server response
+								PrintGamePlayMessage(sr);
+								// get the ante from the client
+								logAndPublish.write("ERROR: Invalid Ante Bet.", false, true);
+								// make sure the client wants to play
+								command = UserSelection("Enter 1 to play or 2 to go to the list of games", 1, 2);
+								if (command == 2)
+								{
+									logAndPublish.write("Sending Get GameList message.", true, false);
+									MessageParser.ClientGetGameMessage oMsg1 = this.messageParser.new ClientGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME);
+									this.sendMessage(this.messageParser.CreateClientGetGameMessage(oMsg1));
+									this.gameState.setState(GameState.GAMELIST); 
+									break;
+								}
+								/* loop to handle user command line input */
+								command = UserSelection("Enter any amount greater than or equal to " + min_ante + " to begin:", min_ante, (int)this.bankAmount);
+							
+								// send GET_HOLE message and transition to the next phase
+								MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_GET_HOLE, (long)command);  
+								this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));	
+								logAndPublish.write("Sending GET_HOLE request", true, false);
+							}
+							else
+							{
+								logAndPublish.write("Ignoring invalid gameplay message", true, false);
+							}
+						}
+						else if (this.gamePlayState.getPlayState() == GamePlayState.GET_FLOP)
+						{
+							if (svrPlayMsg.getGamePlayResponse() == MessageParser.GAME_PLAY_RESPONSE_GET_FLOP_ACK)
+							{
+								int orig_ante = svrPlayMsg.getAnte();
+								this.bankAmount = svrPlayMsg.getBankAmount();
+								/* display server response */
+								PrintGamePlayMessage(sr);
+					            logAndPublish.write("Do you wish to bet, check or fold?", false, true);
+					            logAndPublish.write("To bet, you may only bet the original ante amount.", false, true);
+								/* loop to handle user command line input */
+								command = UserSelection("Enter 1 to bet, 2 to check, and 3 to fold.", 1, 3);
+								/* handle user selection */
+								if (command == 1) 
+								{								
+									if ((orig_ante) > bankAmount)
+									{
+										logAndPublish.write("You do not have enough money to bet, checking.", false, true);
+										logAndPublish.write("Sending Get Turn Card message", true, false);
+										/* send GET_TURN message */
+										MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_GET_TURN, (long)0);
+								        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));						
+										this.gamePlayState.setPlayState(GamePlayState.GET_TURN);
+									} 
+									else
+									{				
+										/* send GET_TURN message */
+										logAndPublish.write("Sending Get Turn Card message", true, false);
+										/* send GET_TURN message */
+										MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_GET_TURN, (long)orig_ante);
+								        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));						
+										this.gamePlayState.setPlayState(GamePlayState.GET_TURN);
+										}
+									}
+								else if (command == 2) 
+								{	
+									logAndPublish.write("Sending Get Turn Card message", true, false);
+									/* send GET_TURN message */
+									MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_GET_TURN, (long)0);
+							        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));						
+									this.gamePlayState.setPlayState(GamePlayState.GET_TURN);
+								}	
+								else
+								{
+									// send fold message and go to fold phase
+									logAndPublish.write("Sending a fold message", true, false);
+									MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_FOLD, (long)(orig_ante));
+									this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));	
+									this.gamePlayState.setPlayState(GamePlayState.FOLD);
+								}
+							}
+							else if (svrPlayMsg.getGamePlayResponse() == MessageParser.GAME_PLAY_RESPONSE_INVALID_HOLE_BET)
+							{
+								/* display server msg */
+								PrintGamePlayMessage(sr);
+								this.bankAmount = svrPlayMsg.getBankAmount();
+								logAndPublish.write("ERROR: Invalid Hole Bet", false, true);
+								logAndPublish.write("Do you wish to play this hand or fold?", false, true);
+								logAndPublish.write("To Play, you must bet twice your ante amount.", false, true);
+								/* loop to handle user command line input */
+								command = UserSelection("Enter 1 to continue, and 2 to return to fold.", 1, 2);
+								int orig_ante = svrPlayMsg.getAnte();
+					
+								/* handle user selection */
+								if (command == 1)
+								{
+									if ((orig_ante*2) > bankAmount)
+									{
+										logAndPublish.write("You do not have enough money to keep playing.  Goodbye.", false, true);
+										this.gameState.setState(GameState.GAMELIST);
+										MessageParser.ClientGetGameMessage getMsg = this.messageParser.new ClientGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME);
+										this.sendMessage(this.messageParser.CreateClientGetGameMessage(getMsg));
+										break;
+									}		
+									else
+									{
+										/* send GET_FLOP message */
+										MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_GET_FLOP, (long)(orig_ante*2));
+										this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));	
+										logAndPublish.write("Getting the Flop Cards", true, false);
+										this.gamePlayState.setPlayState(GamePlayState.GET_FLOP);
+									}
+								}
+								else
+								{
+									// send fold message and go to fold phase
+									logAndPublish.write("Sending a fold message", true, false);
+									MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_FOLD, (long)(orig_ante));
+									this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));	
+									this.gamePlayState.setPlayState(GamePlayState.FOLD);
+								}
+							}
+							else
+							{
+								/* log this incorrect msg to the log file */
+								logAndPublish.write("Ignoring invalid gameplay message", true, false);
+							}
+						}
+						else if (this.gamePlayState.getPlayState() == GamePlayState.GET_TURN)
+						{
+							if (svrPlayMsg.getGamePlayResponse() == MessageParser.GAME_PLAY_RESPONSE_GET_TURN_ACK)
+							{
+								int orig_ante = svrPlayMsg.getAnte();
+								this.bankAmount = svrPlayMsg.getBankAmount();
+								/* display server msg */
+								PrintGamePlayMessage(sr);
+					            logAndPublish.write("Do you wish to bet, check or fold?", false, true);
+					            logAndPublish.write("To bet, you may only bet the original ante amount.", false, true);
+								/* loop to handle user command line input */
+								command = UserSelection("Enter 1 to bet, 2 to check, and 3 to fold.", 1, 3);
+								/* handle user selection */
+								if (command == 1) 
+								{								
+									if ((orig_ante) > bankAmount)
+									{
+										logAndPublish.write("You do not have enough money to bet, checking.", false, true);
+										logAndPublish.write("Sending Get River Card message", true, false);
+										/* send GET_TURN message */
+										MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_GET_RIVER, (long)0);
+								        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));						
+										this.gamePlayState.setPlayState(GamePlayState.GET_RIVER);
+									} 
+									else
+									{				
+										/* send GET_RIVER message */
+										logAndPublish.write("Sending Get River Card message", true, false);
+										/* send GET_TURN message */
+										MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_GET_RIVER, (long)orig_ante);
+								        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));						
+										this.gamePlayState.setPlayState(GamePlayState.GET_RIVER);
+										}
+									}
+								else if (command == 2) 
+								{	
+									logAndPublish.write("Sending Get River Card message", true, false);
+									/* send GET_TURN message */
+									MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_GET_RIVER, (long)0);
+							        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));						
+									this.gamePlayState.setPlayState(GamePlayState.GET_RIVER);
+								}	
+								else
+								{
+									// send fold message and go to fold phase
+									logAndPublish.write("Sending a fold message", true, false);
+									MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_FOLD, (long)(orig_ante));
+									this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));	
+									this.gamePlayState.setPlayState(GamePlayState.FOLD);
+								}
+							}
+							else if (svrPlayMsg.getGamePlayResponse() == MessageParser.GAME_PLAY_RESPONSE_INVALID_FLOP_BET)
+							{
+								int orig_ante = svrPlayMsg.getAnte();
+								this.bankAmount = svrPlayMsg.getBankAmount();
+								/* display server msg */
+								PrintGamePlayMessage(sr);
+								logAndPublish.write("ERROR: Invalid Flop Bet.", false, true);
+					            logAndPublish.write("Do you wish to bet, check or fold?", false, true);
+					            logAndPublish.write("To bet, you may only bet the original ante amount.", false, true);
+								/* loop to handle user command line input */
+								command = UserSelection("Enter 1 to bet, 2 to check, and 3 to fold.", 1, 3);
+								/* handle user selection */
+								if (command == 1) 
+								{								
+									if ((orig_ante) > bankAmount)
+									{
+										logAndPublish.write("You do not have enough money to bet, checking.", false, true);
+										logAndPublish.write("Sending Get Turn Card message", true, false);
+										/* send GET_TURN message */
+										MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_GET_TURN, (long)0);
+								        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));						
+										this.gamePlayState.setPlayState(GamePlayState.GET_TURN);
+									} 
+									else
+									{				
+										/* send GET_TURN message */
+										logAndPublish.write("Sending Get Turn Card message", true, false);
+										/* send GET_TURN message */
+										MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_GET_TURN, (long)orig_ante);
+								        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));						
+										this.gamePlayState.setPlayState(GamePlayState.GET_TURN);
+										}
+									}
+								else if (command == 2) 
+								{	
+									logAndPublish.write("Sending Get Turn Card message", true, false);
+									/* send GET_TURN message */
+									MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_GET_TURN, (long)0);
+							        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));						
+									this.gamePlayState.setPlayState(GamePlayState.GET_TURN);
+								}	
+								else
+								{
+									// send fold message and go to fold phase
+									logAndPublish.write("Sending a fold message", true, false);
+									MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_FOLD, (long)(orig_ante));
+									this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));	
+									this.gamePlayState.setPlayState(GamePlayState.FOLD);
+								}
+							}
+							else
+							{
+								/* log this incorrect msg to the log file and ignore it */
+								logAndPublish.write("Ignoring invalid gameplay message", true, false);
+							}
+						}
+						else if (this.gamePlayState.getPlayState() == GamePlayState.GET_RIVER)
+						{
+							if (svrPlayMsg.getGamePlayResponse() == MessageParser.GAME_PLAY_RESPONSE_GET_RIVER_ACK)
+							{
+								this.bankAmount = svrPlayMsg.getBankAmount();
+								/* print server msg and see if the player wants to play again */
+								PrintGamePlayMessage(sr);
+								logAndPublish.write("Do you want to play again?", false, true);
+								command = UserSelection("Enter 1 to play again or 2 to go to the game list", 1, 2);
+								if (command == 2)
+								{
+									logAndPublish.write("Sending GameList message", true, false);
+									this.gameState.setState(GameState.GAMELIST);
+									MessageParser.ClientGetGameMessage getMsg = this.messageParser.new ClientGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME);
+									this.sendMessage(this.messageParser.CreateClientGetGameMessage(getMsg));
+									break;
+								}
+								// send the init message and change to the init phase
+								logAndPublish.write("Sending Play Game Init Message", true, false);
+			        			MessageParser.ClientPlayGameMessage playMsg = this.messageParser.new ClientPlayGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_INIT,(long)0);
+			        			this.sendMessage(this.messageParser.CreateClientPlayGameMessage(playMsg));
+			        			this.gamePlayState.setPlayState(GamePlayState.INIT);
+							}
+							else if (svrPlayMsg.getGamePlayResponse() == MessageParser.GAME_PLAY_RESPONSE_INVALID_TURN_BET)
+							{
+								int orig_ante = svrPlayMsg.getAnte();
+								this.bankAmount = svrPlayMsg.getBankAmount();
+								/* display server msg */
+								PrintGamePlayMessage(sr);
+								logAndPublish.write("ERROR: Invalid Turn Bet.", false, true);
+					            logAndPublish.write("Do you wish to bet, check or fold?", false, true);
+					            logAndPublish.write("To bet, you may only bet the original ante amount.", false, true);
+								/* loop to handle user command line input */
+								command = UserSelection("Enter 1 to bet, 2 to check, and 3 to fold.", 1, 3);
+								/* handle user selection */
+								if (command == 1) 
+								{								
+									if ((orig_ante) > bankAmount)
+									{
+										logAndPublish.write("You do not have enough money to bet, checking.", false, true);
+										logAndPublish.write("Sending Get River Card message", true, false);
+										/* send GET_TURN message */
+										MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_GET_RIVER, (long)0);
+								        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));						
+										this.gamePlayState.setPlayState(GamePlayState.GET_RIVER);
+									} 
+									else
+									{				
+										/* send GET_RIVER message */
+										logAndPublish.write("Sending Get River Card message", true, false);
+										/* send GET_TURN message */
+										MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_GET_RIVER, (long)orig_ante);
+								        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));						
+										this.gamePlayState.setPlayState(GamePlayState.GET_RIVER);
+										}
+									}
+								else if (command == 2) 
+								{	
+									logAndPublish.write("Sending Get River Card message", true, false);
+									/* send GET_TURN message */
+									MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_GET_RIVER, (long)0);
+							        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));						
+									this.gamePlayState.setPlayState(GamePlayState.GET_RIVER);
+								}	
+								else
+								{
+									// send fold message and go to fold phase
+									logAndPublish.write("Sending a fold message", true, false);
+									MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_FOLD, (long)(orig_ante));
+									this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));	
+									this.gamePlayState.setPlayState(GamePlayState.FOLD);
+								}
+							}
+							else
+							{
+								logAndPublish.write("Ignoring invalid gameplay message", true, false);
+							}
+						}
+						else if (this.gamePlayState.getPlayState() == GamePlayState.FOLD)
+						{
+							if (svrPlayMsg.getGamePlayResponse() == MessageParser.GAME_PLAY_RESPONSE_FOLD_ACK)
+							{
+								this.bankAmount = svrPlayMsg.getBankAmount();
+								/* display server msg and see if player wants to play again */
+								PrintGamePlayMessage(sr);
+								logAndPublish.write("Do you want to play again?", false, true);
+								command = UserSelection("Enter 1 to play again or 2 to go to the game list", 1, 2);
+								if (command == 2)
+								{
+									logAndPublish.write("Sending GameList message", true, false);
+									this.gameState.setState(GameState.GAMELIST);
+									MessageParser.ClientGetGameMessage getMsg = this.messageParser.new ClientGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME);
+									this.sendMessage(this.messageParser.CreateClientGetGameMessage(getMsg));
+									break;
+								}
+								// send the init message and change to the init phase
+								logAndPublish.write("Sending Play Game Init Message", true, false);
+			        			MessageParser.ClientPlayGameMessage playMsg = this.messageParser.new ClientPlayGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_INIT,(long)0);
+			        			this.sendMessage(this.messageParser.CreateClientPlayGameMessage(playMsg));
+			        			this.gamePlayState.setPlayState(GamePlayState.INIT);
+							}
+							else
+							{
+								/* log the incorrectly received message and ignore it */
+								logAndPublish.write("Ignoring invalid gameplay message", true, false);
+							}
+						}
+					}
+					else
+					{
+						/* log the incorrectly received message and ignore it */
+						logAndPublish.write("Ignoring invalid game message", true, false);
+					}
+				}
+				else
+				{
+					/* log the incorrectly received message and ignore it */
+					logAndPublish.write("Ignoring invalid type message", true, false);
+				}
+			} catch(Exception e) {
+				logAndPublish.write(e,true,false);
+				logAndPublish.write("Closing Connection", true, true);
+				this.disconnect();
+				System.exit(0);
 			}
 		}
 	}
+					
+	/**
+	 * Format and Print ServerGamePlayMessage to the screen
+	 * @param ServerResponse
+	 */
+	private void PrintGamePlayMessage (ServerResponse sr) 
+	{
+	    try
+	    {
+	        /* verify version number is correct and ignore msg if not */
+	    	if (this.messageParser.GetVersion(sr.getMessage(), sr.getSize()) != this.m_iVersion)
+	    	{
+	    		logAndPublish.write("Ignoring message with incorrect version", true, false);
+	    		return;
+	    	}
+	    	/* verify the message is a Play game message and then print to the screen */
+	        if (this.messageParser.GetTypeIndicator(sr.getMessage(), sr.getSize()) == MessageParser.TYPE_INDICATOR_GAME)
+	        {
+	        	if (this.messageParser.GetGameIndicator(sr.getMessage(), sr.getSize()) == MessageParser.GAME_INDICATOR_PLAY_GAME)
+	        	{
+	        		MessageParser.ServerPlayGameMessage msg = this.messageParser.GetServerPlayGameMessage(sr.getMessage(), sr.getSize());
+	        		// make sure this is a server play game message
+	        		if (msg.getGameIndicator() != MessageParser.GAME_INDICATOR_PLAY_GAME)
+	        		{
+	        			logAndPublish.write("Ignoring Incorrect Play Game Message for displaying", true, false);
+	        			return;
+	        		}
+	        		/* Get all the data so it can be printed to the screen */
+	        		bankAmount = msg.getBankAmount();
+	        	   	betAmount = msg.getBetAmount();
+	        	   	int ante = msg.getAnte();
+	        	   	int potSize = (int)msg.getPotSize();      	   	
+	        	   	Card pcard1 = msg.getPlayerCard1();
+	        	   	Card pcard2 = msg.getPlayerCard2();
+	        	   	Card dcard1 = msg.getDealerCard1();
+	        	   	Card dcard2 = msg.getDealerCard2();	        
+	        	   	Card fcard1 = msg.getFlopCard1();
+	        	   	Card fcard2 = msg.getFlopCard2();
+	        	   	Card fcard3 = msg.getFlopCard3();		          
+	        	   	Card tcard = msg.getTurnCard();
+	        	   	Card rcard = msg.getRiverCard();
+		          
+	        	   	/* format the winner message */
+	        	   	int winner = msg.getWinner();
+	        	   	String sWinner = "ERROR";
+	        	   	if (winner == 1)
+	        	   	{
+	        	   		sWinner = "DEALER";
+	        	   	}
+	        	   	else if (winner == 2)
+	        	   	{
+	        	   		sWinner = "PLAYER";
+	        	   	}
+	        	   	else if (winner == 3)
+	        	   	{
+	        	   		sWinner = "DRAW";
+	        	   	}
+	        	   	else if (winner == 0)
+	        	   	{
+	        	   		sWinner = "NOT_SET";
+	        	   	}
+	        	   	
+	        	   	/* format the string that will be published */
+	        	   	String message = "";
+	        	   	message += "\n";
+	        	   	message += "Your Bank Amount: " + bankAmount + "\n";
+	        	   	message += "Current Ante: " + ante + "\n";
+	        	   	message += "Current Bet Amount: " + betAmount + "\n";
+	        	   	message += "Current Pot Size: " + potSize + "\n";
+	        	   	message += "\n";
+	        	   	message += "Table Status:----------------------------------------------------------\n";
+	        	   	message += "Player Card 1: " + pcard1.toString() + "\n";
+	        	   	message += "Player Card 2: " + pcard2.toString() + "\n";
+	        	   	message += "\n";
+	        	   	message += "Dealer Card 1: " + dcard1.toString() + "\n";
+	        	   	message += "Dealer Card 2: " + dcard2.toString() + "\n";
+	        	   	message += "\n";	    	 
+	        	   	message += "Flop Card 1: " + fcard1.toString() + "\n";
+	        	   	message += "Flop Card 2: " + fcard2.toString() + "\n";
+	        	   	message += "Flop Card 3: " + fcard3.toString() + "\n";
+	        	   	message += "\n";
+	        	   	message += "Turn Card: " + tcard.toString() + "\n";
+	        	   	message += "River Card: " + rcard.toString() + "\n";
+	        	   	message += "-----------------------------------------------------------------------\n";
+	        	   	message += "Winner: " + sWinner + "\n";
+	        	
+	        	   	/* Write the message to the console */
+	        	   	logAndPublish.write(message, false, true);  
+	        	}
+	        	else
+	        	{
+	        		/* Write to log file the message being ignored */
+	        		logAndPublish.write("Ignoring invalid game message", true, false);
+	        	}
+	        }
+	        else
+	        {
+	        	/* Write to log file the message being ignored */
+	        	logAndPublish.write("Ignoring invalid type message", true, false);
+	        }
+	    } catch (Exception e) {
+	    	logAndPublish.write(e,true,false);
+	    	logAndPublish.write("Closing Connection", true, true);
+	    	this.disconnect();
+	    }
+	    
+	}
+	
 	
 	/**
 	 * GameSetState method simply informs the client which game has been set
@@ -1022,29 +889,60 @@ public class SecureClientController implements Runnable {
 	 */
 	private void GameSetState() throws IOException 
 	{
-
         /* get server response */
         ServerResponse sr = this.receiveMessage();
-		
-        /* verify type as SET */
-        if (this.messageParser.GetTypeIndicator(sr.getMessage(), sr.getSize()).isEqual(TypeIndicator.SET)) 
+        /* verify the message has the correct version number */
+        if (this.messageParser.GetVersion(sr.getMessage(), sr.getSize()) != this.m_iVersion)
         {
-        	MessageParser.ServerGetGameMessage msg = this.messageParser.GetServerGetGameMessage(sr.getMessage(), sr.getSize());
-    		
-        	/* Log and Publish */
-    		logAndPublish(msg.toString(), false, true);  
+        	/* Ignore it if the message has the wrong version */
+        	logAndPublish.write("Ignoring message with an incorrect Version", true, false);
+        	return;
+        }   
+		
+        /* verify type as SET GAME */
+        if (this.messageParser.GetTypeIndicator(sr.getMessage(), sr.getSize()) == MessageParser.TYPE_INDICATOR_GAME)
+        {
+        	if (this.messageParser.GetGameIndicator(sr.getMessage(), sr.getSize()) == MessageParser.GAME_INDICATOR_SET_GAME)
+        	{
+        		/* Get the server message */
+        		MessageParser.ServerSetGameMessage msg = this.messageParser.GetServerSetGameMessage(sr.getMessage(), sr.getSize());
+        		/* Perform a state change depending upon the server response */
+        		if (msg.getGameTypeResponse() == MessageParser.GAME_TYPE_RESPONSE_ACK)
+        		{
+        			// got a valid response
+        			// Send the game play init message and switch to the game play state
+        			logAndPublish.write("Sending Play Game Init Message", true, false);
+        			MessageParser.ClientPlayGameMessage playMsg = this.messageParser.new ClientPlayGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_INIT,(long)0);
+        			this.sendMessage(this.messageParser.CreateClientPlayGameMessage(playMsg));
+        			this.gameState.setState(GameState.GAMEPLAY);
+        			this.gamePlayState.setPlayState(GamePlayState.INIT);
+        		}
+        		else if (msg.getGameTypeCode() == MessageParser.GAME_TYPE_RESPONSE_INVALID)
+        		{
+        			// need to resend the get games message and transition to games list state
+        			MessageParser.ClientGetGameMessage oMsg1 = this.messageParser.new ClientGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME);
+        			this.sendMessage(this.messageParser.CreateClientGetGameMessage(oMsg1));
+        			this.gameState.setState(GameState.GAMELIST); 
+        		}
+        		else
+        		{
+        			/* Ignore invalid message */
+        			logAndPublish.write("Ignoring invalid Server Set Game Message", true, false);
+        		}
+        	}
+        	else
+        	{
+        		/* Ignore invalid message */
+    			logAndPublish.write("Ignoring invalid Server Game Message", true, false);
+        	}
         }
         else
         {
-           	//TODO: ADD ERROR HANDLING AND STATE CHANGES USING SERVER RESPONSE//
+        	/* Ignore invalid message */
+			logAndPublish.write("Ignoring invalid Server Type Message", true, false);
         }
-            
-        //TODO: ADD ERROR HANDLING AND STATE CHANGES USING SERVER RESPONSE//
-        
-		/* transition to closing state */
-		this.gameState.setState(State.GAMEPLAY);
-		
 	}
+	
 	/**
 	 * GameListState method enables the user to select which game they 
 	 * would like to play or to exit, disconnect and close the client application.
@@ -1058,66 +956,58 @@ public class SecureClientController implements Runnable {
 		
         /* get server response */
         ServerResponse sr = this.receiveMessage();
-		
-        /* verify type as LIST */
-        if (this.messageParser.GetTypeIndicator(sr.getMessage(), sr.getSize()).isEqual(TypeIndicator.LIST)) 
+        /* verify the version of the message is correct and ignore if not */
+        if (this.messageParser.GetVersion(sr.getMessage(), sr.getSize()) != this.m_iVersion)
         {
-        	MessageParser.ServerGetGameMessage msg = this.messageParser.GetServerGetGameMessage(sr.getMessage(), sr.getSize());
-
-    		/* Log and Publish */
-    		logAndPublish(msg.toString(), false, false);          	
+        	logAndPublish.write("Ignoring message with an incorrect Version", true, false);
+        	return;
         }
+        /* verify the message received is a Get Game Message */
+        if (this.messageParser.GetTypeIndicator(sr.getMessage(), sr.getSize()) == MessageParser.TYPE_INDICATOR_GAME)
+        {
+        	if (this.messageParser.GetGameIndicator(sr.getMessage(), sr.getSize()) == MessageParser.GAME_INDICATOR_GET_GAME)
+        	{
+        		/* Get the server message and transition appropriately depending on the server response */
+        		MessageParser.ServerGetGameMessage svrMsg = this.messageParser.GetServerGetGameMessage(sr.getMessage(), sr.getSize());
+        		ArrayList<Integer> gameList = svrMsg.getGameTypeCodeList();
+        		/* Log and Publish */
+        		logAndPublish.write(svrMsg.toString(), false, false);   
+        		logAndPublish.write("Game Options:", false, true);
+        		command = UserSelection("1: Play Texas Hold'em\n2: Close Connection", 1, 2);
+		
+        		/* handle user selection */
+        		if (command == 1)
+        		{
+        			/* inform server that user has selected Texas Hold'em */
+        			logAndPublish.write("Sending Game Selection Message", true, false);
+        			MessageParser.ClientSetGameMessage msg = this.messageParser.new ClientSetGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_SET_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM);  
+        			this.sendMessage(this.messageParser.CreateClientSetGameMessage(msg));
+        			this.gameState.setState(GameState.GAMESET);
+        		} 
+        		else 
+        		{
+        			// send a close connection message and close the connection
+        			logAndPublish.write("Sending Close Connection Message", true, false);
+        			MessageParser.ConnectionMessage msg = this.messageParser.new ConnectionMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_CLOSE_CONNECTION, MessageParser.CONNECTION_INDICATOR_CLOSE_CONNECTION);
+        			this.sendMessage(this.messageParser.CreateConnectionMessage(msg));
+        			this.gameState.setState(GameState.CLOSED);
+        		}
+        	}
+        	else
+        	{
+        		/* Ignore the invalid message for this state */
+        		logAndPublish.write("Ignoring wrong Game Message", true, false);
+        	}
+		}
         else
         {
-        	//TODO: ADD ERROR HANDLING AND STATE CHANGES USING SERVER RESPONSE//
-        }
-        
-        //TODO: ADD ERROR HANDLING AND STATE CHANGES USING SERVER RESPONSE//
-
-        //TODO: ADD DYNAMIC MENU USING SERVER RESPONSE//
-        /* Hard Coded Menu */
-		System.out.println("1: Play Texas Hold'em");
-		System.out.println("2: Close Connection");		
-		
-		/* loop to handle user command line input */
-		reset:
-		while(true) {
-			try {
-				command = Integer.parseInt(br.readLine());
-			} catch (NumberFormatException e) {
-			
-	    		/* Log and Publish */
-	    		logAndPublish(e, true, false);
-	    		logAndPublish("Invalid Selection.  Try again.", false, true);
-				continue reset;
-
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-			/* command contains a valid number */
-			if ((command ==1) || (command == 2)) 
-				break;
-		}
-		
-		/* handle user selection */
-		if (command == 1){
-		
-			/* inform server that user has selected Texas Hold'em */
-			MessageParser.ClientSetGameMessage msg = this.messageParser.new ClientSetGameMessage(1, TypeIndicator.SET, GameIndicator.SET_GAME, GameTypeCode.TEXAS_HOLDEM);  
-	        this.sendMessage(this.messageParser.CreateClientSetGameMessage(msg));
-			this.gameState.setState(State.GAMESET);
-
-		} else {
-			
-			/* transition to closing state */
-			this.gameState.setState(State.CLOSING);
-		}
-		
+        	/* Ignore the invalid message for this state */
+        	logAndPublish.write("Ignoring wrong Type Indicator", true, false);
+        }		
 	} 
 	/**
-	 * GameAuthenticateState method performs a version authentication with the server
+	 * GameAuthenticateState client has sent the version message and is waiting for an acknowledgment
+	 * If the client gets acknowledged then it will request to get the game list
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
@@ -1125,36 +1015,81 @@ public class SecureClientController implements Runnable {
 	{
 
 		/* Log and Publish */
-		logAndPublish("Sending Version Message", true, true);
-        
-        MessageParser.VersionMessage oMsg1 = this.messageParser.new VersionMessage(1, TypeIndicator.VERSION, VersionIndicator.CLIENT_VERSION, (short)0, (long)0);
-        this.sendMessage(this.messageParser.CreateVersionMessage(oMsg1));
+		logAndPublish.write("Entered Connection Negotiation State", true, false);
         
         /* get server response */
         ServerResponse sr = this.receiveMessage();
         
 		/* verify type as VERSION */
-        if (this.messageParser.GetTypeIndicator(sr.getMessage(), sr.getSize()).isEqual(TypeIndicator.VERSION)) 
+        if (this.messageParser.GetTypeIndicator(sr.getMessage(), sr.getSize()) == MessageParser.TYPE_INDICATOR_VERSION) 
         {
+        	/* Get the message response from the server and change state depending upon the response */
         	MessageParser.VersionMessage iMsg = this.messageParser.GetVersionMessage(sr.getMessage(), sr.getSize());
-
-    		/* Log and Publish */
-    		logAndPublish(iMsg.toString(), false, true);        	
+        	/* server has validated the client */
+        	if (iMsg.getVersionType() == MessageParser.VERSION_INDICATOR_VERSION_ACK)
+        	{
+        		/* make sure the version number of the message is the same */
+        		if (iMsg.getVersion() == this.m_iVersion)
+        		{
+        			logAndPublish.write("Successfully Authenticated with the server\n", true, true);
+        			this.bankAmount = iMsg.getBankAmount();
+        			/* Log and Publish */
+        			logAndPublish.write(iMsg.toString(), false, false); 
+        			// get the list of games and transition to the game listed state
+        			MessageParser.ClientGetGameMessage oMsg1 = this.messageParser.new ClientGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME);
+        			this.sendMessage(this.messageParser.CreateClientGetGameMessage(oMsg1));
+        			this.gameState.setState(GameState.GAMELIST); 
+        		}
+        		else
+        		{
+        			/* version number was different, ignore the message */
+        			logAndPublish.write("Invalid message from the server, incorrect version number", true, true);
+        		}
+        	}
+        	else if (iMsg.getVersionType() == MessageParser.VERSION_INDICATOR_VERSION_UPGRADE)
+        	{
+        		/* An upgrade is required, need to close the connection */
+        		logAndPublish.write("Upgrade Required", true, true);
+        		this.gameState.setState(GameState.CLOSED);
+        	}
+        	else if (iMsg.getVersionType() == MessageParser.VERSION_INDICATOR_VERSION_REQUIREMENT)
+        	{
+        		/* Version message needs to be sent, transition back to listening state to send it */
+        		logAndPublish.write("Version Required message received from the server", true, false);
+        		this.gameState.setState(GameState.LISTENING);
+        	}
+        	else
+        	{
+        		/* Ignore invalid message received */
+        		logAndPublish.write("Invalid version message received from the server", true, false);
+        	}    		       	
         }
         else
         {
-        	//TODO: ADD ERROR HANDLING AND STATE CHANGES USING SERVER RESPONSE//
+        	/* Ignore invalid message received */
+        	logAndPublish.write("Invalid message received from the server", true, false);
         }
+	}	
+	
+	/**
+	 * GameListeningState() client has just connected and needs to send the Client Version Message
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
+	private void GameListeningState() throws IOException, InterruptedException 
+	{
 
-        //TODO: ADD ERROR HANDLING AND STATE CHANGES USING SERVER RESPONSE//
+		/* Log and Publish */
+		logAndPublish.write("Sending Version Message", true, true);
         
-        /* request game list */
-		MessageParser.ClientGetGameMessage oMsg2 = this.messageParser.new ClientGetGameMessage(1, TypeIndicator.LIST, GameIndicator.GET_GAME);   
-        this.sendMessage(this.messageParser.CreateClientGetGameMessage(oMsg2));
-
-        /* set new state */
-        this.gameState.setState(State.GAMELIST);
-
+		/*
+		 * Send the client version message and then transition to the authentication state
+		 */
+        MessageParser.VersionMessage oMsg1 = this.messageParser.new VersionMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_VERSION, MessageParser.VERSION_INDICATOR_CLIENT_VERSION, (short)this.m_iMinorVersion, (long)0);
+        this.sendMessage(this.messageParser.CreateVersionMessage(oMsg1));
+        
+        this.gameState.setState(GameState.AUTHENTICATE);
+        logAndPublish.write("Changing State to Connection Negotiation", true, false);
 	}	
     
 	/**
@@ -1252,7 +1187,7 @@ public class SecureClientController implements Runnable {
     {
         
 		/* Log and Publish */
-		logAndPublish("Open secure connection to " + hostName + ".", true, true);    	
+		logAndPublish.write("Open secure connection to " + hostName + ".", true, true);    	
     	
     	if(!connected)
         {
@@ -1269,9 +1204,7 @@ public class SecureClientController implements Runnable {
    		 	outputStream = new ObjectOutputStream(oOutputStream); 
    		 	inputstream = new ObjectInputStream(oInputStream); 
    		 	this.connected = true;
-   		 	
-   			/* Log and Publish */
-   			logAndPublish("'connect' status: " + connected, false, false);   		 	
+    		 	
    		 	
    		 	/* Spawn thread with 'this' instance.  Initiate reading from server. */
    		 	Thread t = new Thread(this);
@@ -1291,11 +1224,10 @@ public class SecureClientController implements Runnable {
     {
         
 		/* Log and Publish */
-		logAndPublish("Attempting to find server using ICMP and/or TCP.", true, true); 
+		logAndPublish.write("Attempting to find server using ICMP and/or TCP.", true, true); 
     	
     	if(!connected)
         { 	
-    		System.out.println("PROBLEM2");
     		
     		/* set variables */
         	this.port = port;
@@ -1304,7 +1236,7 @@ public class SecureClientController implements Runnable {
         	EchoFinder ef = new EchoFinder(ssf, port);
 	        socket = ef.findAGMPServer(port);
 	        
-	        /* get input and output screens */ 
+	        /* get input and output streams if the connection was found*/ 
 	        if (socket != null) {
 		        oInputStream = socket.getInputStream();
 		        oOutputStream = socket.getOutputStream();
@@ -1313,7 +1245,7 @@ public class SecureClientController implements Runnable {
 				connected = true;
 
 	  			/* Log and Publish */
-	   			logAndPublish("'findConnect' status: " + connected, false, true);   		 	
+	   			logAndPublish.write("'findConnect' status: " + connected, false, true);   		 	
 				
 				/* Spawn thread with 'this' instance.  Initiate reading from server. */
 		        Thread t = new Thread(this);
@@ -1322,7 +1254,51 @@ public class SecureClientController implements Runnable {
         }
     }
     
+	/**
+	 * UserSelection method to capture user input from command line to questions
+	 * 
+	 * @param choice String summarizing the choice to be made
+	 * @param greaterThan Integer of a value to be greater than as first number in the choice sequence
+	 * @param lessThan Integer of a value to be less than and equal to the last number in the choice sequence
+	 * @return
+	 */
+	public int UserSelection(String choice, int greaterThan, int lessThan)
+	{
+		int command = -1;
+		
+		reset:
+		while(true) {
+			try {
+				logAndPublish.write(choice, false, true);
+				command = Integer.parseInt(br.readLine());
+			} catch (NumberFormatException e) {
+			
+	    		/* Log and Publish */
+	    		logAndPublish.write(e, true, false);
+	    		logAndPublish.write("Invalid Selection.  Try again.", false, true);
+				continue reset;
 
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				logAndPublish.write(e, true, false);
+				logAndPublish.write("Closing Connection", true, true);
+				this.disconnect();
+			}
+			
+			/* command contains a valid number */
+			if ((command >= greaterThan) && (command <=lessThan))
+				break;
+			else 
+			{
+				logAndPublish.write("Invalid Selection.  Try again.", false, true);
+				continue reset;
+			}
+		}	
+		
+		return command;
+	
+	}    
+    
     /**
      * receiveMessage method reads server response from ObjectInputStream 
      * @return 
@@ -1330,10 +1306,12 @@ public class SecureClientController implements Runnable {
      */
     public ServerResponse receiveMessage () throws IOException
     {
+    	/* get the message from the server */
 		byte iByteCount = inputstream.readByte();
 		byte [] inputBuffer = new byte[iByteCount];
 		inputstream.readFully(inputBuffer);   
 		
+		/* store it into the Server Response object */
 		ServerResponse sr = new ServerResponse(inputBuffer, (int)iByteCount);
 		return sr;
     }    
@@ -1345,6 +1323,7 @@ public class SecureClientController implements Runnable {
      */
     public void sendMessage (byte[] msg) throws IOException
     {
+    	/* write the response to the server */
 		outputStream.writeByte((byte)msg.length);
         outputStream.write(msg); 
         outputStream.flush();
@@ -1353,74 +1332,26 @@ public class SecureClientController implements Runnable {
     /**
      * Disconnect this client from the server
      */
-    public void disconnect() {
+    public void disconnect() 
+    {
     	
     	/* Disconnect from server */
 		if(socket != null && connected)
         {
-          try {
-			this.socket.close();
-          }catch(IOException ioe) {
+			try {
+				this.socket.close();
+			}catch(IOException ioe) {
         	  
-      		/* Log and Publish */
-      		logAndPublish(ioe, true, true); 
-          }
-          finally {
-			this.connected = false;
-          }
+				/* Log and Publish */
+				logAndPublish.write(ioe, true, false); 
+			}
+			finally {
+				this.connected = false;
+			}
         }
-    }      
-    
-    /**
-     * logAndPublish method to write out to console and/or logger.
-     * @param msg Message to publish
-     * @param log Write to logger boolean
-     * @param console Write to console boolean
-     */
-    public void logAndPublish (String msg, boolean log, boolean console) {
-    	if (console)
-    		System.out.println(msg);
-    	
-    	if (log)
-    		this.fLogger.info(msg);
-    	
-    }   
-    
-    /**
-     * logAndPublish method to write out to console and/or logger.
-     * @param msg Exception to publish
-     * @param log Write to logger boolean
-     * @param console Write to console boolean
-     */
-    public void logAndPublish (Exception msg, boolean log, boolean console) {
-    	if (console)
-    		msg.printStackTrace();
-    	
-    	if (log)
-    		this.fLogger.info(msg.getMessage());
-    }    
-    
-
-	public GameState getGameState() {
-		return gameState;
-	}
-	public void setGameState(GameState gameState) {
-		this.gameState = gameState;
-	}
-	public int getM_iVersion() {
-		return m_iVersion;
-	}
-	public void setM_iVersion(int m_iVersion) {
-		this.m_iVersion = m_iVersion;
-	}
-	public short getM_iMinorVersion() {
-		return m_iMinorVersion;
-	}
-	public void setM_iMinorVersion(short m_iMinorVersion) {
-		this.m_iMinorVersion = m_iMinorVersion;
-	}
-	
+    }
 }
+
 
 /**
  * ServerResponse class used to store a response message and length from an AGMP Server
@@ -1477,9 +1408,6 @@ class ServerResponse {
 	{
 		return message;
 	}
-    
-
-		
 }    
 
 	

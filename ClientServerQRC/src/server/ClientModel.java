@@ -36,14 +36,6 @@ import javax.net.ssl.SSLSocket;
 import server.card_game.texas_holdem.TexasHoldemModel;
 import java.util.logging.*;
 import common.*;
-import common.GameState.State;
-import common.MessageParser.ChallengeIndicator;
-import common.MessageParser.ConnectionIndicator;
-import common.MessageParser.GameIndicator;
-import common.MessageParser.GameTypeCode;
-import common.MessageParser.GameTypeResponse;
-import common.MessageParser.TypeIndicator;
-import common.MessageParser.VersionIndicator;
 
 /**
  * ClientModel is spawned, one per client to manage the socket connection
@@ -55,528 +47,219 @@ import common.MessageParser.VersionIndicator;
 public class ClientModel extends Observable implements Runnable {
 
 	/** For reading input from socket */
-    private InputStream oInputStream;
-    /** For writing output to socket. */
-    private OutputStream oOutputStream;
-    ObjectOutputStream outputStream;
-    ObjectInputStream inputstream;
-    /** Socket object representing client connection */
+   private InputStream oInputStream;
+   /** For writing output to socket. */
+   private OutputStream oOutputStream;
+   ObjectOutputStream outputStream;
+   ObjectInputStream inputstream;
+   /** Socket object representing client connection */
 
-    private SSLSocket socket;
-    private boolean running;
-    private GameState gameState;
-    private boolean m_bSendClose = false;
+   private SSLSocket socket;
+   private boolean running;
+   private GameState gameState;
     
-    public String uniqueID;
-    private final Logger fLogger;
-    private XmlParser xmlParser;
-    private MessageParser messageParser = null;
-    private TexasHoldemModel oTHModel = null;
-    private int m_iVersion = -1;
-    private short m_iMinorVersion = -1;
-    private long m_lClientBankAmount = -1;
-    private long m_lOpTimer = -1;
+   public String uniqueID;
+   private final Logger fLogger;
+   private XmlParser xmlParser;
+   private MessageParser messageParser = null;
+   private TexasHoldemModel oTHModel = null;
+   private int m_iVersion = -1;
+   private short m_iMinorVersion = -1;
+   private long m_lClientBankAmount = -1;
+   private long m_lVersionOpTimer = -1;
+   private long m_lGameOpTimer = -1;
 
-    private TimeoutTimer timeoutTimer;
-    private boolean bSentChallenge = false;
-    private boolean m_bGotGames = false;
-    private boolean m_bSetGames = false;
-    private GameTypeCode m_eGameTypeCode = GameTypeCode.NOT_SET;
-    private List<MessageParser.GameTypeCode> oGameTypeList = null;
+   private TimeoutTimer timeoutTimer;
+   private int m_iGameTypeCode = MessageParser.NOT_SET;
+   private ArrayList<Integer> oGameTypeList = null;
     
-    public ClientModel(SSLSocket socket, XmlParser xmlParser, Logger fLogger) throws IOException {
-        this.socket = socket;
-        this.uniqueID = "" + socket.getInetAddress() + ":" + socket.getPort();
-        this.fLogger = fLogger;
-        this.xmlParser = xmlParser;
-        this.gameState = new GameState();
-        this.gameState.setState(State.AUTHENTICATE);
-        this.messageParser = new MessageParser();
-        this.m_iVersion = Integer.parseInt(this.xmlParser.getServerTagValue("VERSION"));
-        this.m_iMinorVersion = (short)Integer.parseInt(this.xmlParser.getServerTagValue("MINOR_VERSION"));
-        this.m_lClientBankAmount = Integer.parseInt(this.xmlParser.getServerTagValue("CLIENT_BANK_AMOUNT"));
-        this.m_lOpTimer = Integer.parseInt((this.xmlParser.getServerTagValue("OPERATION_TIMER")));
-        this.timeoutTimer = new TimeoutTimer(this);
-        this.oTHModel = new TexasHoldemModel(this);
-        this.m_bGotGames = false;
-        this.m_bSetGames = false;
-        this.m_eGameTypeCode = GameTypeCode.NOT_SET;
-        // instantiate the server game list
-        this.oGameTypeList = new ArrayList<MessageParser.GameTypeCode>();
-        for (MessageParser.GameTypeCode typecode : MessageParser.GameTypeCode.values())
-        {
-        	oGameTypeList.add(typecode);
-        }
-        this.fLogger.info(this.uniqueID +": Successfully connected");
-        running = false;
-        //get I/O from socket
-        try {
-            this.oInputStream = socket.getInputStream();
-            this.oOutputStream = socket.getOutputStream();
-            outputStream = new ObjectOutputStream(oOutputStream);
-            inputstream = new ObjectInputStream(oInputStream);
-            running = true; //set status
-        }
-        catch (IOException ioe) {
-            throw ioe;
-        }
-    }
+   public ClientModel(SSLSocket socket, XmlParser xmlParser, Logger fLogger) throws IOException {
+      this.socket = socket;
+      this.uniqueID = "" + socket.getInetAddress() + ":" + socket.getPort();
+      this.fLogger = fLogger;
+      this.xmlParser = xmlParser;
+      this.gameState = new GameState();
+      this.gameState.setState(GameState.LISTENING);
+      this.messageParser = new MessageParser();
+      this.m_iVersion = Integer.parseInt(this.xmlParser.getServerTagValue("VERSION"));
+      this.m_iMinorVersion = (short)Integer.parseInt(this.xmlParser.getServerTagValue("MINOR_VERSION"));
+      this.m_lClientBankAmount = (long)Integer.parseInt(this.xmlParser.getServerTagValue("CLIENT_BANK_AMOUNT"));
+      this.m_lVersionOpTimer = Integer.parseInt((this.xmlParser.getServerTagValue("VERSION_OPERATION_TIMER")));
+      this.m_lGameOpTimer = Integer.parseInt((this.xmlParser.getServerTagValue("GAME_OPERATION_TIMER")));
+      this.timeoutTimer = new TimeoutTimer(this);
+      this.oTHModel = new TexasHoldemModel(this);
+      this.m_iGameTypeCode = MessageParser.NOT_SET;
+      // instantiate the server game list
+      this.oGameTypeList = new ArrayList<Integer>();
+      // store the current typecodes
+      oGameTypeList.add(MessageParser.GAME_TYPE_TEXAS_HOLDEM);
+      this.fLogger.info(this.uniqueID +": Successfully connected");
+      running = false;
+      //get I/O from socket
+      try {
+         this.oInputStream = socket.getInputStream();
+         this.oOutputStream = socket.getOutputStream();
+         outputStream = new ObjectOutputStream(oOutputStream);
+         inputstream = new ObjectInputStream(oInputStream);
+         running = true; //set status
+      }
+      catch (IOException ioe) {
+         throw ioe;
+      }
+   }
     
-    /* This functions are getters to be used by the server game models */
-    public Logger getLogger()
-    {
-    	return fLogger;
-    }
-    public XmlParser getXmlParser()
-    {
-    	return xmlParser;
-    }
-    public MessageParser getMessageParser()
-    {
-    	return messageParser;
-    }
-    public int getVersion()
-    {
-    	return m_iVersion;
-    }
-    public long getClientBankAmount()
-    {
-    	return m_lClientBankAmount;
-    }
+   /* This functions are getters to be used by the server game models */
+   public Logger getLogger()
+   {
+      return fLogger;
+   }
+   public XmlParser getXmlParser()
+   {
+      return xmlParser;
+   }
+   public MessageParser getMessageParser()
+   {
+      return messageParser;
+   }
+   public int getVersion()
+   {
+      return m_iVersion;
+   }
+   public long getClientBankAmount()
+   {
+      return m_lClientBankAmount;
+   }
 	
     /** 
      *Stops clients connection
      */
+   public void stopClient()
+   {
+      try {
+         this.fLogger.info(this.uniqueID + ": Stopping Client");
+         this.gameState.setState(GameState.CLOSED);
+         this.socket.close();
+      }catch(IOException ioe){ };
+   }
 
-    public void stopClient()
-    {
-        try {
-        	this.fLogger.info(this.uniqueID + ": Stopping Client");
-        this.gameState.setState(State.CLOSED);
-		this.socket.close();
-        }catch(IOException ioe){ };
-    }
-    public void sendMessage (byte[] msg) throws IOException
-    {
-		outputStream.writeByte((byte)msg.length);
-        outputStream.write(msg); 
-        outputStream.flush();
-    }
-    public void run() {
-        //byte[] inputBuffer = new byte[100];
-        //int iByteCount = -1;
-        
-        //start listening message from client//
-        try 
-        {
-        	this.timeoutTimer.schedule(this.m_lOpTimer);
-        	
-        	
-        	while (running && !this.socket.isClosed() && this.gameState.getState() != State.CLOSED && !this.m_bSendClose ) // && (iByteCount = oInputStream.read(inputBuffer)) > 0)
-        	{
+   public void run() 
+   {
+      try
+      {
+         // force the client to send version info
+         this.timeoutTimer.schedule(this.m_lVersionOpTimer);
+         while (running && !this.socket.isClosed() && this.gameState.getState() != GameState.CLOSED)
+         {
+            // get the input from the client
+            byte iByteCount = inputstream.readByte();
+            byte [] inputBuffer = new byte[iByteCount];
+            inputstream.readFully(inputBuffer); 
         		
-        		//ByteArrayInputStream baos = new ByteArrayInputStream(oInputStream);
-        		//int bytesWritten = 0;
-//        		while(true){
-//        			iByteCount = oInputStream.read(inputBuffer);
-//        			//baos.write(inputBuffer, bytesWritten, iByteCount);
-//        			baos.write(inputBuffer);
-//        			//bytesWritten += iByteCount;
-//        			
-//        			if (this.messageParser.GetVersion(baos.toByteArray(), baos.size()) == this.m_iVersion)
-//        			{
-//        				break;
-//        			}		
-//        		}
-        		 
-//        		byte iByteCount = inputstream.readByte();
-        		byte iByteCount=inputstream.readByte();
-        		byte [] inputBuffer=new byte[iByteCount] ;
-        		inputstream.readFully(inputBuffer);
-        		if (this.gameState.getState().isEqual(State.AUTHENTICATE))
-        		{
-        			System.out.println("entering authenticate");
-        			AuthenticateState(inputBuffer, iByteCount);
-        		}
-        		else if (this.gameState.getState().isEqual(State.GAMELIST))
-        		{
-        			System.out.println("entering list");
-        			GameListState(inputBuffer, iByteCount);
-        		}
-        		else if (this.gameState.getState().isEqual(State.GAMESET))
-        		{
-        			System.out.println("entering set");
-        			GameSetState(inputBuffer, iByteCount);
-        		}        		
-        		
-        		else if (this.gameState.getState().isEqual(State.GAMEPLAY))
-        		{
-        			System.out.println("entering play");
-        			GamePlayState(inputBuffer, iByteCount);
-        		}
-        		else if (this.gameState.getState().isEqual(State.CLOSING))
-        		{	
-        			System.out.println("entering closing");
-        			ClosingState(inputBuffer, iByteCount);
-        		}
-        		System.out.println(running);
-        		System.out.println(this.gameState.getState());
-        		System.out.println(this.m_bSendClose);
-        	}
-        	
-        	
-        	if (this.gameState.getState() == State.CLOSING)
-    		{
-    			SendCloseAck();
-    		}
-        	running = false;
-        }
-        catch (IOException ioe) {
-        	running = false;
-        	this.fLogger.info(this.uniqueID + ": " + ioe);
-        	ioe.printStackTrace();
-        }
+            if (this.gameState.getState() == GameState.LISTENING)
+            {
+               // need to validate the client
+               ListeningState(inputBuffer, iByteCount);
+            }
+            else if (this.gameState.getState() == GameState.AUTHENTICATE)
+            {
+               // Connection Negotiation state
+               // Client has authenticated and needs to get the games
+               AuthenticateState(inputBuffer, iByteCount);
+            }
+            else if (this.gameState.getState() == GameState.GAMELIST)
+            {
+               // Game List state
+               // Client has gotten the games and needs to select one
+               GameListState(inputBuffer, iByteCount);
+            }
+            else if (this.gameState.getState() == GameState.GAMESET)
+            {
+               // Game Set state
+               GameSetState(inputBuffer, iByteCount);
+            }        		
+            else if (this.gameState.getState() == GameState.GAMEPLAY)
+            {
+               // Game Play state
+               GamePlayState(inputBuffer, iByteCount);
+            }
+         }
+         running = false;
+      }
+      catch (IOException ioe) {
+         running = false;
+         this.fLogger.info(this.uniqueID + ": " + ioe);
+      }
         
-        //it's time to close the socket
-        if (!this.socket.isClosed())
-        {
-        	try {
-        		this.socket.close();
-        		this.fLogger.info(this.uniqueID + ": Closing Connection.");
-        	} catch (IOException ioe) { }
-        }
-        
-        //notify the observers for cleanup etc.
-        this.setChanged();              //inherit from Observable
-        this.notifyObservers(this);     //inherit from Observable
-    }
-    
-    private void SendCloseAck()
-    {
-    	MessageParser.ConnectionMessage msg = this.messageParser.new ConnectionMessage(this.m_iVersion, TypeIndicator.CLOSE_CONNECTION, ConnectionIndicator.CLOSE_CONNECTION_ACK);
-    	try	{
-    		this.timeoutTimer.stop();
-			oOutputStream.write(this.messageParser.CreateConnectionMessage(msg));
-			this.gameState.setState(State.CLOSED);
-			this.fLogger.info(this.uniqueID + ": Sent Close Ack");
-		} catch (Exception e) {
-			e.printStackTrace();
-			this.timeoutTimer.stop();
-			this.gameState.setState(State.CLOSED);
-		}
-    }
-
-	private void ClosingState(byte[] inputBuffer, int iByteCount) {
-		/*
-		 * The server is now in the closing state
-		 * In order to be here it must have sent the closing message and is waiting for the ack
-		 */
-		MessageParser.ConnectionMessage msg = null;
-		// Make sure the version and identifier are correct
-		if (this.messageParser.GetVersion(inputBuffer, iByteCount) == this.m_iVersion && this.messageParser.GetTypeIndicator(inputBuffer, iByteCount) == TypeIndicator.CLOSE_CONNECTION)
+      //it's time to close the socket
+      if (!this.socket.isClosed())
+      {
+         try {
+            this.socket.close();
+            this.fLogger.info(this.uniqueID + ": Closing Connection.");
+         } catch (IOException ioe) { }
+      }
+      //notify the observers for cleanup etc.
+      this.setChanged();              //inherit from Observable
+      this.notifyObservers(this);     //inherit from Observable
+   }
+   
+   private void ListeningState(byte[] inputBuffer, int iByteCount) {
+      /*
+      *  During this state the client has to authenticate itself by giving its version to the server
+      *  If the client sends a version message the server will check to see if it is valid and reply appropriately.
+      *  The server will start the counter for the verification. If the client does not finish authentication within the 
+      *  timeout time the connection will be closed
+      */
+		if (this.messageParser.GetTypeIndicator(inputBuffer, iByteCount) == MessageParser.TYPE_INDICATOR_VERSION)
 		{
-			msg = this.messageParser.GetConnectionMessage(inputBuffer, iByteCount);
-			if (msg.getConnectionCode().isEqual(ConnectionIndicator.CLOSE_CONNECTION_ACK))
+         MessageParser.VersionMessage msg = this.messageParser.GetVersionMessage(inputBuffer, iByteCount);
+         if ((msg.getVersion() == this.m_iVersion) && (msg.getVersionType() == MessageParser.VERSION_INDICATOR_CLIENT_VERSION))
 			{
-				this.fLogger.info(this.uniqueID + ": Got Close Ack, Closing connection");
-				this.timeoutTimer.stop();
-				this.gameState.setState(State.CLOSED);
-			}
-		}
-	}
-
-	private void GamePlayState(byte[] inputBuffer, int iByteCount) {
-		// The server should never be receiving a message in this state
-		// It should be in the wait state and then transition to the game state to complete the request
-		// but then transition back once it is done
-		//this.fLogger.info(this.uniqueID + ": Error Server Caught in Game State!");
-		//this.fLogger.info(this.uniqueID + ": Trying to fix by switching to Wait State");
-		//this.gameState.setState(State.GAMELIST);	
-		if (this.messageParser.GetVersion(inputBuffer, iByteCount) != this.m_iVersion)
-		{
-			this.fLogger.info(this.uniqueID + ": has sent an invalid version number, Ignoring Msg");
-			return;
-		}	
-		if (this.messageParser.GetGameIndicator(inputBuffer, iByteCount).isEqual(GameIndicator.PLAY_GAME) && this.m_bSetGames)
-		{
-			this.gameState.setState(State.GAMEPLAY);
-			MessageParser.ClientPlayGameMessage msg = this.messageParser.GetClientPlayGameMessage(inputBuffer, iByteCount);
-			// make sure this was indeed a client get game message
-			if (!msg.getGameIndicator().isEqual(GameIndicator.PLAY_GAME))
-			{
-				// not a client message, must be a server message. Ignore
-				this.fLogger.info(this.uniqueID + ": Received Server Play Game Message, Ignoring");
-				this.gameState.setState(State.GAMEPLAY);
-				return;
-			}
-			if (!msg.getGameTypeCode().isEqual(this.m_eGameTypeCode))
-			{
-				// not a valid game type code, Ignore
-				this.fLogger.info(this.uniqueID + ": Client Play Game Message contains invalid Game Type Code, Ignoring");
-				this.gameState.setState(State.GAMEPLAY);
-				return;
-			}
-			if (this.m_eGameTypeCode.isEqual(GameTypeCode.TEXAS_HOLDEM))
-			{
-				MessageParser.ServerPlayGameMessage svrMsg = oTHModel.updateModel(msg);
-				// update client bank account
-				if (svrMsg != null)
-				{
-					this.m_lClientBankAmount = svrMsg.getBankAmount();
-					this.timeoutTimer.reschedule(m_lOpTimer);
-					try	{
-						sendMessage(this.messageParser.CreateServerPlayGameMessage(svrMsg));
-						this.gameState.setState(State.GAMEPLAY);
-					} catch (Exception e) {
-						e.printStackTrace();
-						this.timeoutTimer.stop();
-						this.gameState.setState(State.CLOSED);
-					}
-				}
-			}
-		}
-		else if (this.messageParser.GetGameIndicator(inputBuffer, iByteCount).isEqual(GameIndicator.GET_GAME))
-		{
-			this.fLogger.info(this.uniqueID + ": is exiting Game Play State and returning to Game List State");
-			this.gameState.setState(State.GAMELIST);
-			return;
-		}
-		else
-		{
-			this.fLogger.info(this.uniqueID + ": has sent an invalid Game Message, Ignoring");
-		}		
-	}
-	
-	private void GameSetState(byte[] inputBuffer, int iByteCount) {
-		// First check to make sure the version is correct
-		if (this.messageParser.GetVersion(inputBuffer, iByteCount) != this.m_iVersion)
-		{
-			this.fLogger.info(this.uniqueID + ": has sent an invalid version number, Ignoring Msg");
-			return;
-		}		
-		
-		if (this.messageParser.GetGameIndicator(inputBuffer, iByteCount).isEqual(GameIndicator.SET_GAME) & this.m_bGotGames)
-		{
-			//this.gameState.setState(State.GAMEPLAY);
-			System.out.println("version and gameindicator right");
-			MessageParser.ClientSetGameMessage msg = this.messageParser.GetClientSetGameMessage(inputBuffer, iByteCount);
-			// make sure this was indeed a client get game message
-			if (!msg.getGameIndicator().isEqual(GameIndicator.SET_GAME))
-			{
-				// not a client message, must be a server message. Ignore
-				this.fLogger.info(this.uniqueID + ": Received Server Set Game Message, Ignoring");
-				this.gameState.setState(State.GAMESET);
-				return;
-			}
-			// Check to make sure it is one of the valid Game Type codes
-			if (msg.getGameTypeCode().isEqual(GameTypeCode.TEXAS_HOLDEM))
-			{
-				// reset the game model
-				System.out.println("GameTypecode is right");
-				this.oTHModel.Reset();
-				this.m_eGameTypeCode = msg.getGameTypeCode();
-				this.gameState.setState(State.GAMEPLAY);
-			}
-			else
-			{
-				this.fLogger.info(this.uniqueID + ": Received Invalid Game Type Code");
-				this.m_bSetGames = false;
-				this.timeoutTimer.reschedule(m_lOpTimer);
-				MessageParser.ServerSetGameMessage svrMsg = this.messageParser.new ServerSetGameMessage(m_iVersion, TypeIndicator.SET, GameIndicator.SET_GAME, msg.getGameTypeCode(), GameTypeResponse.INVALID);
-				try	{
-					//oOutputStream.write(this.messageParser.CreateServerSetGameMessage(svrMsg));
-					outputStream.writeByte((byte)this.messageParser.CreateServerSetGameMessage(svrMsg).length);
-			        outputStream.write(this.messageParser.CreateServerSetGameMessage(svrMsg)); 
-			        outputStream.flush();
-					this.gameState.setState(State.GAMELIST);
-				} catch (Exception e) {
-					e.printStackTrace();
-					this.timeoutTimer.stop();
-					this.gameState.setState(State.CLOSED);
-				}
-				return;
-			}
-			this.fLogger.info(this.uniqueID + ": Received Client Set Game Message, Sending Ack");
-			this.m_bSetGames = true;
-			this.timeoutTimer.reschedule(m_lOpTimer);
-			MessageParser.ServerSetGameMessage svrMsg = this.messageParser.new ServerSetGameMessage(m_iVersion, TypeIndicator.SET, GameIndicator.SET_GAME, this.m_eGameTypeCode, GameTypeResponse.ACK);
-			byte[] outputBuffer=this.messageParser.CreateServerSetGameMessage(svrMsg);
-			try	{
-				//oOutputStream.write(this.messageParser.CreateServerSetGameMessage(svrMsg));
-				System.out.println("send setgame ack");
-				System.out.println(this.messageParser.GetTypeIndicator(outputBuffer, outputBuffer.length));
-		        sendMessage(outputBuffer);
-				this.gameState.setState(State.GAMEPLAY);
-			} catch (Exception e) {
-				e.printStackTrace();
-				this.timeoutTimer.stop();
-				this.gameState.setState(State.CLOSED);
-			}
-		}
-		
-	}
-	
-
-	private void GameListState(byte[] inputBuffer, int iByteCount) {
-		// First check to make sure the version is correct
-		if (this.messageParser.GetVersion(inputBuffer, iByteCount) != this.m_iVersion)
-		{
-			this.fLogger.info(this.uniqueID + ": has sent an invalid version number, Ignoring Msg");
-			return;
-		}
-		if (this.messageParser.GetTypeIndicator(inputBuffer, iByteCount).isEqual(TypeIndicator.LIST))
-		{
-			// first transition to GameListState
-			//this.gameState.setState(State.GAMESET);
-
-			if (this.messageParser.GetGameIndicator(inputBuffer, iByteCount).isEqual(GameIndicator.GET_GAME))
-			{
-				MessageParser.ClientGetGameMessage msg = this.messageParser.GetClientGetGameMessage(inputBuffer, iByteCount);
-				// make sure this was indeed a client get game message
-				
-				if (!msg.getGameIndicator().isEqual(GameIndicator.GET_GAME))
-				{
-					// not a client message, must be a server message. Ignore
-					this.fLogger.info(this.uniqueID + ": Received Server Get Game Message, Ignoring");
-					this.gameState.setState(State.GAMELIST);
-					return;
-				}
-				
-				this.fLogger.info(this.uniqueID + ": Received Client Get Game Message, Sending Games");
-				this.m_bGotGames = true;
-				this.m_bSetGames = false;
-				this.m_eGameTypeCode = GameTypeCode.NOT_SET;
-				this.timeoutTimer.reschedule(m_lOpTimer);
-				MessageParser.ServerGetGameMessage svrMsg = this.messageParser.new ServerGetGameMessage(m_iVersion, TypeIndicator.LIST, GameIndicator.GET_GAME, 0, oGameTypeList);
-				byte[] outputBuffer=this.messageParser.CreateServerGetGameMessage(svrMsg);
-				try	{
-					//oOutputStream.write(this.messageParser.CreateServerGetGameMessage(svrMsg));
-				     System.out.println("send message");
-					sendMessage(outputBuffer);
-					this.gameState.setState(State.GAMESET);
-				} catch (Exception e) {
-					e.printStackTrace();
-					this.timeoutTimer.stop();
-					this.gameState.setState(State.CLOSED);
-				}
-			}
-			else if (this.messageParser.GetTypeIndicator(inputBuffer, iByteCount).isEqual(TypeIndicator.CLOSE_CONNECTION))
-			{
-				MessageParser.ConnectionMessage msg = this.messageParser.GetConnectionMessage(inputBuffer, iByteCount);
-				if (msg.getConnectionCode().isEqual(ConnectionIndicator.CLOSE_CONNECTION))
-				{
-					this.fLogger.info(this.uniqueID + ": Close connection message received");
-					this.timeoutTimer.reschedule(this.m_lOpTimer);
-					this.gameState.setState(State.CLOSING);
-					this.m_bSendClose = true;
-				}
-				else
-				{
-					this.fLogger.info(this.uniqueID + ": sent invalid Close Connection Msg, Ignoring");
-				}
-			}
-			else
-			{
-				this.fLogger.info(this.uniqueID + ": has sent an invalid Msg for the List State");
-			}
-			
-		}
-	}
-
-	
-//		if (this.messageParser.GetTypeIndicator(inputBuffer, iByteCount).isEqual(TypeIndicator.CHALLENGE_CONNECTION))
-//		{
-//			MessageParser.ChallengeMessage msg = this.messageParser.GetChallengeMessage(inputBuffer, iByteCount);
-//			if (msg.getChallengeCode().isEqual(ChallengeIndicator.CHALLENGE_CONNECTION))
-//			{
-//				// server needs to send an ack
-//				this.fLogger.info(this.uniqueID + ": has sent a Challenge Connection Msg, Sending Ack");
-//				this.timeoutTimer.reschedule(m_lOpTimer);
-//				msg.setChallengeCode(ChallengeIndicator.CHALLENGE_CONNECTION_ACK);
-//				try	{
-//					oOutputStream.write(this.messageParser.CreateChallengeMessage(msg));
-//				} catch (Exception e) {
-//					e.printStackTrace();
-//					this.timeoutTimer.stop();
-//					this.gameState.setState(State.CLOSED);
-//				}
-//			}
-//			else if (msg.getChallengeCode().isEqual(ChallengeIndicator.CHALLENGE_CONNECTION_ACK) && this.bSentChallenge)
-//			{
-//				// received the challenge ack
-//				this.fLogger.info(this.uniqueID + ": has sent back the Challenge Connection Ack!");
-//				this.bSentChallenge = false;
-//				this.timeoutTimer.reschedule(m_lOpTimer);
-//			}
-//			else
-//			{
-//				this.fLogger.info(this.uniqueID + ": has sent an invalid Challenge Connection Message, Ignoring");
-//			}
-//		}
-
-	private void AuthenticateState(byte[] inputBuffer, int iByteCount) throws IOException {
-		/*
-		 *  During this state the client has to authenticate itself by giving its version to the server
-		 *  If the client sends a version message the server will check to see if it is valid and reply appropriately.
-		 *  The server will start the counter for the verification. If the client does not finish authentication within the 
-		 *  timeout time the connection will be closed
-		 */
-		if (this.messageParser.GetTypeIndicator(inputBuffer, iByteCount).isEqual(TypeIndicator.VERSION))
-		{
-
-			MessageParser.VersionMessage msg = this.messageParser.GetVersionMessage(inputBuffer, iByteCount);
-			System.out.println(msg.getVersion());
-			if ((msg.getVersion() == this.m_iVersion) && (msg.getVersionType().isEqual(VersionIndicator.CLIENT_VERSION)))
-			{
-				System.out.println("client verision");
-				// reset the timer
-				this.timeoutTimer.reschedule(this.m_lOpTimer);
+				// reset the timer. Use the game time because it is longer and the client has been verified.
+				this.timeoutTimer.reschedule(this.m_lGameOpTimer);
 				msg.setBankAmount(this.m_lClientBankAmount);
-				msg.setVersionType(VersionIndicator.VERSION_ACK);
+				msg.setVersionType(MessageParser.VERSION_INDICATOR_VERSION_ACK);
 				this.fLogger.info(this.uniqueID + ": has finished authenticating!");
 				try	{
-					//oOutputStream.write(this.messageParser.CreateVersionMessage(msg));
-					outputStream.writeByte((byte)this.messageParser.CreateVersionMessage(msg).length);
-			        outputStream.write(this.messageParser.CreateVersionMessage(msg)); 
-			        outputStream.flush();					
-					this.gameState.setState(State.GAMELIST);
+               outputStream.writeByte((byte)this.messageParser.CreateVersionMessage(msg).length);
+               outputStream.write(this.messageParser.CreateVersionMessage(msg)); 
+               outputStream.flush();					
+					this.gameState.setState(GameState.AUTHENTICATE);
 				} catch (Exception e) {
-					e.printStackTrace();
+               e.printStackTrace();
 					this.timeoutTimer.stop();
-					this.gameState.setState(State.CLOSED);
+					this.gameState.setState(GameState.CLOSED);
 				}
 			}
-			else if (msg.getVersionType().isEqual(VersionIndicator.CLIENT_VERSION))
+			else if (msg.getVersionType() == MessageParser.VERSION_INDICATOR_CLIENT_VERSION)
 			{
 				// client needs to upgrade
 				// The server cannot communicate so send the message and close the connection
-				
 				msg.setBankAmount((long)0);
 				msg.setVersion(this.m_iVersion);
 				msg.setMinorVersion(this.m_iMinorVersion);
-				msg.setTypeCode(TypeIndicator.VERSION);
-				msg.setVersionType(VersionIndicator.VERSION_UPGRADE);
+				msg.setTypeCode(MessageParser.TYPE_INDICATOR_VERSION);
+				msg.setVersionType(MessageParser.VERSION_INDICATOR_VERSION_UPGRADE);
 				this.fLogger.info(this.uniqueID + ": Invalid Version, closing connection");
 				try {
-					//oOutputStream.write(this.messageParser.CreateVersionMessage(msg));
-					outputStream.writeByte((byte)this.messageParser.CreateVersionMessage(msg).length);
-			        outputStream.write(this.messageParser.CreateVersionMessage(msg)); 
-			        outputStream.flush();					
+               outputStream.writeByte((byte)this.messageParser.CreateVersionMessage(msg).length);
+               outputStream.write(this.messageParser.CreateVersionMessage(msg)); 
+               outputStream.flush();					
 					this.timeoutTimer.stop();
-					this.gameState.setState(State.CLOSED);
+					this.gameState.setState(GameState.CLOSED);
 				} catch (Exception e) {
 					e.printStackTrace();
 					this.timeoutTimer.stop();
-					this.gameState.setState(State.CLOSED);
+					this.gameState.setState(GameState.CLOSED);
 				}
 			}
 			else
 			{
 				msg.setBankAmount((long)0);
 				msg.setMinorVersion(this.m_iMinorVersion);
-				msg.setTypeCode(TypeIndicator.VERSION);
+				msg.setTypeCode(MessageParser.TYPE_INDICATOR_VERSION);
 				msg.setVersion(this.m_iVersion);
-				msg.setVersionType(VersionIndicator.VERSION_REQUIREMENT);
+				msg.setVersionType(MessageParser.VERSION_INDICATOR_VERSION_REQUIREMENT);
 				this.fLogger.info(this.uniqueID + ": Invalid message, need client protocol version");
 				try {
 					//oOutputStream.write(this.messageParser.CreateVersionMessage(msg));
@@ -586,58 +269,366 @@ public class ClientModel extends Observable implements Runnable {
 				} catch (Exception e) {
 					e.printStackTrace();
 					this.timeoutTimer.stop();
-					this.gameState.setState(State.CLOSED);
+					this.gameState.setState(GameState.CLOSED);
 				}
 			}
 		}
-//		else if (this.messageParser.GetTypeIndicator(inputBuffer, iByteCount).isEqual(TypeIndicator.CLOSE_CONNECTION))
-//		{
-//			MessageParser.ConnectionMessage msg = this.messageParser.GetConnectionMessage(inputBuffer, iByteCount);
-//			if (msg.getConnectionCode().isEqual(ConnectionIndicator.CLOSE_CONNECTION))
-//			{
-//				/*
-//				 *  Client wishes to close the connection. The server will gracefully close the connection
-//				 *  Indicate that we are transitioning to the closing state and that the server was not the
-//				 *  one to issue the request
-//				 */
-//				this.fLogger.info(this.uniqueID + ": Close connection message received");
-//				this.timeoutTimer.reschedule(this.m_lOpTimer);
-//				this.gameState.setState(State.CLOSING);
-//				this.m_bSendClose = true;
-//			}
-//			else
-//			{
-//				/*
-//				 * This was an erroneous close connection acknowledgment message, ignore it and require a login
-//				 */
-//				this.fLogger.info(this.uniqueID + ": Need to finish authentication of version, got a different message");
-//				MessageParser.VersionMessage vmsg = this.messageParser.new VersionMessage(this.m_iVersion, TypeIndicator.VERSION, VersionIndicator.VERSION_REQUIREMENT, this.m_iMinorVersion,(long)0);
-//				try {
-//					oOutputStream.write(this.messageParser.CreateVersionMessage(vmsg));
-//				} catch (Exception e) {
-//					e.printStackTrace();
-//					this.timeoutTimer.stop();
-//					this.gameState.setState(State.CLOSED);
-//				}
-//			}
-//		}	
 		else
 		{
 			// client did not send the right message, server needs to force a version message
 			this.fLogger.info(this.uniqueID + ": Need to finish authentication of version, got a different message");
-			MessageParser.VersionMessage msg = this.messageParser.new VersionMessage(this.m_iVersion, TypeIndicator.VERSION, VersionIndicator.VERSION_REQUIREMENT, this.m_iMinorVersion,(long)0);
+			MessageParser.VersionMessage msg = this.messageParser.new VersionMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_VERSION, MessageParser.VERSION_INDICATOR_VERSION_REQUIREMENT, this.m_iMinorVersion,(long)0);
 			try {
-				//oOutputStream.write(this.messageParser.CreateVersionMessage(msg));
-				outputStream.writeByte((byte)this.messageParser.CreateVersionMessage(msg).length);
-		        outputStream.write(this.messageParser.CreateVersionMessage(msg)); 
-		        outputStream.flush();				
+            outputStream.writeByte((byte)this.messageParser.CreateVersionMessage(msg).length);
+            outputStream.write(this.messageParser.CreateVersionMessage(msg)); 
+            outputStream.flush();				
 			} catch (Exception e) {
 				e.printStackTrace();
-				this.gameState.setState(State.CLOSED);
+				this.gameState.setState(GameState.CLOSED);
 			}
 		}
 		
 	}	
+   
+   private void AuthenticateState(byte[] inputBuffer, int iByteCount) throws IOException {
+		/*
+      *  During this state the client has authenticated and the server is waiting for the get games message
+      */
+      // make sure the version is correct
+      if (this.messageParser.GetVersion(inputBuffer, iByteCount) != this.m_iVersion)
+      {
+         this.fLogger.info(this.uniqueID + ": has sent an invalid version number, Ignoring Msg");
+         return;
+      }	
+		if (this.messageParser.GetTypeIndicator(inputBuffer, iByteCount) == MessageParser.TYPE_INDICATOR_GAME)
+		{
+         if (this.messageParser.GetGameIndicator(inputBuffer, iByteCount) == MessageParser.GAME_INDICATOR_GET_GAME)
+         {
+            MessageParser.ClientGetGameMessage msg = this.messageParser.GetClientGetGameMessage(inputBuffer, iByteCount);
+            // make sure this was indeed a client get game message
+            if (msg.getGameIndicator() != MessageParser.GAME_INDICATOR_GET_GAME)
+            {
+               // not a client message, must be a server message. Ignore
+               this.fLogger.info(this.uniqueID + ": Received Server Get Game Message, Ignoring");
+               return;
+            }
+            // send the client the game list
+            int length = 12 + (int)(Math.ceil((double)this.oGameTypeList.size() / 4) * 4);
+            MessageParser.ServerGetGameMessage svrMsg = this.messageParser.new ServerGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME, length, this.oGameTypeList);
+            this.timeoutTimer.reschedule(this.m_lGameOpTimer);
+				this.fLogger.info(this.uniqueID + ": has sent get game message");
+				try	{
+               outputStream.writeByte((byte)this.messageParser.CreateServerGetGameMessage(svrMsg).length);
+               outputStream.write(this.messageParser.CreateServerGetGameMessage(svrMsg)); 
+               outputStream.flush();					
+					this.gameState.setState(GameState.GAMELIST);
+				} catch (Exception e) {
+               e.printStackTrace();
+					this.timeoutTimer.stop();
+					this.gameState.setState(GameState.CLOSED);
+				}
+			}
+			else
+			{
+				// The game indicator is incorrect
+				this.fLogger.info(this.uniqueID + ": Invalid Game Indicator, should be Get Games");
+			}
+      }
+      else
+      {
+			// The game indicator is incorrect
+         this.fLogger.info(this.uniqueID + ": Invalid Type Indicator, should be the Game Indicator");
+		}		
+	}	
+      
+   private void GameListState(byte[] inputBuffer, int iByteCount) {
+      /*
+      * In this state there are two valid messages
+      * 1) Set Game
+      * 2) Close Connection
+      */
+		// First check to make sure the version is correct
+		if (this.messageParser.GetVersion(inputBuffer, iByteCount) != this.m_iVersion)
+		{
+			this.fLogger.info(this.uniqueID + ": has sent an invalid version number, Ignoring Msg");
+			return;
+		}
+		if (this.messageParser.GetTypeIndicator(inputBuffer, iByteCount) == MessageParser.TYPE_INDICATOR_GAME)
+		{
+         if (this.messageParser.GetGameIndicator(inputBuffer, iByteCount) == MessageParser.GAME_INDICATOR_SET_GAME)
+         {
+            MessageParser.ClientSetGameMessage msg = this.messageParser.GetClientSetGameMessage(inputBuffer, iByteCount);
+            if (msg.getGameIndicator() != MessageParser.GAME_INDICATOR_SET_GAME)
+            {
+               // not a client message, must be a server message. Ignore
+               this.fLogger.info(this.uniqueID + ": Received Server Set Game Message, Ignoring");
+               return;
+            }
+            // make sure the game type code is valid
+            boolean bFound = false;
+            for (int iI = 0; iI < this.oGameTypeList.size(); iI++)
+            {
+               int typecode = oGameTypeList.get(iI).intValue();
+               if (typecode == msg.getGameTypeCode())
+               {
+                  bFound = true;
+               }
+            }
+            
+            // determine whether to send an ack or invalid response
+            if (bFound)
+            {
+               MessageParser.ServerSetGameMessage svrMsg = this.messageParser.new ServerSetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_SET_GAME, msg.getGameTypeCode(), MessageParser.GAME_TYPE_RESPONSE_ACK);
+               this.timeoutTimer.reschedule(m_lGameOpTimer);
+               this.gameState.setState(GameState.GAMESET);
+               this.m_iGameTypeCode = msg.getGameTypeCode();
+               this.fLogger.info(this.uniqueID + ": has sent a valid Game Type Indicator");
+               try	{
+                  outputStream.writeByte((byte)this.messageParser.CreateServerSetGameMessage(svrMsg).length);
+                  outputStream.write(this.messageParser.CreateServerSetGameMessage(svrMsg)); 
+                  outputStream.flush();						
+               } catch (Exception e) {
+                  e.printStackTrace();
+                  this.timeoutTimer.stop();
+                  this.gameState.setState(GameState.CLOSED);
+               }
+            }
+            else
+            {
+               MessageParser.ServerSetGameMessage svrMsg = this.messageParser.new ServerSetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_SET_GAME, msg.getGameTypeCode(), MessageParser.GAME_TYPE_RESPONSE_INVALID);
+               this.timeoutTimer.reschedule(m_lGameOpTimer);
+               this.fLogger.info(this.uniqueID + ": has sent an invalid Game Type Indicator");
+               try	{
+                  outputStream.writeByte((byte)this.messageParser.CreateServerSetGameMessage(svrMsg).length);
+                  outputStream.write(this.messageParser.CreateServerSetGameMessage(svrMsg)); 
+                  outputStream.flush();						
+               } catch (Exception e) {
+                  e.printStackTrace();
+                  this.timeoutTimer.stop();
+                  this.gameState.setState(GameState.CLOSED);
+               }
+            }
+         }
+         else if (this.messageParser.GetGameIndicator(inputBuffer, iByteCount) == MessageParser.GAME_INDICATOR_GET_GAME)
+         {
+            MessageParser.ClientGetGameMessage msg = this.messageParser.GetClientGetGameMessage(inputBuffer, iByteCount);
+            // make sure this was indeed a client get game message
+            if (msg.getGameIndicator() != MessageParser.GAME_INDICATOR_GET_GAME)
+            {
+               // not a client message, must be a server message. Ignore
+               this.fLogger.info(this.uniqueID + ": Received Server Get Game Message, Ignoring");
+               return;
+            }
+            // send the client the game list
+            int length = 12 + (int)(Math.ceil((double)this.oGameTypeList.size() / 4) * 4);
+            MessageParser.ServerGetGameMessage svrMsg = this.messageParser.new ServerGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME, length, this.oGameTypeList);
+            this.timeoutTimer.reschedule(this.m_lGameOpTimer);
+				this.fLogger.info(this.uniqueID + ": has sent get game message");
+				try	{
+               outputStream.writeByte((byte)this.messageParser.CreateServerGetGameMessage(svrMsg).length);
+               outputStream.write(this.messageParser.CreateServerGetGameMessage(svrMsg)); 
+               outputStream.flush();					
+					this.gameState.setState(GameState.GAMELIST);
+				} catch (Exception e) {
+               e.printStackTrace();
+					this.timeoutTimer.stop();
+					this.gameState.setState(GameState.CLOSED);
+				}
+			}
+         else
+         {
+            this.fLogger.info(this.uniqueID + ": has sent an invalid Game Indicator, should be Set Game or Get Game");
+         }
+      }
+      else if (this.messageParser.GetTypeIndicator(inputBuffer, iByteCount) == MessageParser.TYPE_INDICATOR_CLOSE_CONNECTION)
+      {
+         // could be a close connection request
+         MessageParser.ConnectionMessage msg = this.messageParser.GetConnectionMessage(inputBuffer, iByteCount);
+         if (msg.getConnectionCode() == MessageParser.CONNECTION_INDICATOR_CLOSE_CONNECTION)
+         {
+            // send the ack and close the connection
+            msg.setConnectionCode(MessageParser.CONNECTION_INDICATOR_CLOSE_CONNECTION_ACK);
+            this.timeoutTimer.stop();
+            this.fLogger.info(this.uniqueID + ": has sent a request to close the connection");
+            this.gameState.setState(GameState.CLOSED);
+            try	{
+               outputStream.writeByte((byte)this.messageParser.CreateConnectionMessage(msg).length);
+               outputStream.write(this.messageParser.CreateConnectionMessage(msg)); 
+               outputStream.flush();	
+            } catch (Exception e) {
+               e.printStackTrace();
+               this.timeoutTimer.stop();
+               this.gameState.setState(GameState.CLOSED);
+            }
+         }
+         else
+         {
+            this.fLogger.info(this.uniqueID + ": has sent an invalid connection message");
+         }
+      }
+      else
+      {
+         this.fLogger.info(this.uniqueID + ": has sent an invalid message");
+      }            
+	}
+   
+   private void GameSetState(byte[] inputBuffer, int iByteCount) {
+      /* 
+      * In this state the client can only send the play game init message
+      */
+		// First check to make sure the version is correct
+		if (this.messageParser.GetVersion(inputBuffer, iByteCount) != this.m_iVersion)
+		{
+			this.fLogger.info(this.uniqueID + ": has sent an invalid version number, Ignoring Msg");
+			return;
+		}		
+		
+		if (this.messageParser.GetTypeIndicator(inputBuffer, iByteCount) == MessageParser.TYPE_INDICATOR_GAME)
+		{
+			if (this.messageParser.GetGameIndicator(inputBuffer, iByteCount) == MessageParser.GAME_INDICATOR_PLAY_GAME)
+			{
+				// reset the model
+				MessageParser.ClientPlayGameMessage msg = this.messageParser.GetClientPlayGameMessage(inputBuffer, iByteCount);
+				if (msg.getGameIndicator() != MessageParser.GAME_INDICATOR_PLAY_GAME)
+				{
+					// not a client message, must be a server message. Ignore
+					this.fLogger.info(this.uniqueID + ": Received Server Play Game Message, Ignoring");
+					return;
+				}
+				if (msg.getGameTypeCode() != this.m_iGameTypeCode)
+				{
+					// invalid game type code - different than agreed to, ignore
+					this.fLogger.info(this.uniqueID + ": Received Invalid Game Type Code, Ignoring");
+					return;
+				}
+            
+				// determine the game model to initialize
+				if (msg.getGameTypeCode() == MessageParser.GAME_TYPE_TEXAS_HOLDEM)
+				{
+					if (msg.getGamePlayRequest() == MessageParser.GAME_PLAY_REQUEST_INIT)
+					{
+						this.oTHModel.Reset();
+						this.gameState.setState(GameState.GAMEPLAY);
+						MessageParser.ServerPlayGameMessage svrMsg = oTHModel.updateModel(msg);
+						// update client bank account
+						this.m_lClientBankAmount = svrMsg.getBankAmount();
+						this.timeoutTimer.reschedule(m_lGameOpTimer);
+						try	{
+							outputStream.writeByte((byte)this.messageParser.CreateServerPlayGameMessage(svrMsg).length);
+							outputStream.write(this.messageParser.CreateServerPlayGameMessage(svrMsg)); 
+							outputStream.flush();						
+						} catch (Exception e) {
+							e.printStackTrace();
+							this.timeoutTimer.stop();
+							this.gameState.setState(GameState.CLOSED);
+						}
+					}
+					else
+					{
+						this.fLogger.info(this.uniqueID + ": Received Invalid GamePlay message, Ignoring");
+						return;
+					}
+				}
+				else
+				{
+					this.fLogger.info(this.uniqueID + ": Received Invalid Game Type Code, Ignoring");
+					return;
+				}
+			}
+			else
+			{
+				this.fLogger.info(this.uniqueID + ": Received Invalid Game Indicator Code, Ignoring");
+				return;
+			}
+		}
+		else
+		{
+			this.fLogger.info(this.uniqueID + ": Recieved Invalid Type Indicator Code, Ignoring");
+		}		
+	}
+
+   private void GamePlayState(byte[] inputBuffer, int iByteCount) {
+      /*
+      * While in this state the server can only transition to the GameList state or stay in the current state
+      */
+      if (this.messageParser.GetVersion(inputBuffer, iByteCount) != this.m_iVersion)
+      {
+         this.fLogger.info(this.uniqueID + ": has sent an invalid version number, Ignoring Msg");
+         return;
+      }	
+      if (this.messageParser.GetTypeIndicator(inputBuffer, iByteCount) == MessageParser.TYPE_INDICATOR_GAME)
+		{
+         if (this.messageParser.GetGameIndicator(inputBuffer, iByteCount) == MessageParser.GAME_INDICATOR_PLAY_GAME)
+         {
+            MessageParser.ClientPlayGameMessage msg = this.messageParser.GetClientPlayGameMessage(inputBuffer, iByteCount);
+            // make sure this was indeed a client get game message
+            if (msg.getGameIndicator() != MessageParser.GAME_INDICATOR_PLAY_GAME)
+            {
+               // not a client message, must be a server message. Ignore
+               this.fLogger.info(this.uniqueID + ": Received Server Play Game Message, Ignoring");
+               return;
+            }
+            if (msg.getGameTypeCode() != this.m_iGameTypeCode)
+            {
+               // not a valid game type code, Ignore
+               this.fLogger.info(this.uniqueID + ": Client Play Game Message contains invalid Game Type Code, Ignoring");
+               return;
+            }
+            if (this.m_iGameTypeCode == MessageParser.GAME_TYPE_TEXAS_HOLDEM)
+            {
+               MessageParser.ServerPlayGameMessage svrMsg = oTHModel.updateModel(msg);
+               // update client bank account
+               this.m_lClientBankAmount = svrMsg.getBankAmount();
+               this.timeoutTimer.reschedule(m_lGameOpTimer);
+               try	{
+                  outputStream.writeByte((byte)this.messageParser.CreateServerPlayGameMessage(svrMsg).length);
+                  outputStream.write(this.messageParser.CreateServerPlayGameMessage(svrMsg)); 
+                  outputStream.flush();						
+               } catch (Exception e) {
+                  e.printStackTrace();
+                  this.timeoutTimer.stop();
+                  this.gameState.setState(GameState.CLOSED);
+               }
+            }
+         }
+         else if (this.messageParser.GetGameIndicator(inputBuffer, iByteCount) == MessageParser.GAME_INDICATOR_GET_GAME)
+         {
+            MessageParser.ClientGetGameMessage msg = this.messageParser.GetClientGetGameMessage(inputBuffer, iByteCount);
+            // make sure this was indeed a client get game message
+            if (msg.getGameIndicator() != MessageParser.GAME_INDICATOR_GET_GAME)
+            {
+               // not a client message, must be a server message. Ignore
+               this.fLogger.info(this.uniqueID + ": Received Server Get Game Message, Ignoring");
+               return;
+            }
+            // send the client the game list
+            int length = 12 + (int)(Math.ceil((double)this.oGameTypeList.size() / 4) * 4);
+            MessageParser.ServerGetGameMessage svrMsg = this.messageParser.new ServerGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME, length, this.oGameTypeList);
+            this.timeoutTimer.reschedule(this.m_lGameOpTimer);
+				this.fLogger.info(this.uniqueID + ": has sent get game message");
+				try	{
+               outputStream.writeByte((byte)this.messageParser.CreateServerGetGameMessage(svrMsg).length);
+               outputStream.write(this.messageParser.CreateServerGetGameMessage(svrMsg)); 
+               outputStream.flush();					
+					this.gameState.setState(GameState.GAMELIST);
+				} catch (Exception e) {
+               e.printStackTrace();
+					this.timeoutTimer.stop();
+					this.gameState.setState(GameState.CLOSED);
+				}
+         }
+         else
+         {
+            this.fLogger.info(this.uniqueID + ": has sent an invalid Game Message, Ignoring");
+            return;
+         }		
+      }
+      else
+      {
+         this.fLogger.info(this.uniqueID + ": has sent an invalid Type Indicator, Ignoring");
+         return;
+      }
+   }
 	
 	class TimeoutTask extends TimerTask {
 		private ClientModel model;
@@ -646,45 +637,20 @@ public class ClientModel extends Observable implements Runnable {
 		}
 		public void run() {
 			/*
-			 * A timeout occurred, determine if a challenge connection needs to be sent or if the connection needs to be closed
+			 * A timeout occurred, determine if the connection was already closed, and if not close it
 			 */
 			if (this.model.socket.isClosed())
 			{
-				this.model.gameState.setState(State.CLOSED);
+				this.model.gameState.setState(GameState.CLOSED);
 				this.model.timeoutTimer.stop();
 				this.model.fLogger.info("Timeout event: " + this.model.uniqueID + ": has already closed the connection, exiting thread");
 				return;
-			}
-			if (this.model.gameState.getState() == State.GAMELIST || this.model.gameState.getState() == State.GAMEPLAY)
-			{
-				if (this.model.bSentChallenge)
-				{
-					// consider connection dead
-					this.model.fLogger.info(this.model.uniqueID + ": Timer expired Closing connection");
-					this.model.timeoutTimer.stop();
-					this.model.gameState.setState(State.CLOSED);
-				}
-				else
-				{
-					// send the challenge connection message
-					this.model.timeoutTimer.reschedule(this.model.m_lOpTimer);
-					this.model.bSentChallenge = true;
-					this.model.fLogger.info(this.model.uniqueID + ": Timer expired Sending Challenge Connection request");
-					MessageParser.ChallengeMessage msg = this.model.messageParser.new ChallengeMessage(this.model.m_iVersion, TypeIndicator.CHALLENGE_CONNECTION, ChallengeIndicator.CHALLENGE_CONNECTION);
-					try {
-						this.model.oOutputStream.write(this.model.messageParser.CreateChallengeMessage(msg));
-					} catch (Exception e) {
-						e.printStackTrace();
-						this.model.gameState.setState(State.CLOSED);
-						this.model.timeoutTimer.stop();
-					}
-				}
 			}
 			else
 			{
 				this.model.fLogger.info(this.model.uniqueID + ": Timer expired Closing connection");
 				this.model.timeoutTimer.stop();
-				this.model.gameState.setState(State.CLOSED);
+				this.model.gameState.setState(GameState.CLOSED);
 			}
 		}
 	}

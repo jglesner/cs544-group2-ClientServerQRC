@@ -6,107 +6,138 @@ public class Card {
 	 * These are the different possible card values
 	 */	
 	public static int NUM_RANKS = 13;
-	public static int NUM_SUITS = 4;
-    private boolean is_visible=true;
-	public boolean isIs_visible() {
-		return is_visible;
+	public static int NUM_SUITS = 4;	
+   
+	/* set the private variables */
+	private int value;
+   private int suite;
+   public static int NOT_SET = 0;
+   public static int CLUB = 1;
+   public static int SPADE = 2;
+   public static int DIAMOND = 4;
+   public static int HEART = 8;
+   public static int CARD_ACE = 1;
+   public static int CARD_2 = 2;
+   public static int CARD_3 = 3;
+   public static int CARD_4 = 4;
+   public static int CARD_5 = 5;
+   public static int CARD_6 = 6;
+   public static int CARD_7 = 7;
+   public static int CARD_8 = 8;
+   public static int CARD_9 = 9;
+   public static int CARD_10 = 10;
+   public static int CARD_JACK = 11;
+   public static int CARD_QUEEN = 12;
+   public static int CARD_KING = 13;
+   
+   public Card(int suite, int value)
+   {
+	   this.suite = 0;
+	   this.value = 0;
+	   if (suite == 1 || suite == 2 || suite == 4 || suite == 8)
+	   {
+		   this.suite = suite;
+	   }
+	   if (value >= 0 && value <= NUM_RANKS)
+	   {
+		   this.value = value;
+	   }	   
+   }
+   
+   public void setCardValue(int value)
+   {
+	   this.value = 0;
+	   if (value >= 0 && value <= NUM_RANKS)
+	   {
+		   this.value = value;
+	   }
+   }
+   public int getCardValue()
+   {
+	   return value;      
+   }
+   
+   public void setCardSuite(int suite)
+   {
+	   this.suite = 0;
+	   if (suite == 1 || suite == 2 || suite == 4 || suite == 8)
+	   {
+		   this.suite = suite;
+	   }
+   }
+   public int getCardSuite()
+   {
+	   return suite;
+   }
+   
+   public int getSuitValue()
+	{
+		return (int)(Math.log10(suite) / Math.log10(2.0));
 	}
-
-	public void setIs_visible(boolean is_visible) {
-		this.is_visible = is_visible;
+   
+   public int getRankValue()
+	{
+		int cVal = -1;
+		if (value == 1)
+		{
+			cVal = 12;
+		}
+		else if (value > 0)
+		{
+			cVal = value - 2;
+		}
+		return cVal;
 	}
-
-	public enum CardValue{      
-		NOT_SET(0), CARD_ACE(1), CARD_2(2), CARD_3(3), CARD_4(4), CARD_5(5), CARD_6(6),     
-		CARD_7(7), CARD_8(8), CARD_9(9), CARD_10(10), CARD_JACK(11), CARD_QUEEN(12),      
-		CARD_KING(13);
-		private int cardValue;
-		CardValue(int cardValue)
-		{
-			this.setCardValue(cardValue);
-		}
-		public int getCardValue() {
-			return cardValue;
-		}
-		public void setCardValue(int cardValue) {
-			this.cardValue = cardValue;
-		}
-		public boolean isEqual(CardValue rhs)
-		{
-			return (this.getCardValue() == rhs.getCardValue());
-		}
-		public int getRankValue()
-		{
-			int cVal = -1;
-			if (cardValue == 1)
-			{
-				cVal = 12;
-			}
-			else if (cardValue > 0)
-			{
-				cVal = cardValue - 2;
-			}
-			return cVal;
-		}
-	}
-   
-   /*
-   * These are the different possible card suites
-   */
-	public enum CardSuite{
-		NOT_SET(0), CLUB(1), SPADE(2), DIAMOND(4), HEART(8);
-		private int cardSuite;
-		CardSuite(int cardSuite)
-		{
-			this.setCardSuite(cardSuite);
-		}
-		public int getCardSuite() {
-			return cardSuite;
-		}
-		public void setCardSuite(int cardSuite) {
-			this.cardSuite = cardSuite;
-		}
-		public boolean isEqual(CardSuite rhs)
-		{
-			return (this.getCardSuite() == rhs.getCardSuite());
-		}
-		public int getSuitValue()
-		{
-			return (int)(Math.log10(cardSuite) / Math.log10(2.0));
-		}
-	}
-   
-   /* set the private variables */
-   private CardSuite eSuite;
-   private CardValue eValue;
-   
-   public Card(CardSuite eSuite, CardValue eValue)
-   {
-      this.eSuite = eSuite;
-      this.eValue = eValue;
-   }
-   
-   public void setCardValue(CardValue eValue)
-   {
-      this.eValue = eValue;
-   }
-   public CardValue getCardValue()
-   {
-      return eValue;
-   }
-   
-   public void setCardSuite(CardSuite eSuite)
-   {
-      this.eSuite = eSuite;
-   }
-   public CardSuite getCardSuite()
-   {
-      return eSuite;
-   }
    
    public String toString()
    {
-	   String ret = "(" + this.getCardSuite() + " " + this.getCardValue() + ")";
+	   String sValue = "ERROR";
+	   if (this.value == 0)
+	   {
+		   sValue = "NOT_SET";
+	   }
+	   else if (this.value == 1)
+	   {
+		   sValue = "ACE";
+	   }
+	   else if (this.value > 1 && this.value < 11)
+	   {
+		   sValue = "" + this.value;
+	   }
+	   else if (this.value == 11)
+	   {
+		   sValue = "JACK";
+	   }
+	   else if (this.value == 12)
+	   {
+		   sValue = "QUEEN";
+	   }
+	   else if (this.value == 13)
+	   {
+		   sValue = "KING";
+	   }
+	   String sSuite = "ERROR";
+	   if (this.suite == 0)
+	   {
+		   sSuite = "NOT_SET";
+	   }
+	   else if (this.suite == 1)
+	   {
+		   sSuite = "CLUB";
+	   }
+	   else if (this.suite == 2)
+	   {
+		   sSuite = "SPADE";
+	   }
+	   else if (this.suite == 4)
+	   {
+		   sSuite = "DIAMOND";
+	   }
+	   else if (this.suite == 8)
+	   {
+		   sSuite = "HEART";
+	   }
+	   String ret = "(" + sSuite + " " + sValue + ")";
 	   return ret;
    }
 
