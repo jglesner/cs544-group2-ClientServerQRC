@@ -1,7 +1,7 @@
 /**
  *  @author GROUP 2, CS544-900-SPRING12, DREXEL UNIVERSITY
  *  
- *  This is an example of a client side application using the Advanced Game Management Protocol to send messages   
+ *  This is an example of a server side application using the Advanced Game Management Protocol to send messages   
  * 
  *  This application framework originally drew heavily from the following resource:
  *  1. Saleem, Usman. "A Pattern/Framework for Client/Server Programming in Java". Year accessed: 2012, Month accessed: 05, Day accessed: 2.
@@ -28,21 +28,21 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Observable;
 import java.util.Timer;
 import java.util.TimerTask;
 import javax.net.ssl.SSLSocket;
 import server.card_game.texas_holdem.TexasHoldemModel;
-import java.util.logging.*;
 import common.*;
 
 /**
  * ClientModel is spawned, one per client to manage the socket connection
  * and in-game functions using AGMP as a communications protocol.
  * 
- * @author GROUP2
- *
+ *  @author GROUP 2, CS544-900-SPRING12, DREXEL UNIVERSITY
+ *  Members: Jeremy Glesner, Dustin Overmiller, Yiqi Ju, Lei Yuan
+ *  Project: Advanced Game Message Protocol Implementation
+ *  
  */
 public class ClientModel extends Observable implements Runnable {
 
@@ -59,7 +59,7 @@ public class ClientModel extends Observable implements Runnable {
    private GameState gameState;
     
    public String uniqueID;
-   private final Logger fLogger;
+   private final LogAndPublish logAndPublish;
    private XmlParser xmlParser;
    private MessageParser messageParser = null;
    private TexasHoldemModel oTHModel = null;
@@ -72,11 +72,14 @@ public class ClientModel extends Observable implements Runnable {
    private TimeoutTimer timeoutTimer;
    private int m_iGameTypeCode = MessageParser.NOT_SET;
    private ArrayList<Integer> oGameTypeList = null;
-    
-   public ClientModel(SSLSocket socket, XmlParser xmlParser, Logger fLogger) throws IOException {
+   /**
+   * Constructor class to create the ClientModel Object
+   *
+   */
+   public ClientModel(SSLSocket socket, XmlParser xmlParser, LogAndPublish logAndPublish) throws IOException {
       this.socket = socket;
       this.uniqueID = "" + socket.getInetAddress() + ":" + socket.getPort();
-      this.fLogger = fLogger;
+      this.logAndPublish = logAndPublish;
       this.xmlParser = xmlParser;
       this.gameState = new GameState();
       this.gameState.setState(GameState.LISTENING);
@@ -93,7 +96,7 @@ public class ClientModel extends Observable implements Runnable {
       this.oGameTypeList = new ArrayList<Integer>();
       // store the current typecodes
       oGameTypeList.add(MessageParser.GAME_TYPE_TEXAS_HOLDEM);
-      this.fLogger.info(this.uniqueID +": Successfully connected");
+      this.logAndPublish.write(this.uniqueID +": Successfully connected", true, true);
       running = false;
       //get I/O from socket
       try {
@@ -108,40 +111,70 @@ public class ClientModel extends Observable implements Runnable {
       }
    }
     
-   /* This functions are getters to be used by the server game models */
-   public Logger getLogger()
+   /**
+   * getLogAndPublish - get the LogAndPublish object
+   * @param none
+   * @return LogAndPublish
+   */
+   public LogAndPublish getLogAndPublish()
    {
-      return fLogger;
+      return logAndPublish;
    }
+   /**
+   * getXmlParser - get the XmlParser object
+   * @param none
+   * @return XmlParser
+   */
    public XmlParser getXmlParser()
    {
       return xmlParser;
    }
+   /**
+   * getMessageParser - get the MessageParser object
+   * @param none
+   * @return MessageParser
+   */
    public MessageParser getMessageParser()
    {
       return messageParser;
    }
+   /**
+   * getVersion - get the version of the server
+   * @param none
+   * @return int
+   */
    public int getVersion()
    {
       return m_iVersion;
    }
+   /**
+   * getClientBankAmount - get the client bank amount
+   * @param none
+   * @return long
+   */
    public long getClientBankAmount()
    {
       return m_lClientBankAmount;
    }
 	
-    /** 
-     *Stops clients connection
-     */
+   /**
+   * stopClient - closes the socket connection
+   * @param none
+   * @return none
+   */
    public void stopClient()
    {
       try {
-         this.fLogger.info(this.uniqueID + ": Stopping Client");
+         this.logAndPublish.write(this.uniqueID + ": Stopping Client", true, false);
          this.gameState.setState(GameState.CLOSED);
          this.socket.close();
       }catch(IOException ioe){ };
    }
-
+   /**
+   * run - main routine for the thread
+   * @param none
+   * @return none
+   */
    public void run() 
    {
       try
@@ -187,7 +220,7 @@ public class ClientModel extends Observable implements Runnable {
       }
       catch (IOException ioe) {
          running = false;
-         this.fLogger.info(this.uniqueID + ": " + ioe);
+         this.logAndPublish.write(this.uniqueID + ": " + ioe, true, false);
       }
         
       //it's time to close the socket
@@ -195,7 +228,7 @@ public class ClientModel extends Observable implements Runnable {
       {
          try {
             this.socket.close();
-            this.fLogger.info(this.uniqueID + ": Closing Connection.");
+            this.logAndPublish.write(this.uniqueID + ": Closing Connection.", true, true);
          } catch (IOException ioe) { }
       }
       //notify the observers for cleanup etc.
@@ -203,6 +236,14 @@ public class ClientModel extends Observable implements Runnable {
       this.notifyObservers(this);     //inherit from Observable
    }
    
+   /**
+   * ListeningState - In this state the client has to negotiate the version and validate proper
+   * communication. The server will transition to the Authentication (Connection Negotiation) state when this
+   * is successful
+   * @param inputBuffer
+   * @param iByteCount
+   * @return none
+   */
    private void ListeningState(byte[] inputBuffer, int iByteCount) {
       /*
       *  During this state the client has to authenticate itself by giving its version to the server
@@ -219,8 +260,9 @@ public class ClientModel extends Observable implements Runnable {
 				this.timeoutTimer.reschedule(this.m_lGameOpTimer);
 				msg.setBankAmount(this.m_lClientBankAmount);
 				msg.setVersionType(MessageParser.VERSION_INDICATOR_VERSION_ACK);
-				this.fLogger.info(this.uniqueID + ": has finished authenticating!");
+				this.logAndPublish.write(this.uniqueID + ": has finished authenticating!", true, false);
 				try	{
+               // send the message and update the DFA state
                outputStream.writeByte((byte)this.messageParser.CreateVersionMessage(msg).length);
                outputStream.write(this.messageParser.CreateVersionMessage(msg)); 
                outputStream.flush();					
@@ -240,8 +282,9 @@ public class ClientModel extends Observable implements Runnable {
 				msg.setMinorVersion(this.m_iMinorVersion);
 				msg.setTypeCode(MessageParser.TYPE_INDICATOR_VERSION);
 				msg.setVersionType(MessageParser.VERSION_INDICATOR_VERSION_UPGRADE);
-				this.fLogger.info(this.uniqueID + ": Invalid Version, closing connection");
+				this.logAndPublish.write(this.uniqueID + ": Invalid Version, closing connection", true, false);
 				try {
+               // send the upgrade required message and close the connection
                outputStream.writeByte((byte)this.messageParser.CreateVersionMessage(msg).length);
                outputStream.write(this.messageParser.CreateVersionMessage(msg)); 
                outputStream.flush();					
@@ -255,12 +298,13 @@ public class ClientModel extends Observable implements Runnable {
 			}
 			else
 			{
+            // send version requirement message and stay in this state
 				msg.setBankAmount((long)0);
 				msg.setMinorVersion(this.m_iMinorVersion);
 				msg.setTypeCode(MessageParser.TYPE_INDICATOR_VERSION);
 				msg.setVersion(this.m_iVersion);
 				msg.setVersionType(MessageParser.VERSION_INDICATOR_VERSION_REQUIREMENT);
-				this.fLogger.info(this.uniqueID + ": Invalid message, need client protocol version");
+				this.logAndPublish.write(this.uniqueID + ": Invalid message, need client protocol version", true, false);
 				try {
 					//oOutputStream.write(this.messageParser.CreateVersionMessage(msg));
 					outputStream.writeByte((byte)this.messageParser.CreateVersionMessage(msg).length);
@@ -276,7 +320,7 @@ public class ClientModel extends Observable implements Runnable {
 		else
 		{
 			// client did not send the right message, server needs to force a version message
-			this.fLogger.info(this.uniqueID + ": Need to finish authentication of version, got a different message");
+			this.logAndPublish.write(this.uniqueID + ": Need to finish authentication of version, got a different message", true, false);
 			MessageParser.VersionMessage msg = this.messageParser.new VersionMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_VERSION, MessageParser.VERSION_INDICATOR_VERSION_REQUIREMENT, this.m_iMinorVersion,(long)0);
 			try {
             outputStream.writeByte((byte)this.messageParser.CreateVersionMessage(msg).length);
@@ -289,7 +333,13 @@ public class ClientModel extends Observable implements Runnable {
 		}
 		
 	}	
-   
+   /**
+   * AuthenticateState - In this state the client has negotiated the version and the 
+   * server is waiting for the get game list message
+   * @param inputBuffer
+   * @param iByteCount
+   * @return none
+   */
    private void AuthenticateState(byte[] inputBuffer, int iByteCount) throws IOException {
 		/*
       *  During this state the client has authenticated and the server is waiting for the get games message
@@ -297,7 +347,7 @@ public class ClientModel extends Observable implements Runnable {
       // make sure the version is correct
       if (this.messageParser.GetVersion(inputBuffer, iByteCount) != this.m_iVersion)
       {
-         this.fLogger.info(this.uniqueID + ": has sent an invalid version number, Ignoring Msg");
+         this.logAndPublish.write(this.uniqueID + ": has sent an invalid version number, Ignoring Msg", true, false);
          return;
       }	
 		if (this.messageParser.GetTypeIndicator(inputBuffer, iByteCount) == MessageParser.TYPE_INDICATOR_GAME)
@@ -309,14 +359,14 @@ public class ClientModel extends Observable implements Runnable {
             if (msg.getGameIndicator() != MessageParser.GAME_INDICATOR_GET_GAME)
             {
                // not a client message, must be a server message. Ignore
-               this.fLogger.info(this.uniqueID + ": Received Server Get Game Message, Ignoring");
+               this.logAndPublish.write(this.uniqueID + ": Received Server Get Game Message, Ignoring", true, false);
                return;
             }
-            // send the client the game list
+            // send the client the game list and update to the game list state
             int length = 12 + (int)(Math.ceil((double)this.oGameTypeList.size() / 4) * 4);
             MessageParser.ServerGetGameMessage svrMsg = this.messageParser.new ServerGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME, length, this.oGameTypeList);
             this.timeoutTimer.reschedule(this.m_lGameOpTimer);
-				this.fLogger.info(this.uniqueID + ": has sent get game message");
+				this.logAndPublish.write(this.uniqueID + ": has sent get game message", true, false);
 				try	{
                outputStream.writeByte((byte)this.messageParser.CreateServerGetGameMessage(svrMsg).length);
                outputStream.write(this.messageParser.CreateServerGetGameMessage(svrMsg)); 
@@ -331,16 +381,22 @@ public class ClientModel extends Observable implements Runnable {
 			else
 			{
 				// The game indicator is incorrect
-				this.fLogger.info(this.uniqueID + ": Invalid Game Indicator, should be Get Games");
+				this.logAndPublish.write(this.uniqueID + ": Invalid Game Indicator, should be Get Games", true, false);
 			}
       }
       else
       {
 			// The game indicator is incorrect
-         this.fLogger.info(this.uniqueID + ": Invalid Type Indicator, should be the Game Indicator");
+         this.logAndPublish.write(this.uniqueID + ": Invalid Type Indicator, should be the Game Indicator", true, false);
 		}		
 	}	
-      
+   /**
+   * GameListState - In this state the client has received the list of games and can 
+   * either select one or close the connection
+   * @param inputBuffer
+   * @param iByteCount
+   * @return none
+   */   
    private void GameListState(byte[] inputBuffer, int iByteCount) {
       /*
       * In this state there are two valid messages
@@ -350,7 +406,7 @@ public class ClientModel extends Observable implements Runnable {
 		// First check to make sure the version is correct
 		if (this.messageParser.GetVersion(inputBuffer, iByteCount) != this.m_iVersion)
 		{
-			this.fLogger.info(this.uniqueID + ": has sent an invalid version number, Ignoring Msg");
+			this.logAndPublish.write(this.uniqueID + ": has sent an invalid version number, Ignoring Msg", true, false);
 			return;
 		}
 		if (this.messageParser.GetTypeIndicator(inputBuffer, iByteCount) == MessageParser.TYPE_INDICATOR_GAME)
@@ -361,7 +417,7 @@ public class ClientModel extends Observable implements Runnable {
             if (msg.getGameIndicator() != MessageParser.GAME_INDICATOR_SET_GAME)
             {
                // not a client message, must be a server message. Ignore
-               this.fLogger.info(this.uniqueID + ": Received Server Set Game Message, Ignoring");
+               this.logAndPublish.write(this.uniqueID + ": Received Server Set Game Message, Ignoring", true, false);
                return;
             }
             // make sure the game type code is valid
@@ -378,11 +434,12 @@ public class ClientModel extends Observable implements Runnable {
             // determine whether to send an ack or invalid response
             if (bFound)
             {
+				/* send an ack and switch to the game set state */
                MessageParser.ServerSetGameMessage svrMsg = this.messageParser.new ServerSetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_SET_GAME, msg.getGameTypeCode(), MessageParser.GAME_TYPE_RESPONSE_ACK);
                this.timeoutTimer.reschedule(m_lGameOpTimer);
                this.gameState.setState(GameState.GAMESET);
                this.m_iGameTypeCode = msg.getGameTypeCode();
-               this.fLogger.info(this.uniqueID + ": has sent a valid Game Type Indicator");
+               this.logAndPublish.write(this.uniqueID + ": has sent a valid Game Type Indicator", true, false);
                try	{
                   outputStream.writeByte((byte)this.messageParser.CreateServerSetGameMessage(svrMsg).length);
                   outputStream.write(this.messageParser.CreateServerSetGameMessage(svrMsg)); 
@@ -395,9 +452,10 @@ public class ClientModel extends Observable implements Runnable {
             }
             else
             {
+				/* invalid request, send an invalid response code and stay in this state */
                MessageParser.ServerSetGameMessage svrMsg = this.messageParser.new ServerSetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_SET_GAME, msg.getGameTypeCode(), MessageParser.GAME_TYPE_RESPONSE_INVALID);
                this.timeoutTimer.reschedule(m_lGameOpTimer);
-               this.fLogger.info(this.uniqueID + ": has sent an invalid Game Type Indicator");
+               this.logAndPublish.write(this.uniqueID + ": has sent an invalid Game Type Indicator", true, false);
                try	{
                   outputStream.writeByte((byte)this.messageParser.CreateServerSetGameMessage(svrMsg).length);
                   outputStream.write(this.messageParser.CreateServerSetGameMessage(svrMsg)); 
@@ -416,14 +474,14 @@ public class ClientModel extends Observable implements Runnable {
             if (msg.getGameIndicator() != MessageParser.GAME_INDICATOR_GET_GAME)
             {
                // not a client message, must be a server message. Ignore
-               this.fLogger.info(this.uniqueID + ": Received Server Get Game Message, Ignoring");
+               this.logAndPublish.write(this.uniqueID + ": Received Server Get Game Message, Ignoring", true, false);
                return;
             }
             // send the client the game list
             int length = 12 + (int)(Math.ceil((double)this.oGameTypeList.size() / 4) * 4);
             MessageParser.ServerGetGameMessage svrMsg = this.messageParser.new ServerGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME, length, this.oGameTypeList);
             this.timeoutTimer.reschedule(this.m_lGameOpTimer);
-				this.fLogger.info(this.uniqueID + ": has sent get game message");
+				this.logAndPublish.write(this.uniqueID + ": has sent get game message", true, false);
 				try	{
                outputStream.writeByte((byte)this.messageParser.CreateServerGetGameMessage(svrMsg).length);
                outputStream.write(this.messageParser.CreateServerGetGameMessage(svrMsg)); 
@@ -437,7 +495,7 @@ public class ClientModel extends Observable implements Runnable {
 			}
          else
          {
-            this.fLogger.info(this.uniqueID + ": has sent an invalid Game Indicator, should be Set Game or Get Game");
+            this.logAndPublish.write(this.uniqueID + ": has sent an invalid Game Indicator, should be Set Game or Get Game", true, false);
          }
       }
       else if (this.messageParser.GetTypeIndicator(inputBuffer, iByteCount) == MessageParser.TYPE_INDICATOR_CLOSE_CONNECTION)
@@ -449,7 +507,7 @@ public class ClientModel extends Observable implements Runnable {
             // send the ack and close the connection
             msg.setConnectionCode(MessageParser.CONNECTION_INDICATOR_CLOSE_CONNECTION_ACK);
             this.timeoutTimer.stop();
-            this.fLogger.info(this.uniqueID + ": has sent a request to close the connection");
+            this.logAndPublish.write(this.uniqueID + ": has sent a request to close the connection", true, false);
             this.gameState.setState(GameState.CLOSED);
             try	{
                outputStream.writeByte((byte)this.messageParser.CreateConnectionMessage(msg).length);
@@ -463,15 +521,21 @@ public class ClientModel extends Observable implements Runnable {
          }
          else
          {
-            this.fLogger.info(this.uniqueID + ": has sent an invalid connection message");
+            this.logAndPublish.write(this.uniqueID + ": has sent an invalid connection message", true, false);
          }
       }
       else
       {
-         this.fLogger.info(this.uniqueID + ": has sent an invalid message");
+         this.logAndPublish.write(this.uniqueID + ": has sent an invalid message", true, false);
       }            
 	}
-   
+   /**
+   * GameSetState - In this state the client has sent a valid game type code and must now initiate the
+   * game play by sending the game play init message
+   * @param inputBuffer
+   * @param iByteCount
+   * @return none
+   */   
    private void GameSetState(byte[] inputBuffer, int iByteCount) {
       /* 
       * In this state the client can only send the play game init message
@@ -479,7 +543,7 @@ public class ClientModel extends Observable implements Runnable {
 		// First check to make sure the version is correct
 		if (this.messageParser.GetVersion(inputBuffer, iByteCount) != this.m_iVersion)
 		{
-			this.fLogger.info(this.uniqueID + ": has sent an invalid version number, Ignoring Msg");
+			this.logAndPublish.write(this.uniqueID + ": has sent an invalid version number, Ignoring Msg", true, false);
 			return;
 		}		
 		
@@ -492,13 +556,13 @@ public class ClientModel extends Observable implements Runnable {
 				if (msg.getGameIndicator() != MessageParser.GAME_INDICATOR_PLAY_GAME)
 				{
 					// not a client message, must be a server message. Ignore
-					this.fLogger.info(this.uniqueID + ": Received Server Play Game Message, Ignoring");
+					this.logAndPublish.write(this.uniqueID + ": Received Server Play Game Message, Ignoring", true, false);
 					return;
 				}
 				if (msg.getGameTypeCode() != this.m_iGameTypeCode)
 				{
 					// invalid game type code - different than agreed to, ignore
-					this.fLogger.info(this.uniqueID + ": Received Invalid Game Type Code, Ignoring");
+					this.logAndPublish.write(this.uniqueID + ": Received Invalid Game Type Code, Ignoring", true, false);
 					return;
 				}
             
@@ -507,8 +571,10 @@ public class ClientModel extends Observable implements Runnable {
 				{
 					if (msg.getGamePlayRequest() == MessageParser.GAME_PLAY_REQUEST_INIT)
 					{
+						/* game play init message has arrived, reinitalize the Texas Holdem Model and switch to the game play state */
 						this.oTHModel.Reset();
 						this.gameState.setState(GameState.GAMEPLAY);
+						/* get the server response message from the texas hold'em model */
 						MessageParser.ServerPlayGameMessage svrMsg = oTHModel.updateModel(msg);
 						// update client bank account
 						this.m_lClientBankAmount = svrMsg.getBankAmount();
@@ -525,37 +591,49 @@ public class ClientModel extends Observable implements Runnable {
 					}
 					else
 					{
-						this.fLogger.info(this.uniqueID + ": Received Invalid GamePlay message, Ignoring");
+						// Invalid game play message, log it and ignore
+						this.logAndPublish.write(this.uniqueID + ": Received Invalid GamePlay message, Ignoring", true, false);
 						return;
 					}
 				}
 				else
 				{
-					this.fLogger.info(this.uniqueID + ": Received Invalid Game Type Code, Ignoring");
+					// invalid game type code, than what was agreed to, log it and ignore
+					this.logAndPublish.write(this.uniqueID + ": Received Invalid Game Type Code, Ignoring", true, false);
 					return;
 				}
 			}
 			else
 			{
-				this.fLogger.info(this.uniqueID + ": Received Invalid Game Indicator Code, Ignoring");
+				// invalid game indicator log it and ignore the message
+				this.logAndPublish.write(this.uniqueID + ": Received Invalid Game Indicator Code, Ignoring", true, false);
 				return;
 			}
 		}
 		else
 		{
-			this.fLogger.info(this.uniqueID + ": Recieved Invalid Type Indicator Code, Ignoring");
+			// invalid type indicator for this state, log it and ignore the message
+			this.logAndPublish.write(this.uniqueID + ": Recieved Invalid Type Indicator Code, Ignoring", true, false);
 		}		
 	}
-
+	/**
+   * GamePlayState - In this state the client is playing the game. It can only leave this state by sending
+   * a get game list request.
+   * @param inputBuffer
+   * @param iByteCount
+   * @return none
+   */   
    private void GamePlayState(byte[] inputBuffer, int iByteCount) {
       /*
       * While in this state the server can only transition to the GameList state or stay in the current state
       */
       if (this.messageParser.GetVersion(inputBuffer, iByteCount) != this.m_iVersion)
       {
-         this.fLogger.info(this.uniqueID + ": has sent an invalid version number, Ignoring Msg");
+		/* Invalid version, ignoring this message */
+         this.logAndPublish.write(this.uniqueID + ": has sent an invalid version number, Ignoring Msg", true, false);
          return;
       }	
+	  // Make sure the message is the correct play game message
       if (this.messageParser.GetTypeIndicator(inputBuffer, iByteCount) == MessageParser.TYPE_INDICATOR_GAME)
 		{
          if (this.messageParser.GetGameIndicator(inputBuffer, iByteCount) == MessageParser.GAME_INDICATOR_PLAY_GAME)
@@ -565,17 +643,18 @@ public class ClientModel extends Observable implements Runnable {
             if (msg.getGameIndicator() != MessageParser.GAME_INDICATOR_PLAY_GAME)
             {
                // not a client message, must be a server message. Ignore
-               this.fLogger.info(this.uniqueID + ": Received Server Play Game Message, Ignoring");
+               this.logAndPublish.write(this.uniqueID + ": Received Server Play Game Message, Ignoring", true, false);
                return;
             }
             if (msg.getGameTypeCode() != this.m_iGameTypeCode)
             {
                // not a valid game type code, Ignore
-               this.fLogger.info(this.uniqueID + ": Client Play Game Message contains invalid Game Type Code, Ignoring");
+               this.logAndPublish.write(this.uniqueID + ": Client Play Game Message contains invalid Game Type Code, Ignoring", true, false);
                return;
             }
             if (this.m_iGameTypeCode == MessageParser.GAME_TYPE_TEXAS_HOLDEM)
             {
+				// get the message that should be sent from the server by the game model
                MessageParser.ServerPlayGameMessage svrMsg = oTHModel.updateModel(msg);
                // update client bank account
                this.m_lClientBankAmount = svrMsg.getBankAmount();
@@ -590,6 +669,11 @@ public class ClientModel extends Observable implements Runnable {
                   this.gameState.setState(GameState.CLOSED);
                }
             }
+			else
+			{
+				// invalid game type, log it and ignore it
+				logAndPublish.write(this.uniqueID + " has sent an invalid Game Type Code, Ignoring", true, false);
+			}
          }
          else if (this.messageParser.GetGameIndicator(inputBuffer, iByteCount) == MessageParser.GAME_INDICATOR_GET_GAME)
          {
@@ -598,14 +682,14 @@ public class ClientModel extends Observable implements Runnable {
             if (msg.getGameIndicator() != MessageParser.GAME_INDICATOR_GET_GAME)
             {
                // not a client message, must be a server message. Ignore
-               this.fLogger.info(this.uniqueID + ": Received Server Get Game Message, Ignoring");
+               this.logAndPublish.write(this.uniqueID + ": Received Server Get Game Message, Ignoring", true, false);
                return;
             }
-            // send the client the game list
+            // send the client the game list and switch to the GameList state
             int length = 12 + (int)(Math.ceil((double)this.oGameTypeList.size() / 4) * 4);
             MessageParser.ServerGetGameMessage svrMsg = this.messageParser.new ServerGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME, length, this.oGameTypeList);
             this.timeoutTimer.reschedule(this.m_lGameOpTimer);
-				this.fLogger.info(this.uniqueID + ": has sent get game message");
+				this.logAndPublish.write(this.uniqueID + ": has sent get game message", true, false);
 				try	{
                outputStream.writeByte((byte)this.messageParser.CreateServerGetGameMessage(svrMsg).length);
                outputStream.write(this.messageParser.CreateServerGetGameMessage(svrMsg)); 
@@ -619,22 +703,43 @@ public class ClientModel extends Observable implements Runnable {
          }
          else
          {
-            this.fLogger.info(this.uniqueID + ": has sent an invalid Game Message, Ignoring");
+			// invalid Game Message that was received for this state, ignore it
+            this.logAndPublish.write(this.uniqueID + ": has sent an invalid Game Message, Ignoring", true, false);
             return;
          }		
       }
       else
       {
-         this.fLogger.info(this.uniqueID + ": has sent an invalid Type Indicator, Ignoring");
+		// invalid type code for this state, ignore it
+         this.logAndPublish.write(this.uniqueID + ": has sent an invalid Type Indicator, Ignoring", true, false);
          return;
       }
    }
-	
+	/**
+	* The TimeoutTask Class
+	*
+	*	This class is used to create a timeout to avoid looping and provide reliability
+	*	It also handles closing the connection when the timeout occurs
+	* 
+	*  @author GROUP 2, CS544-900-SPRING12, DREXEL UNIVERSITY
+	*  Members: Jeremy Glesner, Dustin Overmiller, Yiqi Ju, Lei Yuan
+	*  Project: Advanced Game Message Protocol Implementation
+	*  
+	*/
 	class TimeoutTask extends TimerTask {
 		private ClientModel model;
+		/**
+		* Constructor
+		*
+		*/
 		public TimeoutTask(ClientModel model) {
 			this.model = model;
 		}
+		/**
+		* run - main method for the thread to run
+		* @param none
+		* @return none
+		*/
 		public void run() {
 			/*
 			 * A timeout occurred, determine if the connection was already closed, and if not close it
@@ -643,31 +748,50 @@ public class ClientModel extends Observable implements Runnable {
 			{
 				this.model.gameState.setState(GameState.CLOSED);
 				this.model.timeoutTimer.stop();
-				this.model.fLogger.info("Timeout event: " + this.model.uniqueID + ": has already closed the connection, exiting thread");
+				this.model.logAndPublish.write("Timeout event: " + this.model.uniqueID + ": has already closed the connection, exiting thread", true, false);
 				return;
 			}
 			else
 			{
-				this.model.fLogger.info(this.model.uniqueID + ": Timer expired Closing connection");
+				this.model.logAndPublish.write(this.model.uniqueID + ": Timer expired Closing connection", true, false);
 				this.model.timeoutTimer.stop();
 				this.model.gameState.setState(GameState.CLOSED);
 			}
 		}
 	}
-	
+	/**
+	* The TimeoutTimer Class
+	*
+	*	This class actually maintains the timer and stores the time for
+	*	it to go off
+	* 
+	*  @author GROUP 2, CS544-900-SPRING12, DREXEL UNIVERSITY
+	*  Members: Jeremy Glesner, Dustin Overmiller, Yiqi Ju, Lei Yuan
+	*  Project: Advanced Game Message Protocol Implementation
+	*  
+	*/
 	class TimeoutTimer extends Timer {
+		/* private members */
 		private TimerTask task;
 		private Timer timer;
 		private boolean bRunning;
 		private boolean bSchedule;
 		private ClientModel model;
+		/**
+		* Constructor
+		*
+		*/
 		public TimeoutTimer(ClientModel model) {
 			timer = new Timer();
 			bRunning = false;
 			bSchedule = false;
 			this.model = model;
 		}
-		
+		/**
+		* schedule - method to create a timer and assign it the task
+		* @param delay
+		* @return none
+		*/
 		public void schedule(long delay)
 		{
 			this.task = new TimeoutTask(this.model);
@@ -675,9 +799,15 @@ public class ClientModel extends Observable implements Runnable {
 			bSchedule = true;
 			timer.schedule(task, delay);
 		}
-		
+		/**
+		* reschedule - method to reschedule a timeout
+		* this is used when a valid message is received by the client
+		* @param delay
+		* @return none
+		*/
 		public void reschedule(long delay)
 		{
+			/* only reschedule if one is first scheduled */
 			if (bSchedule)
 			{
 				this.stop();
@@ -686,9 +816,14 @@ public class ClientModel extends Observable implements Runnable {
 				bRunning = true;
 			}
 		}
-		
+		/**
+		* stop - method to stop the timer
+		* @param none
+		* @return none
+		*/
 		public void stop()
 		{
+			/* if it is running stop it */
 			if (bRunning)
 			{
 				bRunning = false;

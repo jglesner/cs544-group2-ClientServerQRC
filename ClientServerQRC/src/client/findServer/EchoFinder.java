@@ -9,7 +9,16 @@ import java.util.Enumeration;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
-
+/**
+ *  The EchoFinder Class
+ *
+ *  Used to scan through the ip address of the network and use either ICMP or TCP
+ *  
+ *  @author GROUP 2, CS544-900-SPRING12, DREXEL UNIVERSITY
+ *  Members: Jeremy Glesner, Dustin Overmiller, Yiqi Ju, Lei Yuan
+ *  Project: Advanced Game Message Protocol Implementation
+ *  
+ */
 public class EchoFinder {
 
     /**
@@ -29,12 +38,22 @@ public class EchoFinder {
 	
     SSLSocketFactory ssf = null;
 
+    /**
+     * EchoFinder - constructor for the class
+     * @param ssf
+     * @param port
+     */
 	public EchoFinder(SSLSocketFactory ssf, int port) {
     	this.bs = new BindServer();
     	this.ssf = ssf;
     	this.port = port;
     }
     
+	/**
+	 * findAGMPServer - main routine to scan the different ip address and use either ICMP or TCP to find the server
+	 * @param port
+	 * @return
+	 */
 	public SSLSocket findAGMPServer(int port) {
 		try {
 			InetAddress localAddr = null;
@@ -46,6 +65,7 @@ public class EchoFinder {
 					e.printStackTrace();
 			}
 			
+			/* get the first three numbers of the ip address */
 			String[] strArray = localAddr.toString().split("\\.");
 			int first = Integer.parseInt(strArray[0].substring(1));
 			int second = Integer.parseInt(strArray[1]);
@@ -79,6 +99,11 @@ public class EchoFinder {
 		return socket;
 	}
 	
+	/**
+	 * getIpAddress - searches through the various network interfaces to find the ip address to use
+	 * @return
+	 * @throws SocketException
+	 */
     public InetAddress getIpAddress() throws SocketException {
     	
     	InetAddress localaddr = null;
