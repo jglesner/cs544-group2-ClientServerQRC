@@ -3,8 +3,17 @@ package common;
 import java.util.ArrayList;
 import common.card_game.Card;
 
-/* This class will be used by all classes to parse the incoming message or to create the outgoing messages
- * 
+/**
+ *  The MessageParser Class
+ *  
+ *  This class is used to handle the following:
+ *  1) Parsing incoming byte arrays to the proper message
+ *  2) Converting the message to a byte array for output
+ *
+ *  @author GROUP 2, CS544-900-SPRING12, DREXEL UNIVERSITY
+ *  Members: Jeremy Glesner, Dustin Overmiller, Yiqi Ju, Lei Yuan
+ *  Project: Advanced Game Message Protocol Implementation
+ *  
  */
 public class MessageParser {
 	
@@ -74,30 +83,37 @@ public class MessageParser {
 	public static int CONNECTION_INDICATOR_CLOSE_CONNECTION = 1;
 	public static int CONNECTION_INDICATOR_CLOSE_CONNECTION_ACK = 2;
    
-   /*
-   * This class represents the message structure for the version message
+   /**
+   * VersionMessage class used to store the Version Message PDU
+   *
    */
    public class VersionMessage
    {
+      /* class members */
       private int iVersion;
       private int iTypeCode;
       private int iVersionType;
       private short nMinorVersion;
       private long  lBankAmount;
+      /**
+      * Constructor
+      *
+      */
       public VersionMessage(int version, int typecode, int versiontype, short minorversion, long bankamount)
       {
+         /* make sure all parameters are valid */
          this.iVersion = 0;
          if (version >= 0)
          {
         	 this.iVersion = version;
          }
          this.iTypeCode = 0;
-         if (typecode == 1 || typecode == 2 || typecode == 3)
+         if (typecode > 0 && typecode < 4)
          {
         	 this.iTypeCode = typecode;
          }
          this.iVersionType = 0;
-         if (versiontype == 1 || versiontype == 2 || versiontype == 3 || versiontype == 4)
+         if (versiontype > 0 && versiontype < 5)
          {
         	 this.iVersionType = versiontype;
          }
@@ -112,69 +128,130 @@ public class MessageParser {
         	 this.lBankAmount = bankamount;
          }
       }
+      /**
+      * setVersion - set version member
+      * @param version
+      * @return none
+      */
       public void setVersion(int version)
       {
     	  this.iVersion = 0;
+        /* make sure it is valid */
     	  if (version >= 0)
     	  {
     		  this.iVersion = version;
     	  }
       }
+      /**
+      * getVersion - get version member
+      * @param none
+      * @return int
+      */
       public int getVersion()
       {
          return iVersion;
       }
+      /**
+      * setTypeCode - set type code member
+      * @param typecode
+      * @return none
+      */
       public void setTypeCode(int typecode)
       {
     	  this.iTypeCode = 0;
-          if (typecode == 1 || typecode == 2 || typecode == 3)
+        /* make sure it is valid */
+          if (typecode > 0 && typecode < 4)
           {
          	 this.iTypeCode = typecode;
           }
       }
+      /**
+      * getTypeCode - get type code member
+      * @param none
+      * @return int
+      */
       public int getTypeCode()
       {
          return iTypeCode;
       }
+      /**
+      * setVersionType - set version type member
+      * @param versiontype
+      * @return none
+      */
       public void setVersionType(int versiontype)
       {
     	  this.iVersionType = 0;
-          if (versiontype == 1 || versiontype == 2 || versiontype == 3 || versiontype == 4)
+        /* make sure it is valid */
+          if (versiontype > 0 && versiontype < 5)
           {
          	 this.iVersionType = versiontype;
           }
       }
+      /**
+      * getVersionType - get version type member
+      * @param none
+      * @return int
+      */
       public int getVersionType()
       {
          return iVersionType;
       }
+      /**
+      * setMinorVersion - set minor version member
+      * @param minorversion
+      * @return none
+      */
       public void setMinorVersion(short minorversion)
       {
     	  this.nMinorVersion = 0;
+        /* make sure it is valid */
           if (minorversion >= 0)
           {
          	 this.nMinorVersion = minorversion;
           }
       }
+      /**
+      * getMinorVersion - get minor version member
+      * @param none
+      * @return short
+      */
       public short getMinorVersion()
       {
          return nMinorVersion;
       }
+      /**
+      * setBankAmount - set bank amount member
+      * @param bankamount
+      * @return none
+      */
       public void setBankAmount(long bankamount)
       {
     	  this.lBankAmount = 0;
+        /* make sure it is valid */
           if (bankamount >= 0)
           {
          	 this.lBankAmount = bankamount;
           }
       }
+      /**
+      * getBankAmount - get bank amount member
+      * @param none
+      * @return long
+      */
       public long getBankAmount()
       {
          return lBankAmount;
       }   
       
+      /**
+      * toString - convert message to a string format
+      * @param none
+      * @return String
+      */
       public String toString()
       {
+         /* format the various type codes to strings */
     	  String sTypeCode = "UNKNOWN";
     	  if (iTypeCode == 0)
     	  {
@@ -223,96 +300,141 @@ public class MessageParser {
       }      
    }
    
-   /*
-   * This class represents the structure for the client
-   * get game message
+   /**
+   * ClientGetGameMessage class used to store the Client Get Game PDU Message
+   *
    */
    public class ClientGetGameMessage
    {
+      /* private members */
       private int iVersion;
       private int iTypeCode;
       private int iGameIndicator;
+      /**
+      * Constructor
+      *
+      */
       public ClientGetGameMessage(int version, int typecode, int gameindicator)
       {
+         /* make sure all parameters are valid */
          this.iVersion = 0;
          if (version >= 0)
          {
         	 this.iVersion = version;
          }
          this.iTypeCode = 0;
-         if (typecode == 1 || typecode == 2 || typecode == 3)
+         if (typecode > 0 && typecode < 4)
          {
         	 this.iTypeCode = typecode; 
          }
          this.iGameIndicator = 0;
-         if (gameindicator == 1 || gameindicator == 2 || gameindicator == 3)
+         if (gameindicator > 0 && gameindicator < 4)
          {
         	 this.iGameIndicator = gameindicator;
          }
       }
+      /**
+      * setVersion - set the version member
+      * @param version
+      * @return none
+      */
       public void setVersion(int version)
       {
     	  this.iVersion = 0;
+        /* make sure it is valid */
     	  if (version >= 0)
     	  {
     		  this.iVersion = version;
     	  }
       }
+      /**
+      * getVersion - get version member
+      * @param none
+      * @return int
+      */
       public int getVersion()
       {
          return iVersion;
       }
+      /**
+      * setTypeCode - set type code member
+      * @param typecode
+      * @return none
+      */
       public void setTypeCode(int typecode)
       {
     	  this.iTypeCode = 0;
-          if (typecode == 1 || typecode == 2 || typecode == 3)
+        /* make sure it is valid */
+          if (typecode > 0 && typecode < 4)
           {
          	 this.iTypeCode = typecode; 
           }
       }
+      /**
+      * getTypeCode - get type code member
+      * @param none
+      * @return int
+      */
       public int getTypeCode()
       {
          return iTypeCode;
       }
+      /**
+      * setGameIndicator - set game indicator member
+      * @param gameindicator
+      * @return none
+      */
       public void setGameIndicator(int gameindicator)
       {
     	  this.iGameIndicator = 0;
-          if (gameindicator == 1 || gameindicator == 2 || gameindicator == 3)
+          /* make sure it is valid */
+          if (gameindicator > 0 && gameindicator < 4)
           {
          	 this.iGameIndicator = gameindicator;
           }
       }
+      /**
+      * getGameIndicator - get game indicator member
+      * @param none
+      * @return int
+      */
       public int getGameIndicator()
       {
          return iGameIndicator;
       }      
    }
    
-   /*
-   * This class represents the structure for the server
-   * get game message
+   /**
+   * ServerGetGameMessage class used to store the Server Get Game PDU Message
+   *
    */
    public class ServerGetGameMessage
    {
+      /* private members */
       private int iVersion;
       private int iTypeCode;
       private int iGameIndicator;
       private long lMessageLength;
       private ArrayList<Integer> oGameTypeCodeList;
+      /**
+      * Constructor
+      *
+      */
       public ServerGetGameMessage(int version, int typecode, int gameindicator, long length, ArrayList<Integer> gametypecodelist)
       {
+         /* make sure all parameters are valid */
     	  this.iVersion = 0;
           if (version >= 0)
           {
          	 this.iVersion = version;
           }
           this.iTypeCode = 0;
-          if (typecode == 1 || typecode == 2 || typecode == 3)
+          if (typecode > 0 && typecode < 4)
           {
          	 this.iTypeCode = typecode; 
           }
           this.iGameIndicator = 0;
-          if (gameindicator == 1 || gameindicator == 2 || gameindicator == 3)
+          if (gameindicator > 0 && gameindicator < 4)
           {
          	 this.iGameIndicator = gameindicator;
           }
@@ -328,67 +450,126 @@ public class MessageParser {
         	  this.oGameTypeCodeList = gametypecodelist;
           }
       }
+      /**
+      * setVersion - set version member
+      * @param version
+      * @return none
+      */
       public void setVersion(int version)
       {
     	  this.iVersion = 0;
+        /* make sure it is valid */
           if (version >= 0)
           {
          	 this.iVersion = version;
           }
       }
+      /**
+      * getVersion - get version member
+      * @param none
+      * @return int
+      */
       public int getVersion()
       {
          return iVersion;
       }
+      /**
+      * setTypeCode - set type code member
+      * @param typecode
+      * @return none
+      */
       public void setTypeCode(int typecode)
       {
     	  this.iTypeCode = 0;
-          if (typecode == 1 || typecode == 2 || typecode == 3)
+        /* make sure it is valid */
+          if (typecode > 0 && typecode < 4)
           {
          	 this.iTypeCode = typecode; 
           }
       }
+      /**
+      * getTypeCode - get typecode member
+      * @param none
+      * @return int
+      */
       public int getTypeCode()
       {
          return iTypeCode;
       }
+      /**
+      * setGameIndicator - set game indicator member
+      * @param gameindicator
+      * @return none
+      */
       public void setGameIndicator(int gameindicator)
       {
     	  this.iGameIndicator = 0;
-          if (gameindicator == 1 || gameindicator == 2 || gameindicator == 3)
+        /* make sure it is valid */
+          if (gameindicator > 0 && gameindicator < 4)
           {
          	 this.iGameIndicator = gameindicator;
           }
       }
+      /**
+      * getGameIndicator - get game indicator member
+      * @param none
+      * @return int
+      */
       public int getGameIndicator()
       {
          return iGameIndicator;
       }   
+      /**
+      * setMessageLength - set message length member
+      * @param length
+      * @return none
+      */
       public void setMessageLength(long length)
       {
     	  this.lMessageLength = 0;
+        /* make sure it is valid */
           if (length >= 0)
           {
         	  this.lMessageLength = length;
           }
       }
+      /**
+      * getMessageLength - get message length member
+      * @param none
+      * @return long
+      */
       public long getMessageLength()
       {
          return lMessageLength;
       } 
+      /**
+      * setGameTypeCodeList - set game type code list member
+      * @param gametypecodelist
+      * @return none
+      */
       public void setGameTypeCodeList(ArrayList<Integer> gametypecodelist)
       {
     	  this.oGameTypeCodeList.clear();
+        /* make sure it is valid */
           if (gametypecodelist.size() >= 0)
           {
         	  this.oGameTypeCodeList = gametypecodelist;
           }
       }
+      /**
+      * getGameTypeCodeList - get game type code list member
+      * @param none
+      * @return ArrayList<Integer>
+      */
       public ArrayList<Integer> getGameTypeCodeList()
       {
          return oGameTypeCodeList;
       } 
-      
+      /**
+      * toString - convert the message to a string for printing
+      * @param none
+      * @return String
+      */
       public String toString()
       {
     	  String message = "";
@@ -404,9 +585,9 @@ public class MessageParser {
       
    }
    
-   /*
-   * This class represents the structure for the client
-   * set game message
+   /**
+   * ClientSetGameMessage class used to store the Client Set Game PDU Message
+   *
    */
    public class ClientSetGameMessage
    {
@@ -414,20 +595,25 @@ public class MessageParser {
       private int iTypeCode;
       private int iGameIndicator;
       private int  iGameTypeCode;
+      /**
+      * Constructor
+      *
+      */
       public ClientSetGameMessage(int version, int typecode, int gameindicator, int gametypecode)
       {
+         /* make sure all parameters are valid */
     	  this.iVersion = 0;
           if (version >= 0)
           {
          	 this.iVersion = version;
           }
           this.iTypeCode = 0;
-          if (typecode == 1 || typecode == 2 || typecode == 3)
+          if (typecode > 0 && typecode < 4)
           {
          	 this.iTypeCode = typecode; 
           }
           this.iGameIndicator = 0;
-          if (gameindicator == 1 || gameindicator == 2 || gameindicator == 3)
+          if (gameindicator > 0 && gameindicator < 4)
           {
          	 this.iGameIndicator = gameindicator;
           }
@@ -437,81 +623,131 @@ public class MessageParser {
         	  this.iGameTypeCode = gametypecode;
           }
       }
+      /**
+      * setVersion - set version member
+      * @param version
+      * @return none
+      */
       public void setVersion(int version)
       {
     	  this.iVersion = 0;
+        /* make sure it is valid */
           if (version >= 0)
           {
          	 this.iVersion = version;
           }
       }
+      /**
+      * getVersion - get version member
+      * @param none
+      * @return int
+      */
       public int getVersion()
       {
          return iVersion;
       }
+      /**
+      * setTypeCode - set type code member
+      * @param typecode
+      * @return none
+      */
       public void setTypeCode(int typecode)
       {
     	  this.iTypeCode = 0;
-          if (typecode == 1 || typecode == 2 || typecode == 3)
+        /* make sure it is valid */
+          if (typecode > 0 && typecode < 4)
           {
          	 this.iTypeCode = typecode; 
           }
       }
+      /**
+      * getTypeCode - get type code member
+      * @param none
+      * @return int
+      */
       public int getTypeCode()
       {
          return iTypeCode;
       }
+      /**
+      * setGameIndicator - set game indicator member
+      * @param gameindicator
+      * @return none
+      */
       public void setGameIndicator(int gameindicator)
       {
     	  this.iGameIndicator = 0;
-          if (gameindicator == 1 || gameindicator == 2 || gameindicator == 3)
+         /* make sure it is valid */
+          if (gameindicator > 0 && gameindicator < 4)
           {
          	 this.iGameIndicator = gameindicator;
           }
       }
+      /**
+      * getGameIndicator - get game indicator member
+      * @param none
+      * @return int
+      */
       public int getGameIndicator()
       {
          return iGameIndicator;
       }  
+      /**
+      * setGameTypeCode - set game type code member
+      * @param gametypecode
+      * @return none
+      */
       public void setGameTypeCode(int gametypecode)
       {
     	  this.iGameTypeCode = 0;
+        /* make sure it is valid */
           if (gametypecode == 1)
           {
         	  this.iGameTypeCode = gametypecode;
           }
       }
+      /**
+      * getGameTypeCode - get game type code member
+      * @param none
+      * @return int
+      */
       public int getGameTypeCode()
       {
          return iGameTypeCode;
       }
    }
    
-   /*
-   * This class represents the structure for the server
-   * set game message
+   /**
+   * ServerSetGameMessage class used to store the Server Set Game PDU Message
+   *
    */
    public class ServerSetGameMessage
    {
+      /* private members */
       private int iVersion;
       private int iTypeCode;
       private int iGameIndicator;
       private int  iGameTypeCode;
       private int iGameTypeResponse;
+      /**
+      * Constructor
+      *
+      */
       public ServerSetGameMessage(int version, int typecode, int gameindicator, int gametypecode, int gametyperesponse)
       {
+         /* make sure all params are valid */
     	  this.iVersion = 0;
           if (version >= 0)
           {
          	 this.iVersion = version;
           }
           this.iTypeCode = 0;
-          if (typecode == 1 || typecode == 2 || typecode == 3)
+          if (typecode > 0 && typecode < 4)
           {
          	 this.iTypeCode = typecode; 
           }
           this.iGameIndicator = 0;
-          if (gameindicator == 1 || gameindicator == 2 || gameindicator == 3)
+          if (gameindicator > 0 && gameindicator < 4)
           {
          	 this.iGameIndicator = gameindicator;
           }
@@ -521,74 +757,135 @@ public class MessageParser {
         	  this.iGameTypeCode = gametypecode;
           }
           this.iGameTypeResponse = 0;
-          if (gametyperesponse == 1 || gametyperesponse == 2)
+          if (gametyperesponse > 0 && gametyperesponse < 3)
           {
         	  this.iGameTypeResponse = gametyperesponse;
           }
       }
+      /**
+      * setVersion - set version member
+      * @param version
+      * @return none
+      */
       public void setVersion(int version)
       {
     	  this.iVersion = 0;
+        /* make sure it is valid */
           if (version >= 0)
           {
          	 this.iVersion = version;
           }
       }
+      /**
+      * getVersion - get version member
+      * @param none
+      * @return int
+      */
       public int getVersion()
       {
          return iVersion;
       }
+      /**
+      * setTypeCode - set type code member
+      * @param typecode
+      * @return none
+      */
       public void setTypeCode(int typecode)
       {
     	  this.iTypeCode = 0;
-          if (typecode == 1 || typecode == 2 || typecode == 3)
+        /* make sure it is valid */
+          if (typecode > 0 && typecode < 4)
           {
          	 this.iTypeCode = typecode; 
           }
       }
+      /**
+      * getTypeCode - get type code member
+      * @param none
+      * @return int
+      */
       public int getTypeCode()
       {
          return iTypeCode;
       }
+      /**
+      * setGameIndicator - set game indicator member
+      * @param gameindicator
+      * @return none
+      */
       public void setGameIndicator(int gameindicator)
       {
     	  this.iGameIndicator = 0;
-          if (gameindicator == 1 || gameindicator == 2 || gameindicator == 3)
+        /* make sure it is valid */
+          if (gameindicator > 0 && gameindicator < 4)
           {
          	 this.iGameIndicator = gameindicator;
           }
       }
+      /**
+      * getGameIndicator - get game indicator member
+      * @param none
+      * @return int
+      */
       public int getGameIndicator()
       {
          return iGameIndicator;
       }  
+      /**
+      * setGameTypeCode - set game type code member
+      * @param gametypecode
+      * @return none
+      */
       public void setGameTypeCode(int gametypecode)
       {
     	  this.iGameTypeCode = 0;
+        /* make sure it is valid */
           if (gametypecode == 1)
           {
         	  this.iGameTypeCode = gametypecode;
           }
       }
+      /**
+      * getGameTypeCode - get game type code member
+      * @param none
+      * @return int
+      */
       public int getGameTypeCode()
       {
          return iGameTypeCode;
       }
+      /**
+      * setGameTypeResponse - set game type response member
+      * @param gametyperesponse
+      * @return none
+      */
       public void setGameTypeResponse(int gametyperesponse)
       {
     	  this.iGameTypeResponse = 0;
-          if (gametyperesponse == 1 || gametyperesponse == 2)
+        /* make sure it is valid */
+          if (gametyperesponse > 0 && gametyperesponse < 3)
           {
         	  this.iGameTypeResponse = gametyperesponse;
           }
       }
+      /**
+      * getGameTypeResponse - get game type response member
+      * @param none
+      * @return int
+      */
       public int getGameTypeResponse()
       {
          return iGameTypeResponse;
       }
       
+      /**
+      * toString - convert the class to a string for output
+      * @param none
+      * @return String
+      */
       public String toString()
       {
+         /* format types to strings */
     	  String sGameResponse = "ERROR";
     	  if (iGameTypeResponse == 0)
     	  {
@@ -610,32 +907,38 @@ public class MessageParser {
       
    }
    
-    /*
-   * This class represents the structure for the client
-   * play game message
+    /**
+   * ClientPlayGameMessage class used to store the Client Play Game PDU Message
+   *
    */
    public class ClientPlayGameMessage
    {
+      /* ember variables */
       private int iVersion;
       private int iTypeCode;
       private int iGameIndicator;
       private int  iGameTypeCode;
       private int iGamePlayRequest;
       private long lBetAmount;
+      /**
+      * Constructor
+      *
+      */
       public ClientPlayGameMessage(int version, int typecode, int gameindicator, int gametypecode, int gameplayrequest, long betamount)
       {
+         /* make sure parameters are valid */
     	  this.iVersion = 0;
           if (version >= 0)
           {
          	 this.iVersion = version;
           }
           this.iTypeCode = 0;
-          if (typecode == 1 || typecode == 2 || typecode == 3)
+          if (typecode > 0 && typecode < 4)
           {
          	 this.iTypeCode = typecode; 
           }
           this.iGameIndicator = 0;
-          if (gameindicator == 1 || gameindicator == 2 || gameindicator == 3)
+          if (gameindicator > 0 && gameindicator < 4)
           {
          	 this.iGameIndicator = gameindicator;
           }
@@ -655,66 +958,126 @@ public class MessageParser {
         	  this.lBetAmount = betamount;
           }
       }
+      /**
+      * setVersion - set version member
+      * @param version
+      * @return none
+      */
       public void setVersion(int version)
       {
     	  this.iVersion = 0;
+        /* make sure it is valid */
           if (version >= 0)
           {
          	 this.iVersion = version;
           }
       }
+      /**
+      * getVersion - get version member
+      * @param none
+      * @return int
+      */
       public int getVersion()
       {
          return iVersion;
       }
+      /**
+      * setTypeCode - set type code member
+      * @param typecode
+      * @return none
+      */
       public void setTypeCode(int typecode)
       {
     	  this.iTypeCode = 0;
-          if (typecode == 1 || typecode == 2 || typecode == 3)
+         /* make sure it is valid */
+          if (typecode > 0 && typecode < 4)
           {
          	 this.iTypeCode = typecode; 
           }
       }
+      /**
+      * getTypeCode - get type code member
+      * @param none
+      * @return int
+      */
       public int getTypeCode()
       {
          return iTypeCode;
       }
+      /**
+      * setGameIndicator - set game indicator member
+      * @param gameindicator
+      * @return none
+      */
       public void setGameIndicator(int gameindicator)
       {
     	  this.iGameIndicator = 0;
-          if (gameindicator == 1 || gameindicator == 2 || gameindicator == 3)
+        /* make sure it is valid */
+          if (gameindicator > 0 && gameindicator < 4)
           {
          	 this.iGameIndicator = gameindicator;
           }
       }
+      /**
+      * getGameIndicator - get game indicator member
+      * @param none
+      * @return int
+      */
       public int getGameIndicator()
       {
          return iGameIndicator;
       }  
+      /**
+      * setGameTypeCode - set game type code member
+      * @param gametypecode
+      * @return none
+      */
       public void setGameTypeCode(int gametypecode)
       {
     	  this.iGameTypeCode = 0;
+        /* make sure it is valid */
           if (gametypecode == 1)
           {
         	  this.iGameTypeCode = gametypecode;
           }
       }
+      /**
+      * getGameTypeCode - get game type code member
+      * @param none
+      * @return int
+      */
       public int getGameTypeCode()
       {
          return iGameTypeCode;
       }
+      /**
+      * setGamePlayRequest - set game play request member
+      * @param gameplayrequest
+      * @return none
+      */
       public void setGamePlayRequest(int gameplayrequest)
       {
     	  this.iGamePlayRequest = 0;
+        /* make sure it is valid */
           if (gameplayrequest > 0 && gameplayrequest < 7)
           {
         	  this.iGamePlayRequest = gameplayrequest;
           }
       }
+      /**
+      * getGamePlayRequest - get game play request member
+      * @param none
+      * @return int
+      */
       public int getGamePlayRequest()
       {
          return iGamePlayRequest;
       }
+      /**
+      * setBetAmount - set bet amount member
+      * @param betamount
+      * @return none
+      */
       public void setBetAmount(long betamount)
       {
     	  this.lBetAmount = 0;
@@ -723,18 +1086,24 @@ public class MessageParser {
         	  this.lBetAmount = betamount;
           }
       }
+      /**
+      * getBetAmount - get bet amount code member
+      * @param none
+      * @return long
+      */
       public long getBetAmount()
       {
          return lBetAmount;
       }
    }
    
-    /*
-   * This class represents the structure for the server
-   * play game message
+   /**
+   * ServerPlayGameMessage class used to store the Server Play Game PDU Message
+   *
    */
    public class ServerPlayGameMessage
    {
+      /* member variables */
       private int iVersion;
       private int iTypeCode;
       private int iGameIndicator;
@@ -754,9 +1123,14 @@ public class MessageParser {
       private long lPotSize;
       private long lBetAmount;
       private long lBankAmount;
+      /**
+      * Constructor
+      *
+      */
       public ServerPlayGameMessage(int version, int typecode, int gameindicator, int gametypecode, int gameplayresponse, 
             int ante, Card p1, Card p2, Card d1, Card d2, Card f1, Card f2, Card f3, Card turn, Card river, int winner, long potsize, long betamount, long bankamount)
       {
+         /* make sure the parameters are correct */
     	  this.iVersion = 0;
     	  if (version >= 0)
     	  {
@@ -817,186 +1191,380 @@ public class MessageParser {
     		  this.lBankAmount = bankamount;
     	  }
       }
+      /**
+      * setVersion - set version member
+      * @param version
+      * @return none
+      */
       public void setVersion(int version)
       {
     	  this.iVersion = 0;
+        /* make sure it is valid */
     	  if (version >= 0)
     	  {
     		  this.iVersion = version;
     	  }
       }
+      /**
+      * getVersion - get version member
+      * @param none
+      * @return int
+      */
       public int getVersion()
       {
          return iVersion;
       }
+      /**
+      * setTypeCode - set type code member
+      * @param typecode
+      * @return none
+      */
       public void setTypeCode(int typecode)
       {
     	  this.iTypeCode = 0;
+        /* make sure it is valid */
     	  if (typecode > 0 && typecode < 4)
     	  {
     		  this.iTypeCode = typecode;
     	  }
       }
+      /**
+      * getTypeCode - get type code member
+      * @param none
+      * @return int
+      */
       public int getTypeCode()
       {
          return iTypeCode;
       }
+      /**
+      * setGameIndicator - set game indicator member
+      * @param gameindicator
+      * @return none
+      */
       public void setGameIndicator(int gameindicator)
       {
     	  this.iGameIndicator = 0;
+        /* make sure it is valid */
     	  if (gameindicator > 0 && gameindicator < 4)
     	  {
     		  this.iGameIndicator = gameindicator;
     	  }
       }
+      /**
+      * getGameIndicator - get game indicator member
+      * @param none
+      * @return int
+      */
       public int getGameIndicator()
       {
          return iGameIndicator;
       }  
+      /**
+      * setGamTypeCode - set game type code member
+      * @param gametypecode
+      * @return none
+      */
       public void setGameTypeCode(int gametypecode)
       {
     	  this.iGameTypeCode = 0;
+        /* make sure it is valid */
     	  if (gametypecode == 1)
     	  {
     		  this.iGameTypeCode = gametypecode;
     	  }
       }
+      /**
+      * getGameTypeCode - get game type code member
+      * @param none
+      * @return int
+      */
       public int getGameTypeCode()
       {
          return iGameTypeCode;
       }
+      /**
+      * setGamePlayResponse - set game play response member
+      * @param gameplayresponse
+      * @return none
+      */
       public void setGamePlayResponse(int gameplayresponse)
       {
     	  this.iGamePlayResponse = 0;
+        /* make sure it is valid */
     	  if (gameplayresponse > 0 && gameplayresponse < 12)
     	  {
     		  this.iGamePlayResponse = gameplayresponse;
     	  }
       }
+      /**
+      * getGamePlayResponse - get game play response member
+      * @param none
+      * @return int
+      */
       public int getGamePlayResponse()
       {
          return iGamePlayResponse;
       }
+      /**
+      * setAnte - set ante member
+      * @param ante
+      * @return none
+      */
       public void setAnte(int ante)
       {
     	  this.iAnte = 0;
+        /* make sure it is valid */
     	  if (ante > 0)
     	  {
     		  this.iAnte = ante;
     	  }
       }
+      /**
+      * getAnte - get ante member
+      * @param none
+      * @return int
+      */
       public int getAnte()
       {
          return iAnte;
       }
+      /**
+      * setPlayerCard1 - set player card 1 member
+      * @param card
+      * @return none
+      */
       public void setPlayerCard1(Card card)
       {
          this.ePlayerCard1 = card;
       }
+      /**
+      * getPlayerCard1 - get player card 1 member
+      * @param none
+      * @return card
+      */
       public Card getPlayerCard1()
       {
          return ePlayerCard1;
       }
+      /**
+      * setPlayerCard2 - set player card 2 member
+      * @param card
+      * @return none
+      */
       public void setPlayerCard2(Card card)
       {
          this.ePlayerCard2 = card;
       }
+      /**
+      * getPlayerCard2 - get player card 2 member
+      * @param none
+      * @return card
+      */
       public Card getPlayerCard2()
       {
          return ePlayerCard2;
       }
+      /**
+      * setDealerCard1 - set dealer card 1 member
+      * @param card
+      * @return none
+      */
       public void setDealerCard1(Card card)
       {
          this.eDealerCard1 = card;
       }
+      /**
+      * getDealerCard1 - get dealer card 1 member
+      * @param none
+      * @return card
+      */
       public Card getDealerCard1()
       {
          return eDealerCard1;
       }
+      /**
+      * setDealerCard2 - set dealer card 2 member
+      * @param card
+      * @return none
+      */
       public void setDealerCard2(Card card)
       {
          this.eDealerCard2 = card;
       }
+      /**
+      * getDealerCard2 - get dealer card 2 member
+      * @param none
+      * @return card
+      */
       public Card getDealerCard2()
       {
          return eDealerCard2;
       }
+      /**
+      * setFlopCard1 - set flop card 1 member
+      * @param card
+      * @return none
+      */
       public void setFlopCard1(Card card)
       {
          this.eFlopCard1 = card;
       }
+      /**
+      * getFlopCard1 - get flop card 1 member
+      * @param none
+      * @return card
+      */
       public Card getFlopCard1()
       {
          return eFlopCard1;
       }
+      /**
+      * setFlopCard2 - set flop card 2 member
+      * @param card
+      * @return none
+      */
       public void setFlopCard2(Card card)
       {
          this.eFlopCard2 = card;
       }
+      /**
+      * getFlopCard2 - get flop card 2 member
+      * @param none
+      * @return card
+      */
       public Card getFlopCard2()
       {
          return eFlopCard2;
       }
+      /**
+      * setFlopCard3 - set flop card 3 member
+      * @param card
+      * @return none
+      */
       public void setFlopCard3(Card card)
       {
          this.eFlopCard3 = card;
       }
+      /**
+      * getFlopCard3 - get flop card 3 member
+      * @param none
+      * @return card
+      */
       public Card getFlopCard3()
       {
          return eFlopCard3;
       }
+      /**
+      * setTurnCard - set turn card member
+      * @param card
+      * @return none
+      */
       public void setTurnCard(Card card)
       {
          this.eTurnCard = card;
       }
+      /**
+      * getTurnCard - get turn card member
+      * @param none
+      * @return card
+      */
       public Card getTurnCard()
       {
          return eTurnCard;
       }
+      /**
+      * setRiverCard - set river card member
+      * @param card
+      * @return none
+      */
       public void setRiverCard(Card card)
       {
          this.eRiverCard = card;
       }
+      /**
+      * getRiverCard - get river card member
+      * @param none
+      * @return card
+      */
       public Card getRiverCard()
       {
          return eRiverCard;
       }
+      /**
+      * setWinner - set winner member
+      * @param winner
+      * @return none
+      */
       public void setWinner(int winner)
       {
     	  this.iWinner = 0;
+        /* make sure it is valid */
     	  if (winner > 0 && winner < 4)
     	  {
     		  this.iWinner = winner;
     	  }
       }
+      /**
+      * getWinner - get winner member
+      * @param none
+      * @return int
+      */
       public int getWinner()
       {
          return iWinner;
       }
+      /**
+      * setPotSize - set pot size member
+      * @param potsize
+      * @return none
+      */
       public void setPotSize(long potsize)
       {
     	  this.lPotSize = 0;
+        /* make sure it is valid */
     	  if (potsize >= 0)
     	  {
     		  this.lPotSize = potsize;
     	  }
       }
+      /**
+      * getPotSize - get pot size member
+      * @param none
+      * @return long
+      */
       public long getPotSize()
       {
          return lPotSize;
       }
+      /**
+      * setBetAmount - set bet amount member
+      * @param betamount
+      * @return none
+      */
       public void setBetAmount(long betamount)
       {
     	  this.lBetAmount = 0;
+        /* make sure it is valid */
     	  if (betamount >= 0)
     	  {
     		  this.lBetAmount = betamount;
     	  }
       }
+      /**
+      * getBetAmount - get bet amount member
+      * @param none
+      * @return long
+      */
       public long getBetAmount()
       {
          return lBetAmount;
       }
+      /**
+      * setBankAmount - set bank amount member
+      * @param bankamount
+      * @return none
+      */
       public void setBankAmount(long bankamount)
       {
     	  this.lBankAmount = 0;
@@ -1005,25 +1573,34 @@ public class MessageParser {
     		  this.lBankAmount = bankamount;
     	  }
       }
+      /**
+      * getBankAmount - get bank amount member
+      * @param none
+      * @return long
+      */
       public long getBankAmount()
       {
          return lBankAmount;
       }
-      
-
-      
    }
    
-   /*
-   * This class is for Connection Message
+   /**
+   * ConnectionMessage class used to store the Connection Message PDU
+   *
    */
    public class ConnectionMessage
    {
+      /* member variables */
       private int iVersion;
       private int iTypeCode;
       private int iConnectionCode;
+      /**
+      * Constructor
+      *
+      */
       public ConnectionMessage(int version, int typecode, int concode)
       {
+         /* make sure all parameters are valid */
     	  this.iVersion = 0;
     	  if (version > 0)
     	  {
@@ -1040,18 +1617,34 @@ public class MessageParser {
     		  this.iConnectionCode = concode;
     	  }
       }
+      /**
+      * setVersion - set version member
+      * @param version
+      * @return none
+      */
       public void setVersion(int version)
       {
     	  this.iVersion = 0;
+        /* make sure it is valid */
     	  if (version >= 0)
     	  {
     		  this.iVersion = version;
     	  }
       }
+      /**
+      * getVersion - get version member
+      * @param none
+      * @return int
+      */
       public int getVersion()
       {
          return iVersion;
       }
+      /**
+      * setTypeCode - set type code member
+      * @param typecode
+      * @return none
+      */
       public void setTypeCode(int typecode)
       {
     	  this.iTypeCode = 0;
@@ -1060,10 +1653,20 @@ public class MessageParser {
     		  this.iTypeCode = typecode;
     	  }
       }
+      /**
+      * getTypeCode - get type code member
+      * @param none
+      * @return int
+      */
       public int getTypeCode()
       {
          return iTypeCode;
       }
+      /**
+      * setConnectionCode - set connection code member
+      * @param concode
+      * @return none
+      */
       public void setConnectionCode(int concode)
       {
     	  this.iConnectionCode = 0;
@@ -1072,46 +1675,63 @@ public class MessageParser {
     		  this.iConnectionCode = concode;
     	  }
       }
+      /**
+      * getConnectionCode - get connection code member
+      * @param none
+      * @return int
+      */
       public int getConnectionCode()
       {
          return iConnectionCode;
       }
    }
        
-      
-	/*
-   * This function will return the version of the message
+   /**
+   * GetVersion - This function will return the version of the message
    * It will be -1 if the message is not the correct size
-   */
+   * @param buffer
+   * @param iSize
+   * @return int
+   */   
 	public int GetVersion(byte[] buffer, int iSize)
 	{
 		int version = -1;
+      /* make sure the mesage is the proper size */
 		if (iSize >= 2)
 		{
+         /* get the data from the byte array */
 			version = (int)(((buffer[0] << 8) | buffer[1]) & 0xFFFF );
 		}
 		return version;
 	}
 	
-   /* 
-   * This function will return the type indicator of the message
-   * It will be -1 if the message is not the correct size
-   */  
+   /**
+   * GetTypeIndicator - This function will return the type indicator of the message
+   * It will be 0 (NOT_SET) if the message is not the correct size
+   * @param buffer
+   * @param iSize
+   * @return int
+   */   
 	public int GetTypeIndicator(byte[] buffer, int iSize)
 	{
 		int Indicator = NOT_SET;
+      /* make sure the message is the proper size */
 		if (iSize >= 4)
 		{
+         /* get the data from the byte array */
 			Indicator = ((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
 			return Indicator;
 		}
       return Indicator;  
 	}
 	
-	/* 
-	 * Function will get the version message
-    * Values will be -1 if the message is not the correct type
-	 */
+   /**
+   * GetVersionMessage - Function will get the version message
+    * Values will be NOT_SET or -1 if the message is not the correct type
+   * @param buffer
+   * @param iSize
+   * @return VersionMessage
+   */
 	public VersionMessage GetVersionMessage(byte[] buffer, int iSize)
 	{
 		int version = -1;
@@ -1119,8 +1739,10 @@ public class MessageParser {
 		int verType = NOT_SET;
 		short minorversion = -1;
 		long bankamount = -1;
+      /* make sure the message is the proper size */
 		if (iSize == 12)
 		{
+         /* get the data from the byte array */
 			version = (int)(((buffer[0] << 8) | buffer[1]) & 0xFFFF ); //FFFF
 			indicator = ((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF)); //FFFF
 			verType = ((int)(buffer[4] & 0xFF));
@@ -1138,12 +1760,16 @@ public class MessageParser {
 		return message;
 	}
 	
-	/* 
-   * This function will create the version message 
+   /**
+   * CreateVersionMessage - This function will create the byte array
+   * associated with the versio message to send over the socket
+   * @param VersionMessage
+   * @return byte[]
    */
 	public byte[] CreateVersionMessage(VersionMessage message)
 	{
 		byte[] buffer = new byte[12];
+      /* store the Version message into the byte array */
 		buffer[0] = (byte)((message.getVersion() & 0xFF00) >> 8);
 		buffer[1] = (byte)(message.getVersion() & 0xFF);
 		buffer[2] = (byte)((message.getTypeCode() & 0xFF00) >> 8);
@@ -1159,31 +1785,41 @@ public class MessageParser {
 		return buffer;
 	}
 	
-	/*
-	 * Function to get the GameIndicator
-    * Value will be -1 if the message is not the right size
-	 */
+   /**
+   * GetGameIndicator - Function to get the GameIndicator
+    * Value will be 0 (NOT_SET) if the message is not the right size
+   * @param buffer
+   * @param iSize
+   * @return int
+   */
 	public int GetGameIndicator(byte[] buffer, int iSize)
 	{
 		int indicator = NOT_SET;
+      /* make sure the message is the proper size */
 		if (iSize >= 5)
 		{
+         /* get the data from the byte array */
 			indicator = ((short)(buffer[4] & 0xFF));
 		}
 		return indicator;
 	}
    
-   /*
-   * Function to get the client get-game message
-   * Values will be -1 if the message is incorrect
+   /**
+   * GetClientGetGameMessage - Function to get the client get game message
+   * The values will be -1 and 0 (NOT_SET) if the message is not the correct size
+   * @param buffer
+   * @param iSize
+   * @return ClientGetGameMessage
    */
    public ClientGetGameMessage GetClientGetGameMessage(byte[] buffer, int iSize)
    {
 	   int version = -1;
 	   int typecode = NOT_SET;
 	   int gameindicator = NOT_SET;
+      /* make sure the message is the proper size */
       if (iSize == 8)
       {
+         /* get the data from the byte array */
          version = (int)(((buffer[0] << 8) | buffer[1]) & 0xFFFF );
          typecode = ((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
          gameindicator = ((int)(buffer[4] & 0xFF));
@@ -1193,12 +1829,16 @@ public class MessageParser {
       return message;
    }
    
-   /* 
-   * Function to create the client get-game message
+   /**
+   * CreateClientGetGameMessage - Function to convert the Client Get Game Message
+   * into a byte array to be sent across the socket connection
+   * @param ClientGetGameMessage
+   * @return byte[]
    */
    public byte[] CreateClientGetGameMessage(ClientGetGameMessage message)
    {
       byte[] buffer = new byte[8];
+      /* convert the message to a byte array */
 		buffer[0] = (byte)((message.getVersion() & 0xFF00) >> 8);
 		buffer[1] = (byte)(message.getVersion() & 0xFF);
 		buffer[2] = (byte)((message.getTypeCode() & 0xFF00) >> 8);
@@ -1210,9 +1850,13 @@ public class MessageParser {
 		return buffer;
    }
 	
-	/*
-	 * Function to get the server get game message
-	 */
+	/**
+   * GetServerGetGameMessage - Function to get the server get game message
+   * The values will be -1 and 0 (NOT_SET) if the message is not the correct size
+   * @param buffer
+   * @param iSize
+   * @return ServerGetGameMessage
+   */
     public ServerGetGameMessage GetServerGetGameMessage(byte[] buffer, int iSize)
     {
     	int version = -1;
@@ -1221,8 +1865,10 @@ public class MessageParser {
     	long length = -1;
     	ArrayList<Integer> GameTypeCodes = new ArrayList<Integer>();
     	GameTypeCodes.clear();
+      /* make sure the message is the proper size */
     	if ((iSize >= 16) && ((iSize % 4) == 0))
     	{
+         /* get the data from the byte array */
     		version = (int)(((buffer[0] << 8) | buffer[1]) & 0xFFFF );
     		typecode = ((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
     		gameindicator = ((int)(buffer[4] & 0xFF));
@@ -1238,6 +1884,7 @@ public class MessageParser {
             {
                length = (long)iSize;
             }
+            /* grab the list of games and fill in the array */
             for (int iI = 12; iI < length; iI++)
             {
                short gameCode = (short)(buffer[iI] & 0xFF);
@@ -1251,15 +1898,20 @@ public class MessageParser {
         return message;
     }
 	
-	/*
-	 * Function to create the server Get game message
-	 */
+	/**
+   * CreateServerGetGameMessage - Function to convert the Server Get Game Message
+   * into a byte array to be sent across the socket connection
+   * @param ServerGetGameMessage
+   * @return byte[]
+   */
 	public byte[] CreateServerGetGameMessage(ServerGetGameMessage message)
 	{
+      /* get the length field of the message */
 		int gameCodeLen = ((int)Math.ceil(message.getGameTypeCodeList().size() / 4.0) * 4);
 		int length = gameCodeLen + 12;
 		long uilength = (long)length;
 		byte[] buffer = new byte[length];
+      /* convert to a byte array */
 		buffer[0] = (byte)((message.getVersion() & 0xFF00) >> 8);
 		buffer[1] = (byte)(message.getVersion() & 0xFF);
 		buffer[2] = (byte)((message.getTypeCode() & 0xFF00) >> 8);
@@ -1287,17 +1939,23 @@ public class MessageParser {
 		return buffer;
 	}
 	
-	/*
-	 * Function to get the Client Set Game Message
-	 */
+	/**
+   * GetClientSetGameMessage - Function to get the client set game message
+   * The values will be -1 and 0 (NOT_SET) if the message is not the correct size
+   * @param buffer
+   * @param iSize
+   * @return ClientSetGameMessage
+   */
 	public ClientSetGameMessage GetClientSetGameMessage(byte[] buffer, int iSize)
 	{
 		int version = -1;
 		int typecode = NOT_SET;
 		int gameindicator = NOT_SET;
 		int gamecode = NOT_SET;
+      /* make sure the message is the proper size */
 		if (iSize == 8)
 		{
+         /* get the data from the byte array */
 			version = (int)(((buffer[0] << 8) | buffer[1]) & 0xFFFF );
     		typecode = ((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
     		gameindicator = ((short)(buffer[4] & 0xFF));
@@ -1308,12 +1966,16 @@ public class MessageParser {
 		return message;
 	}
 	
-	/*
-	 *  Function to create the Client Set Game Message
-	 */
+	/**
+   * CreateClientSetGameMessage - Function to convert the Client Set Game Message
+   * into a byte array to be sent across the socket connection
+   * @param ClientSetGameMessage
+   * @return byte[]
+   */
 	public byte[] CreateClientSetGameMessage(ClientSetGameMessage message)
 	{
 		byte[] buffer = new byte[8];
+      /* convert to a byte array */
 		buffer[0] = (byte)((message.getVersion() & 0xFF00) >> 8);
 		buffer[1] = (byte)(message.getVersion() & 0xFF);
 		buffer[2] = (byte)((message.getTypeCode() & 0xFF00) >> 8);
@@ -1326,9 +1988,13 @@ public class MessageParser {
 		return buffer;
 	}
     
-    /*
-     * Function to get the Server Set Game Message
-     */
+   /**
+   * GetServerSetGameMessage - Function to get the server set game message
+   * The values will be -1 and 0 (NOT_SET) if the message is not the correct size
+   * @param buffer
+   * @param iSize
+   * @return ServerSetGameMessage
+   */
 	public ServerSetGameMessage GetServerSetGameMessage(byte[] buffer, int iSize)
 	{
 		int version = -1;
@@ -1336,8 +2002,10 @@ public class MessageParser {
 		int gameindicator = NOT_SET;
 		int gamecode = NOT_SET;
 		int gameresponse = NOT_SET;
+      /* make sure the message is the proper size */
 		if (iSize == 8)
 		{
+         /* get the data from the byte array */
 			version = (int)(((buffer[0] << 8) | buffer[1]) & 0xFFFF );
     		typecode = ((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
     		gameindicator = ((int)(buffer[4] & 0xFF));
@@ -1349,12 +2017,16 @@ public class MessageParser {
 		return message;
 	}
 	
-	/*
-	 *  Function to create the Server Set Game Message
-	 */
+	/**
+   * CreateServerSetGameMessage - Function to convert the Server Set Game Message
+   * into a byte array to be sent across the socket connection
+   * @param ServerSetGameMessage
+   * @return byte[]
+   */
 	public byte[] CreateServerSetGameMessage(ServerSetGameMessage message)
 	{
 		byte[] buffer = new byte[8];
+      /* convert message to a byte array */
 		buffer[0] = (byte)((message.getVersion() & 0xFF00) >> 8);
 		buffer[1] = (byte)(message.getVersion() & 0xFF);
 		buffer[2] = (byte)((message.getTypeCode() & 0xFF00) >> 8);
@@ -1367,9 +2039,13 @@ public class MessageParser {
 		return buffer;
 	}
 	
-	/*
-	 * Function to get the Client Play Game Message
-	 */
+	/**
+   * GetClientPlayGameMessage - Function to get the client play game message
+   * The values will be -1 and 0 (NOT_SET) if the message is not the correct size
+   * @param buffer
+   * @param iSize
+   * @return ClientPlayGameMessage
+   */
 	public ClientPlayGameMessage GetClientPlayGameMessage(byte[] buffer, int iSize)
 	{
 		int version = -1;
@@ -1378,8 +2054,10 @@ public class MessageParser {
 		int gamecode = NOT_SET;
 		int gamerequest = NOT_SET;
 		long betamount = -1;
+      /* make sure the message is the proper size */
 		if (iSize == 12)
 		{
+         /* get the data from the byte array */
 			version = (int)(((buffer[0] << 8) | buffer[1]) & 0xFFFF );
     		typecode = ((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
     		gameindicator = ((int)(buffer[4] & 0xFF));
@@ -1395,12 +2073,16 @@ public class MessageParser {
 		return message;
 	}
 	
-	/*
-	 *  Function to create the Client Play Game Message
-	 */
+	/**
+   * CreateClientPlayGameMessage - Function to convert the Client Play Game Message
+   * into a byte array to be sent across the socket connection
+   * @param ClientPlayGameMessage
+   * @return byte[]
+   */
 	public byte[] CreateClientPlayGameMessage(ClientPlayGameMessage message)
 	{
 		byte[] buffer = new byte[12];
+      /* convert message to a byte array */
 		buffer[0] = (byte)((message.getVersion() & 0xFF00) >> 8);
 		buffer[1] = (byte)(message.getVersion() & 0xFF);
 		buffer[2] = (byte)((message.getTypeCode() & 0xFF00) >> 8);
@@ -1417,9 +2099,13 @@ public class MessageParser {
 		return buffer;
 	}
 	
-	/*
-	 *  Function to get the server play game message
-	 */
+	/**
+   * GetServerPlayGameMessage - Function to get the server play game message
+   * The values will be -1 and 0 (NOT_SET) if the message is not the correct size
+   * @param buffer
+   * @param iSize
+   * @return ServerPlayGameMessage
+   */
 	public ServerPlayGameMessage GetServerPlayGameMessage(byte[] buffer, int iSize)
 	{
 		int version = -1;
@@ -1443,8 +2129,10 @@ public class MessageParser {
 		Card f3 = new Card(Card.NOT_SET, Card.NOT_SET);
 		Card t1 = new Card(Card.NOT_SET, Card.NOT_SET);
 		Card r1 = new Card(Card.NOT_SET, Card.NOT_SET);
+      /* make sure the message is the proper size */
 		if (iSize == 32)
 		{
+         /* convert the byte array to the data */
 			version = (int)(((buffer[0] << 8) | buffer[1]) & 0xFFFF );
     		typecode = ((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
     		gameindicator = ((int)(buffer[4] & 0xFF));
@@ -1508,12 +2196,16 @@ public class MessageParser {
 		return message;
 	}
 	
-	/*
-	 *  Function to create the Server Play Game Message
-	 */
+	/**
+   * CreateServerPlayGameMessage - Function to convert the Server Play Game Message
+   * into a byte array to be sent across the socket connection
+   * @param ServerPlayGameMessage
+   * @return byte[]
+   */
 	public byte[] CreateServerPlayGameMessage(ServerPlayGameMessage message)
 	{
 		byte[] buffer = new byte[32];
+      /* convert message to the byte array */
 		buffer[0] = (byte)((message.getVersion() & 0xFF00) >> 8);
 		buffer[1] = (byte)(message.getVersion() & 0xFF);
 		buffer[2] = (byte)((message.getTypeCode() & 0xFF00) >> 8);
@@ -1550,16 +2242,22 @@ public class MessageParser {
 		return buffer;
 	}
 	
-	/*
-	 * Function to get the Connection Message
-	 */
+	/**
+   * GetConnectionMessage - Function to get the connection message
+   * The values will be -1 and 0 (NOT_SET) if the message is not the correct size
+   * @param buffer
+   * @param iSize
+   * @return ConnectionMessage
+   */
 	public ConnectionMessage GetConnectionMessage(byte[] buffer, int iSize)
 	{
 		int version = -1;
 		int typecode = NOT_SET;
 		int concode = NOT_SET;
+      /* make sure the message is the proper size */
 		if (iSize == 8)
 		{
+         /* get the data from the byte array */
 			version = (int)(((buffer[0] << 8) | buffer[1]) & 0xFFFF );
     		typecode = ((int)(((buffer[2] << 8) | buffer[3]) & 0xFFFF));
     		concode = (int)((buffer[4] & 0xFF));
@@ -1569,12 +2267,16 @@ public class MessageParser {
 		return message;
 	}
 	
-	/*
-	 *  Function to create the Connection Message
-	 */
+	/**
+   * CreateConnectionMessage - Function to convert the Connection Message
+   * into a byte array to be sent across the socket connection
+   * @param ConnectionMessage
+   * @return byte[]
+   */
 	public byte[] CreateConnectionMessage(ConnectionMessage message)
 	{
 		byte[] buffer = new byte[8];
+      /* convert the message to a byte array */
 		buffer[0] = (byte)((message.getVersion() & 0xFF00) >> 8);
 		buffer[1] = (byte)(message.getVersion() & 0xFF);
 		buffer[2] = (byte)((message.getTypeCode() & 0xFF00) >> 8);

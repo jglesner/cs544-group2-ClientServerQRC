@@ -10,9 +10,14 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 /**
- * EchoFinder class is used to scan through the ip address of the network and use either ICMP or TCP
- * to find the server
+ *  The EchoFinder Class
  *
+ *  Used to scan through the ip address of the network and use either ICMP or TCP
+ *  
+ *  @author GROUP 2, CS544-900-SPRING12, DREXEL UNIVERSITY
+ *  Members: Jeremy Glesner, Dustin Overmiller, Yiqi Ju, Lei Yuan
+ *  Project: Advanced Game Message Protocol Implementation
+ *  
  */
 public class EchoFinder {
 

@@ -10,6 +10,8 @@ import java.util.logging.SimpleFormatter;
 
 /**
  *  The LogAndPublish Errorhandler Class
+ *
+ *  Used by both the client and the server for logging and console output
  *  
  *  @author GROUP 2, CS544-900-SPRING12, DREXEL UNIVERSITY
  *  Members: Jeremy Glesner, Dustin Overmiller, Yiqi Ju, Lei Yuan

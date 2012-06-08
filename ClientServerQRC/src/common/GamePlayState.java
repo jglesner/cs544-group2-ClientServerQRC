@@ -1,10 +1,16 @@
 package common;
 
 /**
- * GamePlayState class is used by the client to maintain the current phase of texas holdem
- * It contains the various states that the client could transition to, a simple contructor, and
- * getter and setter functions 
+ *  The GamePlayState Class
  *
+ *  Used by the client to maintain the current phase of texas holdem
+ *  It contains the various states that the client could transition to, a simple contructor, and
+ *  getter and setter functions 
+ *  
+ *  @author GROUP 2, CS544-900-SPRING12, DREXEL UNIVERSITY
+ *  Members: Jeremy Glesner, Dustin Overmiller, Yiqi Ju, Lei Yuan
+ *  Project: Advanced Game Message Protocol Implementation
+ *  
  */
 public class GamePlayState {
 	public static int NOT_SET = 0;
@@ -16,7 +22,7 @@ public class GamePlayState {
 	public static int FOLD = 6;
 	private int state;
 	/**
-	 * GamePhase - Contructor used to create the class
+	 * GamePlayState - Contructor used to create the class
 	 * @param none
 	 */
 	public GamePlayState()

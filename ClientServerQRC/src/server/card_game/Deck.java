@@ -1,18 +1,30 @@
 package server.card_game;
 
 import java.util.Random;
-
 import common.card_game.Card;
 
-/*
- * This code was obtained with help from http://www.cs.uga.edu/~gtb/1302/Project1/Deck.java
+/**
+ *  The Deck Class
+ *  
+ *  This class is used by the server to represent a deck in 
+ *	card games. It contains 52 card objects and the server can
+ *	shuffle and retrieve cards
+ *
+ *  @author GROUP 2, CS544-900-SPRING12, DREXEL UNIVERSITY
+ *  Members: Jeremy Glesner, Dustin Overmiller, Yiqi Ju, Lei Yuan
+ *  Project: Advanced Game Message Protocol Implementation
+ *  
  */
-
 public class Deck {
+	/* private member variables */
 	private static Random gen = new Random();
 	private Card[] deck = null;
 	private int curIndex;
 	
+	/**
+	* Constructor - create the 52 card deck
+	*
+	*/
 	public Deck() {
 		deck = new Card[52];
 		int kK = 0;
@@ -28,6 +40,12 @@ public class Deck {
 		curIndex = 0;
 	}
 	
+	/**
+      * shuffle - method to randomize the cards in an effort
+	  * to "shuffle" the deck
+      * @param version
+      * @return none
+      */
 	public void shuffle()
 	{
 		int randIndex;
@@ -41,7 +59,11 @@ public class Deck {
 		}
 		curIndex = 0;
 	}
-	
+	/**
+      * getCards - get a number of cards from the deck
+      * @param nNumCards
+      * @return Card[]
+      */
 	public Card[] getCards(int nNumCards)
 	{
 		Card[] cards = null;

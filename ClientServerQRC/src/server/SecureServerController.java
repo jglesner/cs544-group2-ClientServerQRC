@@ -3,7 +3,7 @@
  *  Members: Jeremy Glesner, Dustin Overmiller, Yiqi Ju, Lei Yuan
  *  Project: Advanced Game Message Protocol Implementation
  *  
- *  This is an example of a client side application using the Advanced Game Management Protocol to send messages   
+ *  This is an example of a server side application using the Advanced Game Management Protocol to send messages   
  * 
  *  This application framework originally drew heavily from the following resource:
  *  1. Saleem, Usman. "A Pattern/Framework for Client/Server Programming in Java". Year accessed: 2012, Month accessed: 05, Day accessed: 2.
@@ -33,7 +33,6 @@ import javax.net.ssl.*;
 import common.*;
 import java.security.*;
 import java.security.cert.*;
-import java.util.logging.*;
 
 
 /**
@@ -60,7 +59,7 @@ public class SecureServerController implements Observer {
 	private ClientModel ClientModel;
 	private final XmlParser xmlParser;
 	/* logging utility */
-	private final Logger fLogger;
+	private LogAndPublish logAndPublish;
 	
 
 	/** Port number of ServerController. */
@@ -69,36 +68,30 @@ public class SecureServerController implements Observer {
 	/** status for listening */
 	private boolean listening;	
 	
-	
+	/**
+   * start - start the server controller
+   * @param none
+   * @return none
+   */
 	public void start()
 	{
-		System.out.println("Starting Server...");	
-		this.fLogger.info("Starting the Server:");
+      logAndPublish.write("Starting Server...", true, true);
 		try
 		{
 			startServerController();
-			System.out.println("Successful\n");	
-			this.fLogger.info("Server started successfully");
+         logAndPublish.write("Server started successfully", true, true);
 		}
 		catch(Exception e)
 		{
-			System.out.println("Error " + e);			
+         logAndPublish.write(e, true, false);		
 		}	
 	}	
-	
+	/**
+   * Constructor for SecureServerController
+   */
 	public SecureServerController(XmlParser xmlParser, LogAndPublish logAndPublish) {
 		this.xmlParser = xmlParser;
-		this.fLogger = Logger.getLogger(this.xmlParser.getServerTagValue("LOG_FILE"));
-		this.fLogger.setUseParentHandlers(false);
-		this.fLogger.removeHandler(new ConsoleHandler());
-		try {
-			FileHandler fh = new FileHandler(this.xmlParser.getServerTagValue("LOG_FILE"), true);
-			fh.setFormatter(new SimpleFormatter());
-			this.fLogger.addHandler(fh);
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
+      this.logAndPublish = logAndPublish;
 		this.clients = new Vector<ClientModel>();
 	    this.port = Integer.parseInt(this.xmlParser.getServerTagValue("PORT_NUMBER"));
 	    this.listening = false;
@@ -106,11 +99,16 @@ public class SecureServerController implements Observer {
 		this.trustStorePassword=this.xmlParser.getServerTagValue("DEFAULT_TRUSTSTORE_PASSWORD");
 		this.keyStore=this.xmlParser.getServerTagValue("DEFAULT_KEYSTORE");
 		this.keyStorePassword=this.xmlParser.getServerTagValue("DEFAULT_KEYSTORE_PASSWORD");
-		this.fLogger.info("Setting port number to:" + this.port);
-		this.fLogger.info("Using TrustStore: " + this.trustStore);
-		this.fLogger.info("Setting KeyStore: " + this.keyStore);
+		this.logAndPublish.write("Setting port number to:" + this.port, true, false);
+		this.logAndPublish.write("Using TrustStore: " + this.trustStore, true, false);
+		this.logAndPublish.write("Setting KeyStore: " + this.keyStore, true, false);
 	}
 
+   /**
+   * startServerController - start the server controller thread
+   * @param none
+   * @return none
+   */
 	public void startServerController() {
 		if (!listening) {
 			this.sst = new StartSecureServerControllerThread();
@@ -118,7 +116,11 @@ public class SecureServerController implements Observer {
 	        this.listening = true;
 	    }
 	}
-	
+	/**
+   * stpServerController - stop the server controller
+   * @param none
+   * @return none
+   */
 	public void stopServerController() {
 	    if (this.listening) {
 	        this.sst.stopServerControllerThread();
@@ -134,16 +136,29 @@ public class SecureServerController implements Observer {
 	    }
 	}
 
-	//Observable interface//
+	/**
+   * update - Observable interface
+   * @param observable
+   * @param object
+   * @return none
+   */
 	public void update(Observable observable, Object object) {
 	    //notified by observables, do cleanup here//
 	    this.clients.removeElement(observable);
 	}
-
+   /**
+   * getPort - get the port number
+   * @param none
+   * @return int
+   */
 	public int getPort() {
 	    return port;
 	}
-
+   /**
+   * setPort - set the port number
+   * @param port
+   * @return none
+   */
 	public void setPort(int port) {
 	    this.port = port;
 	}
@@ -156,17 +171,17 @@ public class SecureServerController implements Observer {
 	class SimpleHandshakeListener implements HandshakeCompletedListener
 	{
 		String ident;
-		private final Logger fLogger;
+		private final LogAndPublish logAndPublish;
 
 	    /**
 	     * Constructs a SimpleHandshakeListener with the given
 	     * identifier.
 	     * @param ident Used to identify output from this Listener.
 	     */
-	    public SimpleHandshakeListener(String ident, Logger fLogger)
+	    public SimpleHandshakeListener(String ident, LogAndPublish logAndPublish)
 	    {
 	      this.ident=ident;
-	      this.fLogger = fLogger;
+	      this.logAndPublish = logAndPublish;
 	    }
 
 	    /** Invoked upon SSL handshake completion. */
@@ -176,10 +191,10 @@ public class SecureServerController implements Observer {
 	      try {
 	        X509Certificate cert=(X509Certificate)event.getPeerCertificates()[0];
 	        String peer=cert.getSubjectDN().getName();
-	        this.fLogger.info(ident+": Request from "+peer+"\n");
+	        this.logAndPublish.write(""+ident+": Request from "+peer+"\n", true, false);
 	      }
 	      catch (SSLPeerUnverifiedException pue) {
-	    	  this.fLogger.warning(ident+": Peer unverified\n");
+	    	  this.logAndPublish.write(""+ident+": Peer unverified\n", true, false);
 	      }
 	    }	
 	  }
@@ -222,17 +237,17 @@ public class SecureServerController implements Observer {
 	            	SecureServerController.this.socket = (SSLSocket)SecureServerController.this.ssocket.accept();
 	            	String uniqueID = socket.getInetAddress() + ":" + socket.getPort();
 	          
-    	            HandshakeCompletedListener hcl=new SimpleHandshakeListener(uniqueID, SecureServerController.this.fLogger);
+    	            HandshakeCompletedListener hcl=new SimpleHandshakeListener(uniqueID, SecureServerController.this.logAndPublish);
     	            SecureServerController.this.socket.addHandshakeCompletedListener(hcl);      
 	            	
-	            	SecureServerController.this.fLogger.info("Client " + uniqueID + " connected using ");
+	            	SecureServerController.this.logAndPublish.write("Client " + uniqueID + " connected using ", true, false);
 	                try 
 	                {
 	                	SSLSession clientSession = socket.getSession();
-	                	SecureServerController.this.fLogger.info("protocol: " + clientSession.getProtocol() + ", ");
-	                	SecureServerController.this.fLogger.info("cipher: " + clientSession.getCipherSuite() + "\n");
+	                	SecureServerController.this.logAndPublish.write("protocol: " + clientSession.getProtocol() + ", ", true, false);
+	                	SecureServerController.this.logAndPublish.write("cipher: " + clientSession.getCipherSuite() + "\n", true, false);
 	                	
-	                	SecureServerController.this.ClientModel = new ClientModel(SecureServerController.this.socket, SecureServerController.this.xmlParser, SecureServerController.this.fLogger);
+	                	SecureServerController.this.ClientModel = new ClientModel(SecureServerController.this.socket, SecureServerController.this.xmlParser, SecureServerController.this.logAndPublish);
 	                    Thread t = new Thread(SecureServerController.this.ClientModel);
 	                    SecureServerController.this.ClientModel.addObserver(SecureServerController.this);
 	                    SecureServerController.this.clients.addElement(SecureServerController.this.ClientModel);
@@ -247,10 +262,14 @@ public class SecureServerController implements Observer {
 	            this.stopServerControllerThread();
 	        }
 	    }
-
+   /**
+   * stopServerControllerThread - stop the server controller thread
+   * @param none
+   * @return none
+   */
     public void stopServerControllerThread() {
     	try {
-    		SecureServerController.this.fLogger.info("Stopping the server thread");
+    		SecureServerController.this.logAndPublish.write("Stopping the server thread", true, false);
     		SecureServerController.this.ssocket.close();
     	}
     	catch (IOException ioe) {

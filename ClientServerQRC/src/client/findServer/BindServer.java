@@ -8,9 +8,14 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 /**
- * 
- * BindServer class used to create the socket connection between the server and the client
+ *  The BindServer Class
  *
+ *  Used to create the socket connection between the server and the client
+ *  
+ *  @author GROUP 2, CS544-900-SPRING12, DREXEL UNIVERSITY
+ *  Members: Jeremy Glesner, Dustin Overmiller, Yiqi Ju, Lei Yuan
+ *  Project: Advanced Game Message Protocol Implementation
+ *  
  */
 public class BindServer {
 	
