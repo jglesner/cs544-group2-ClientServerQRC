@@ -442,7 +442,7 @@ public class TexasGame extends javax.swing.JFrame {
 		
 		jLabel16.setIcon(new javax.swing.ImageIcon(getClass().getClassLoader().getResource(sDealerCard1)));
 		jLabel17.setIcon(new javax.swing.ImageIcon(getClass().getClassLoader().getResource(sDealerCard2)));
-		
+				
 		jButton1.setVisible(true);
 		jButton2.setVisible(true);
 		jButton4.setVisible(false);
@@ -469,9 +469,9 @@ public class TexasGame extends javax.swing.JFrame {
         String sFlopCard2=this.getCardSource(this.pokerModel.getoFlopCards()[1]);
         String sFlopCard3=this.getCardSource(this.pokerModel.getoFlopCards()[2]);
         
-        jLabel1.setIcon(new ImageIcon(getClass().getResource(sFlopCard1)));
-        jLabel2.setIcon(new ImageIcon(getClass().getResource(sFlopCard2)));
-        jLabel3.setIcon(new ImageIcon(getClass().getResource(sFlopCard3)));
+        jLabel1.setIcon(new ImageIcon(getClass().getClassLoader().getResource(sFlopCard1)));
+        jLabel2.setIcon(new ImageIcon(getClass().getClassLoader().getResource(sFlopCard2)));
+        jLabel3.setIcon(new ImageIcon(getClass().getClassLoader().getResource(sFlopCard3)));
         
     	jButton4.setVisible(true);
     	
@@ -485,7 +485,7 @@ public class TexasGame extends javax.swing.JFrame {
     }
     public void setTurnCard(){
     	  String sTurnCard1=this.getCardSource(this.pokerModel.getoTurnCard());
-    	  jLabel4.setIcon(new ImageIcon(getClass().getResource(sTurnCard1)));
+    	  jLabel4.setIcon(new ImageIcon(getClass().getClassLoader().getResource(sTurnCard1)));
     	  basicRefresh();
     }
     
@@ -494,9 +494,9 @@ public class TexasGame extends javax.swing.JFrame {
     	 String sDealerCard1=this.getCardSource(this.pokerModel.getoDealerCards()[0]);
          String sDealerCard2=this.getCardSource(this.pokerModel.getoDealerCards()[1]);
          
-    	jLabel5.setIcon(new ImageIcon(getClass().getResource(sRiverCard1)));
-		jLabel16.setIcon(new javax.swing.ImageIcon(getClass().getResource(sDealerCard1)));
-		jLabel17.setIcon(new javax.swing.ImageIcon(getClass().getResource(sDealerCard2)));
+    	jLabel5.setIcon(new ImageIcon(getClass().getClassLoader().getResource(sRiverCard1)));
+		jLabel16.setIcon(new javax.swing.ImageIcon(getClass().getClassLoader().getResource(sDealerCard1)));
+		jLabel17.setIcon(new javax.swing.ImageIcon(getClass().getClassLoader().getResource(sDealerCard2)));
 		
 		jButton1.setText("go back to game list");
 		jButton2.setText("play again");

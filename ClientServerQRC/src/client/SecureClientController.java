@@ -357,10 +357,13 @@ public class SecureClientController implements Runnable {
 							    this.texasFrame=new TexasGame(holdemModel);
 								this.texasFrame.setMinAnte(min_ante);
 								this.texasFrame.getPokerModel().setlBankAmount(bankAmount);
-								this.texasFrame.setInfo("the minimum ante is "+min_ante);
 								this.texasFrame.init();
+								this.texasFrame.setInfo("The minimum ante is "+min_ante);
+								this.texasFrame.revalidate();
+								this.texasFrame.repaint();
 								this.texasFrame.setVisible(true);
-							
+								
+								
 								while(this.texasFrame.getbPlayGames() == InputState.NOT_SET)
 								{
 									logAndPublish.write("waiting for client to bet", false, false);
@@ -404,7 +407,6 @@ public class SecureClientController implements Runnable {
 							if (svrPlayMsg.getGamePlayResponse() == MessageParser.GAME_PLAY_RESPONSE_GET_HOLE_ACK)
 							{
 								/* display server msg */
-								logAndPublish.write("get hole ack", false, false);
 //								PrintGamePlayMessage(sr);
 								getGameInfo(sr);
 								this.bankAmount = svrPlayMsg.getBankAmount();
