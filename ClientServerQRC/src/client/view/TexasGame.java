@@ -8,93 +8,77 @@ import client.card_game.ClientPokerModel;
 import client.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+
+import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 
-import common.MessageParser.TypeIndicator;
+import common.card_game.Card;
+import images.*;
 
 
+/**
+ *
+ * 
+ */
 public class TexasGame extends javax.swing.JFrame {
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
-    private javax.swing.JButton jButton2;
-    public InputState getbPlayGames() {
-		return bPlayGames;
-	}
-
-	public void setbPlayGames(InputState bPlayGames) {
-		this.bPlayGames = bPlayGames;
-	}
-
-	public InputState getbGetHole() {
-		return bGetHole;
-	}
-
-	public void setbGetHole(InputState bGetHole) {
-		this.bGetHole = bGetHole;
-	}
-
-	public InputState getbGetFlog() {
-		return bGetFlog;
-	}
-
-	public void setbGetFlog(InputState bGetFlog) {
-		this.bGetFlog = bGetFlog;
-	}
-
-	public InputState getbGetTurn() {
-		return bGetTurn;
-	}
-
-	public void setbGetTurn(InputState bGetTurn) {
-		this.bGetTurn = bGetTurn;
-	}
-
-	public InputState getbGetRiver() {
-		return bGetRiver;
-	}
-
-	public void setbGetRiver(InputState bGetRiver) {
-		this.bGetRiver = bGetRiver;
-	}
-	private javax.swing.JButton jButton3;
-    private javax.swing.JButton jButton4;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel10;
-    private javax.swing.JLabel jLabel11;
-    private javax.swing.JLabel jLabel12;
-    private javax.swing.JLabel jLabel13;
-    private javax.swing.JLabel jLabel14;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel5;
-
-
-	private javax.swing.JLabel jLabel6;
-    private javax.swing.JLabel jLabel7;
-    private javax.swing.JLabel jLabel8;
-    private javax.swing.JLabel jLabel9;
-    private javax.swing.JMenu jMenu1;
-    private javax.swing.JMenu jMenu2;
-    private javax.swing.JMenuBar jMenuBar1;
-    private javax.swing.JMenuItem jMenuItem1;
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel2;
-    private javax.swing.JPanel jPanel3;
-    private javax.swing.JTextField jTextField1;
     
+	  private javax.swing.JButton jButton1;
+	    private javax.swing.JButton jButton2;
+	    private javax.swing.JButton jButton3;
+	    private javax.swing.JButton jButton4;
+	    private javax.swing.JLabel jLabel1;
+	    private javax.swing.JLabel jLabel10;
+	    private javax.swing.JLabel jLabel11;
+	    private javax.swing.JLabel jLabel12;
+	    private javax.swing.JLabel jLabel13;
+	    private javax.swing.JLabel jLabel14;
+	    private javax.swing.JLabel jLabel16;
+	    private javax.swing.JLabel jLabel17;
+	    private javax.swing.JLabel jLabel2;
+	    private javax.swing.JLabel jLabel3;
+	    private javax.swing.JLabel jLabel4;
+	    private javax.swing.JLabel jLabel5;
+	    private javax.swing.JLabel jLabel6;
+	    private javax.swing.JLabel jLabel7;
+	    private javax.swing.JLabel jLabel8;
+	    private javax.swing.JLabel jLabel9;
+	    private javax.swing.JPanel jPanel1;
+	    private javax.swing.JPanel jPanel2;
+	    private javax.swing.JPanel jPanel3;
+	    private javax.swing.JPanel jPanel4;
+	    private javax.swing.JTextField jTextField1;
+   
+    private ClientPokerModel pokerModel;
+    private int userAnte;
+    private int minAnte;
+    private String info;
     
-    private ClientPokerModel pokerModel = new ClientPokerModel();
-    private int userAnte=-1;
-    private int minAnte=-1;
-    private InputState bPlayGames=InputState.NOT_SET;
-    private InputState bGetHole=InputState.NOT_SET;
-    private InputState bGetFlog=InputState.NOT_SET;
-    private InputState bGetTurn=InputState.NOT_SET;
-    private InputState bGetRiver=InputState.NOT_SET;
-  
+	private InputState bPlayGames;
+    private InputState follow;
     
-  
+    public int getFollow() {
+    	return follow.getState();
+    }
+    
+    public void setFollow(int follow) {
+    	this.follow.setState(follow);
+    }
+    
+    public int getbPlayGames() {
+    	return bPlayGames.getState();
+    }
+    
+    public void setbPlayGames(int state) {
+    	bPlayGames.setState(state);
+    }
+
+	public String getInfo() {
+		return info;
+	}
+
+	public void setInfo(String info) {
+		this.info = info;
+	}
 
 	public ClientPokerModel getPokerModel() {
 		return pokerModel;
@@ -110,30 +94,44 @@ public class TexasGame extends javax.swing.JFrame {
 
 	public void setUserAnte(int userAnte) {
 		this.userAnte = userAnte;
-	}
-
-	public int getMinAnte() {
-		return minAnte;
-	}
-
-	public void setMinAnte(int minAnte) {
-		this.minAnte = minAnte;
-	}
+	}  
+  
     /**
      * Creates new form TexasGame
      */
-    public TexasGame() {
-       
+    public TexasGame( ClientPokerModel pokerModel) {
+    	bPlayGames = new InputState(InputState.NOT_SET);
+        follow = new InputState(InputState.NOT_SET);
+        init( pokerModel);
     }
-
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
      * regenerated by the Form Editor.
      */
     @SuppressWarnings("unchecked")
+    public int getMinAnte() {
+  		return minAnte;
+  	}
+
+  	public void setMinAnte(int minAnte) {
+  		this.minAnte = minAnte;
+  	}
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-   public void initComponents() {
+    public void init(ClientPokerModel pokerModel){
+    	   this.pokerModel=pokerModel;
+           bPlayGames.setState(InputState.NOT_SET);
+           follow.setState(InputState.NOT_SET);
+    }
+    public void reset(ClientPokerModel pokerModel)
+    {
+    	this.pokerModel = pokerModel;
+        bPlayGames.setState(InputState.NOT_SET);
+        follow.setState(InputState.NOT_SET);
+    	
+    }
+    
+    public void init() {
 
         jPanel2 = new javax.swing.JPanel();
         jPanel1 = new javax.swing.JPanel();
@@ -145,6 +143,9 @@ public class TexasGame extends javax.swing.JFrame {
         jLabel9 = new javax.swing.JLabel();
         jLabel12 = new javax.swing.JLabel();
         jLabel13 = new javax.swing.JLabel();
+        jPanel4 = new javax.swing.JPanel();
+        jLabel16 = new javax.swing.JLabel();
+        jLabel17 = new javax.swing.JLabel();
         jLabel6 = new javax.swing.JLabel();
         jButton1 = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
@@ -157,10 +158,6 @@ public class TexasGame extends javax.swing.JFrame {
         jLabel14 = new javax.swing.JLabel();
         jButton3 = new javax.swing.JButton();
         jButton4 = new javax.swing.JButton();
-        jMenuBar1 = new javax.swing.JMenuBar();
-        jMenu1 = new javax.swing.JMenu();
-        jMenuItem1 = new javax.swing.JMenuItem();
-        jMenu2 = new javax.swing.JMenu();
 
         org.jdesktop.layout.GroupLayout jPanel2Layout = new org.jdesktop.layout.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
@@ -178,60 +175,92 @@ public class TexasGame extends javax.swing.JFrame {
         setBackground(new java.awt.Color(0, 153, 153));
 
         jPanel1.setBackground(new java.awt.Color(0, 153, 153));
-        jLabel2.setText("flop1");
+
         jLabel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
         jLabel2.setBackground(new java.awt.Color(102, 0, 0));
-        jLabel2.setText("flop2");
         jLabel2.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
-        jLabel3.setText("flop3");
         jLabel3.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
-        jLabel4.setText("turn");
         jLabel4.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
-        jLabel5.setText("river");
         jLabel5.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
-        jLabel9.setText("The minimum Ante is "+new Integer(this.minAnte).toString());
-
+        jLabel9.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+   
+     
         jLabel12.setText("Pot:");
 
-        jLabel13.setText(new Long(pokerModel.getlPotSize()).toString());
+        jLabel13.setText(new Long(this.pokerModel.getlPotSize()).toString());
+        jLabel13.setMaximumSize(new java.awt.Dimension(100000, 16));
+        jLabel13.setPreferredSize(new java.awt.Dimension(100, 16));
+
+        jPanel4.setBackground(new java.awt.Color(0, 153, 153));
+
+        jLabel16.setBackground(new java.awt.Color(255, 255, 255));
+        jLabel16.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+
+        jLabel17.setBackground(new java.awt.Color(255, 255, 255));
+        jLabel17.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+
+        org.jdesktop.layout.GroupLayout jPanel4Layout = new org.jdesktop.layout.GroupLayout(jPanel4);
+        jPanel4.setLayout(jPanel4Layout);
+        jPanel4Layout.setHorizontalGroup(
+            jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel4Layout.createSequentialGroup()
+                .add(12, 12, 12)
+                .add(jLabel17, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 72, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
+                .add(jLabel16, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 72, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(16, Short.MAX_VALUE))
+        );
+        jPanel4Layout.setVerticalGroup(
+            jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel4Layout.createSequentialGroup()
+                .addContainerGap(8, Short.MAX_VALUE)
+                .add(jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                    .add(jLabel16, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 96, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(jLabel17, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 96, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap())
+        );
 
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .add(jLabel9, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 280, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(89, 89, 89))
             .add(jPanel1Layout.createSequentialGroup()
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jPanel1Layout.createSequentialGroup()
-                        .add(22, 22, 22)
-                        .add(jLabel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 70, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .add(18, 18, 18)
-                        .add(jLabel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 72, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .add(18, 18, 18)
-                        .add(jLabel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 72, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
-                        .add(jLabel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 72, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .add(24, 24, 24)
-                        .add(jLabel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 72, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                     .add(jPanel1Layout.createSequentialGroup()
                         .add(184, 184, 184)
                         .add(jLabel12)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(jLabel13)))
-                .addContainerGap(19, Short.MAX_VALUE))
+                        .add(jLabel13, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(jPanel1Layout.createSequentialGroup()
+                        .add(140, 140, 140)
+                        .add(jPanel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(jPanel1Layout.createSequentialGroup()
+                        .add(22, 22, 22)
+                        .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                            .add(jLabel9, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .add(jPanel1Layout.createSequentialGroup()
+                                .add(jLabel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 70, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .add(18, 18, 18)
+                                .add(jLabel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 72, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .add(18, 18, 18)
+                                .add(jLabel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 72, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
+                                .add(jLabel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 72, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .add(24, 24, 24)
+                                .add(jLabel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 72, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))))
+                .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel1Layout.createSequentialGroup()
-                .add(16, 16, 16)
+                .addContainerGap()
+                .add(jPanel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(18, 18, 18)
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jLabel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 96, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(jLabel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 96, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
@@ -241,7 +270,7 @@ public class TexasGame extends javax.swing.JFrame {
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jLabel12)
-                    .add(jLabel13))
+                    .add(jLabel13, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jLabel9, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 16, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
         );
@@ -250,24 +279,21 @@ public class TexasGame extends javax.swing.JFrame {
         jLabel6.setText("Texas Hold'em");
 
         jButton1.setText("Fold");
-
         jButton2.setText("Bet");
-        jButton2.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton2ActionPerformed(evt);
-            }
-        });
-
+        jButton4.setText("Check");
+        
+        jButton1.setVisible(false);
+        jButton2.setVisible(false);
+        jButton4.setVisible(false);
+        
         jPanel3.setBackground(new java.awt.Color(0, 153, 153));
 
         jLabel8.setBackground(new java.awt.Color(255, 255, 255));
-        jLabel8.setText("card2");
         jLabel8.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
         jLabel7.setBackground(new java.awt.Color(255, 255, 255));
-        jLabel7.setText("card1");
         jLabel7.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
-
+        
         org.jdesktop.layout.GroupLayout jPanel3Layout = new org.jdesktop.layout.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
@@ -288,52 +314,31 @@ public class TexasGame extends javax.swing.JFrame {
                     .add(jLabel7, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 96, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap())
         );
-        
+
         jLabel10.setText("Bet Amount:");
-        jTextField1.setText(new Long(this.pokerModel.getlBetAmount()).toString());
-        jTextField1.setCursor(new java.awt.Cursor(java.awt.Cursor.TEXT_CURSOR));
 
         jLabel11.setText("Bank Account:");
+
+        jTextField1.setText(new Integer(this.minAnte).toString());
+        jTextField1.setCursor(new java.awt.Cursor(java.awt.Cursor.TEXT_CURSOR));
+        jTextField1.setPreferredSize(new java.awt.Dimension(100, 28));
+        jTextField1.setSize(new java.awt.Dimension(4, 0));
+
+
         jLabel14.setText(new Long(this.pokerModel.getlBankAmount()).toString());
+        jLabel14.setMaximumSize(new java.awt.Dimension(100000, 16));
+        jLabel14.setPreferredSize(new java.awt.Dimension(100, 16));
 
         jButton3.setText("Yes");
         jButton3.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-            	System.out.println("into action");
-                userAnte=Integer.parseInt(jTextField1.getText());
-                bGetHole=InputState.YES;
+                userAnte= Integer.parseInt(jTextField1.getText());
+                bPlayGames.setState(InputState.FOLLOW);
             }
         });
 
-        jButton4.setText("Check");
+     
 
-        jMenu1.setText("File");
-        jMenu1.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jMenu1MouseClicked(evt);
-            }
-        });
-
-        jMenuItem1.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, java.awt.event.InputEvent.CTRL_MASK));
-        jMenuItem1.setText("Quit");
-        jMenuItem1.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jMenuItem1MouseClicked(evt);
-            }
-        });
-        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem1ActionPerformed(evt);
-            }
-        });
-        jMenu1.add(jMenuItem1);
-
-        jMenuBar1.add(jMenu1);
-
-        jMenu2.setText("Edit");
-        jMenuBar1.add(jMenu2);
-
-        setJMenuBar(jMenuBar1);
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -342,161 +347,238 @@ public class TexasGame extends javax.swing.JFrame {
             .add(layout.createSequentialGroup()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(layout.createSequentialGroup()
-                        .add(195, 195, 195)
-                        .add(jLabel6))
-                    .add(layout.createSequentialGroup()
-                        .add(32, 32, 32)
+                        .add(181, 181, 181)
+                        .add(jPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                             .add(layout.createSequentialGroup()
-                                .add(81, 81, 81)
+                                .add(jLabel10)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .add(jTextField1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(jButton3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 70, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                            .add(layout.createSequentialGroup()
+                                .add(jLabel11)
+                                .add(18, 18, 18)
+                                .add(jLabel14, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .add(0, 0, Short.MAX_VALUE))))
+                    .add(layout.createSequentialGroup()
+                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                            .add(layout.createSequentialGroup()
+                                .add(41, 41, 41)
+                                .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                            .add(layout.createSequentialGroup()
+                                .add(194, 194, 194)
+                                .add(jLabel6))
+                            .add(layout.createSequentialGroup()
+                                .add(109, 109, 109)
                                 .add(jButton4)
-                                .add(26, 26, 26)
+                                .add(30, 30, 30)
                                 .add(jButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 86, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                                 .add(28, 28, 28)
-                                .add(jButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 86, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                            .add(layout.createSequentialGroup()
-                                .add(143, 143, 143)
-                                .add(jPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
-                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                                    .add(jLabel11)
-                                    .add(layout.createSequentialGroup()
-                                        .add(jLabel10)
-                                        .add(19, 19, 19)
-                                        .add(jTextField1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
-                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                                    .add(jLabel14)
-                                    .add(jButton3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 70, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))))))
+                                .add(jButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 86, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                        .add(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(layout.createSequentialGroup()
-                .add(16, 16, 16)
+                .add(25, 25, 25)
                 .add(jLabel6)
-                .add(27, 27, 27)
+                .add(18, 18, 18)
                 .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(31, 31, 31)
+                .add(18, 18, 18)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jButton2)
-                    .add(jButton1)
-                    .add(jButton4))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                    .add(jButton4)
+                    .add(jButton1))
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(layout.createSequentialGroup()
-                        .add(6, 6, 6)
-                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                                .add(jLabel10)
-                                .add(jTextField1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                            .add(layout.createSequentialGroup()
-                                .add(1, 1, 1)
-                                .add(jButton3)))
+                        .add(61, 61, 61)
+                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                            .add(jButton3)
+                            .add(jTextField1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(jLabel10))
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                             .add(jLabel11)
-                            .add(jLabel14))))
+                            .add(jLabel14, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                    .add(layout.createSequentialGroup()
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 22, Short.MAX_VALUE)
+                        .add(jPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
                 .add(45, 45, 45))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jMenu1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jMenu1MouseClicked
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jMenu1MouseClicked
-
-    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jMenuItem1ActionPerformed
-
-    private void jMenuItem1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jMenuItem1MouseClicked
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jMenuItem1MouseClicked
-
-    private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField1ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField1ActionPerformed
-
-    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-       
-    }//GEN-LAST:event_jButton2ActionPerformed
-
-    private void jTextField1PropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_jTextField1PropertyChange
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField1PropertyChange
-
-    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jButton3ActionPerformed
-
+  
     /**
      * @param args the command line arguments
      */
-    public static void main(String args[]) {
-        /*
-         * Set the Nimbus look and feel
-         */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /*
-         * If Nimbus (introduced in Java SE 6) is not available, stay with the
-         * default look and feel. For details see
-         * http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
+    public String getCardSource(Card c){
+    	if(!c.isVisible())
+    		return "images/card_back.png";
+    	int value=c.getCardValue();
+    	String svalue="";
+    	if(value<10)
+    		svalue="0"+new Integer(value).toString();
+    	else
+    		svalue=new Integer(value).toString();
+    		
+    	String ssuit =new Integer(c.getCardSuite()).toString();
+    	return "images/card_"+ssuit+svalue+".png";
+    }
+    public void setHoleCards(){
+    	
+        String sPlayCard1=this.getCardSource(this.pokerModel.getoPlayerCards()[0]);
+        String sPlayCard2=this.getCardSource(this.pokerModel.getoPlayerCards()[1]);
+        
+        String sDealerCard1=this.getCardSource(this.pokerModel.getoDealerCards()[0]);
+        String sDealerCard2=this.getCardSource(this.pokerModel.getoDealerCards()[1]);
+        
+		jLabel7.setIcon(new javax.swing.ImageIcon(getClass().getClassLoader().getResource(sPlayCard1)));
+		jLabel8.setIcon(new javax.swing.ImageIcon(getClass().getClassLoader().getResource(sPlayCard2)));
+		
+		jLabel16.setIcon(new javax.swing.ImageIcon(getClass().getClassLoader().getResource(sDealerCard1)));
+		jLabel17.setIcon(new javax.swing.ImageIcon(getClass().getClassLoader().getResource(sDealerCard2)));
+		
+		jButton1.setVisible(true);
+		jButton2.setVisible(true);
+		jButton4.setVisible(false);
+		
+		jButton3.setVisible(false);
+        basicRefresh();
+        
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+               follow.setState(InputState.FOLD);
             }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(TexasGame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(TexasGame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(TexasGame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(TexasGame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
+        });
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+               follow.setState(InputState.FOLLOW);
+            }
+        });
 
-        /*
-         * Create and display the form
-         */
-        java.awt.EventQueue.invokeLater(new Runnable() {
+		
+    }
+    
+    public void setFlopCards(){
+        String sFlopCard1=this.getCardSource(this.pokerModel.getoFlopCards()[0]);
+        String sFlopCard2=this.getCardSource(this.pokerModel.getoFlopCards()[1]);
+        String sFlopCard3=this.getCardSource(this.pokerModel.getoFlopCards()[2]);
+        
+        jLabel1.setIcon(new ImageIcon(getClass().getResource(sFlopCard1)));
+        jLabel2.setIcon(new ImageIcon(getClass().getResource(sFlopCard2)));
+        jLabel3.setIcon(new ImageIcon(getClass().getResource(sFlopCard3)));
+        
+    	jButton4.setVisible(true);
+    	
+	    jButton4.addActionListener(new java.awt.event.ActionListener() {
+	      public void actionPerformed(java.awt.event.ActionEvent evt) {
+	         follow.setState(InputState.CHECK);
+	      }
+	     });
+	      basicRefresh();
+      
+    }
+    public void setTurnCard(){
+    	  String sTurnCard1=this.getCardSource(this.pokerModel.getoTurnCard());
+    	  jLabel4.setIcon(new ImageIcon(getClass().getResource(sTurnCard1)));
+    	  basicRefresh();
+    }
+    
+    public void setRiverCard(){
+    	String sRiverCard1=this.getCardSource(this.pokerModel.getoRiverCard());
+    	 String sDealerCard1=this.getCardSource(this.pokerModel.getoDealerCards()[0]);
+         String sDealerCard2=this.getCardSource(this.pokerModel.getoDealerCards()[1]);
+         
+    	jLabel5.setIcon(new ImageIcon(getClass().getResource(sRiverCard1)));
+		jLabel16.setIcon(new javax.swing.ImageIcon(getClass().getResource(sDealerCard1)));
+		jLabel17.setIcon(new javax.swing.ImageIcon(getClass().getResource(sDealerCard2)));
+		
+		jButton1.setText("go back to game list");
+		jButton2.setText("play again");
+		
+		jButton1.setVisible(true);
+		jButton2.setVisible(true);
+		jButton4.setVisible(false);
+		
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+               follow.setState(InputState.FOLD);
+            }
+        });
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+               follow.setState(InputState.FOLLOW);
+            }
+        });
 
-            public void run() {
-                new TexasGame().setVisible(true);
+    	basicRefresh();
+    }
+    public void setFold(){
+
+ 		
+ 		jButton1.setText("go back to game list");
+		jButton2.setText("play again");
+		
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+               follow.setState(InputState.FOLD);
+            }
+        });
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+               follow.setState(InputState.FOLLOW);
             }
         });
         
-        
+		basicRefresh();
     }
-    public enum InputState{
-		NOT_SET(0), YES(1), NO(2); 
-		private int indicator;
+    public void basicRefresh(){
+		
+		jTextField1.setText(new Long(this.pokerModel.getlBetAmount()).toString());
+		jLabel9.setText(this.info);
+	    jLabel14.setText(new Long(this.pokerModel.getlBankAmount()).toString());
+	    jLabel13.setText(new Long(this.pokerModel.getlPotSize()).toString());
+	    
+    }
+    
+    public void popMessage(String msg){
+    	JOptionPane.showMessageDialog(this, msg );
+    }
+    
+    public class InputState {
+    	
+    	/* private variables */
+    	private int state;
+    	
+    	/* public constants */
+    	public static final int NOT_SET = 0;
+    	public static final int FOLLOW = 1;
+    	public static final int CHECK = 2;
+    	public static final int FOLD = 3;
+    	 
 		InputState(int indicator)
 		{
-			this.setIndicator(indicator);
+			state = NOT_SET;
+			if (indicator > 0 && indicator < 4)
+			{
+				state = indicator;
+			}
 		}
-		public int getIndicator() {
-			return indicator;
+		public int getState() {
+			return state;
 		}
-		public void setIndicator(int indicator) {
-			this.indicator = indicator;
-		}
-		public boolean isEqual(TypeIndicator rhs)
-		{
-			return (this.indicator == rhs.getIndicator());
+		public void setState(int indicator) {
+			if (indicator >= 0 && indicator < 4)
+			{
+				this.state = indicator;
+			}
 		}
 	}
-
-
-
 
 }
     

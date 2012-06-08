@@ -155,6 +155,7 @@ public class TexasHoldemModel {
 		{			
 			if (clientMsg.getGamePlayRequest() == MessageParser.GAME_PLAY_REQUEST_GET_FLOP)
 			{
+				System.out.println("Get Hole Request, bet amount is: " + clientMsg.getBetAmount());
 				// check to make sure the client's bet amount is twice the ante
 				if (clientMsg.getBetAmount() == (2 * this.iAnte))
 				{

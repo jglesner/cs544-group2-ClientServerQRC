@@ -1,61 +1,100 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * jLabel1 == "welcome to poker online"
+ * jLabel2 == Texas Hold'em icon
+ * jComboBox1 == choose game box
+ * jButton1 == "OK" button
+ * jButton2 == "Quit" 
+ * 
+ * 
+ * 
  */
 package client.view;
 
-import client.view.TexasGame;
-import client.*;
 import common.*;
-import common.MessageParser.GameTypeCode;
+import images.*;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.List;
 
-import javax.swing.*;
+import javax.swing.JComboBox;
+import javax.swing.JOptionPane;
+
 
 /**
  *
- * @author yiqiju
+ * 
  */
 public class Welcome extends javax.swing.JFrame {
+    
+	
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.ButtonGroup buttonGroup1;
+    private javax.swing.ButtonGroup buttonGroup2;
+    private javax.swing.ButtonGroup buttonGroup3;
+    private javax.swing.ButtonGroup buttonGroup4;
+    private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
+    
+    private javax.swing.JComboBox jComboBox1;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    // End of variables declaration//GEN-END:variables
+    private boolean bGetGameList=false;
+    private boolean quitGame=false;
+    private String gameChoice=null;
+    private String[] gamelist=null;
+    private boolean bInit = false;
+    
+    public void resetGameList() {
+    	if (bInit)
+    	{
+    		jComboBox1.setSelectedIndex(-1);
+    		gameChoice=null;
+    	}
+    }
+    
+    public boolean isbGetGameList() {
+		return bGetGameList;
+	}
 
+	public void setbGetGameList(boolean bGetGameList) {
+		this.bGetGameList = bGetGameList;
+	}
+
+	public boolean isQuitGame() {
+		return quitGame;
+	}
+
+	public void setQuitGame(boolean quitGame) {
+		this.quitGame = quitGame;
+	}
+
+	public String getGameChoice() {
+		return gameChoice;
+	}
+
+	public void setGameChoice(String gameChoice) {
+		this.gameChoice = gameChoice;
+	}
+
+	public String[] getGamelist() {
+		return gamelist;
+	}
+
+	public void setGamelist(String[] gamelist) {
+		this.gamelist = gamelist;
+	}
+
+	
     /**
      * Creates new form welcome
      */
-	private ArrayList<MessageParser.GameTypeCode> oGameTypeList=new ArrayList<MessageParser.GameTypeCode>();
-	private int	gametypecode=-1;
-	private boolean SetGames=false; 
-	private boolean list=false;
-	private   TexasGame texasGame=null;
-	public ArrayList<MessageParser.GameTypeCode> getoGameTypeList() {
-		return oGameTypeList;
-	}
-
-	public void setoGameTypeList(ArrayList<MessageParser.GameTypeCode> oGameTypeList) {
-		this.oGameTypeList = oGameTypeList;
-	}
-	
-	
-	public boolean isSetGames() {
-		return SetGames;
-	}
-
-	public void setSetGames(boolean setGames) {
-		SetGames = setGames;
-	}
-
-	public int getGametypecode() {
-		return gametypecode;
-	}
-
-	public void setGametypecode(int gametypecode) {
-		this.gametypecode = gametypecode;
-	}
-	
-
+    public Welcome() {
+    	bInit = false;
+        update();
+        bInit = true;
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -64,90 +103,76 @@ public class Welcome extends javax.swing.JFrame {
      */
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-   public void initComponents() {
+    public void update() {
 
-        jLabel1 = new javax.swing.JLabel();
-        jLabel2 = new javax.swing.JLabel();
-        jButton1 = new javax.swing.JButton();
-        jButton2 = new javax.swing.JButton();
-        jLabel3 = new javax.swing.JLabel();
-        jMenuBar1 = new javax.swing.JMenuBar();
-        jMenu1 = new javax.swing.JMenu();
-        jMenuItem1 = new javax.swing.JMenuItem();
-        jMenu2 = new javax.swing.JMenu();
-        oGameTypeList=new ArrayList<MessageParser.GameTypeCode>();
+    	if (!bInit)
+    	{
+    		buttonGroup1 = new javax.swing.ButtonGroup();
+    		buttonGroup2 = new javax.swing.ButtonGroup();
+    		buttonGroup3 = new javax.swing.ButtonGroup();
+    		buttonGroup4 = new javax.swing.ButtonGroup();
+    		jLabel1 = new javax.swing.JLabel();
+    		jLabel2 = new javax.swing.JLabel();
+    		jButton1 = new javax.swing.JButton();
+    		jButton2 = new javax.swing.JButton();
+    		jLabel3 = new javax.swing.JLabel();
+    		jComboBox1 = new javax.swing.JComboBox();
+    	}
+
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("PokerOnline");
-
-        jLabel1.setFont(new java.awt.Font("Lucida Grande", 0, 18)); // NOI18N
-        jLabel1.setText("connecting to server!");
+        jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getClassLoader().getResource("images/holdem.jpeg"))); // NOI18N
+        jLabel2.setVerticalAlignment(javax.swing.SwingConstants.TOP);
         
-       
-        if(!list){
-        	jLabel1.setText("connected to server successfully!Please choose your game");
-        	jLabel1.setVisible(false);
-        	jLabel2.setVisible(false);
-        	jButton1.setVisible(false);
-        }
+        if(bGetGameList==false){
+        	jLabel1.setFont(new java.awt.Font("Lucida Grande", 0, 18)); // NOI18N
+        	jLabel1.setText("Welcome to Poker Online! ");
+        	jComboBox1.setVisible(false);
+        } 
         else{
-	         jLabel2.setVisible(true);
-	         jButton1.setVisible(true);
-        	 jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource("holdem.jpeg"))); // NOI18N
-             jLabel2.setVerticalAlignment(javax.swing.SwingConstants.TOP);
-			 jButton1.setText("Texus Hold'em Poker");
-			 jButton1.addActionListener(new java.awt.event.ActionListener() {
-			 public void actionPerformed(java.awt.event.ActionEvent evt) {
-			    jButton1ActionPerformed(evt);
-			   }
-			  });
+        	
+        	jComboBox1.setModel(new javax.swing.DefaultComboBoxModel(gamelist));
+        	jComboBox1.setSelectedIndex(0);
+        	jComboBox1.setVisible(true);
+            jComboBox1.addActionListener(new java.awt.event.ActionListener() {
+                 public void actionPerformed(java.awt.event.ActionEvent evt) {
+                     JComboBox gamebox=(JComboBox)evt.getSource();
+                     gameChoice=(String)gamebox.getSelectedItem();
+                 }
+             });
         }
+       jButton1.setVisible(false);
+       jButton2.setVisible(false);
 
-        jButton2.setText("Quit");
-
-        jMenu1.setText("File");
-
-        jMenuItem1.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, java.awt.event.InputEvent.CTRL_MASK));
-        jMenuItem1.setText("Quit");
-        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem1ActionPerformed(evt);
-            }
-        });
-        jMenu1.add(jMenuItem1);
-
-        jMenuBar1.add(jMenu1);
-
-        jMenu2.setText("Edit");
-        jMenuBar1.add(jMenu2);
-
-        setJMenuBar(jMenuBar1);
+       
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(layout.createSequentialGroup()
-                .add(24, 24, 24)
-                .add(jLabel1)
-                .add(0, 21, Short.MAX_VALUE))
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
+                .add(0, 125, Short.MAX_VALUE)
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(jLabel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 213, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(layout.createSequentialGroup()
+                        .add(6, 6, 6)
+                        .add(jLabel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 191, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                .add(139, 139, 139))
             .add(layout.createSequentialGroup()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(layout.createSequentialGroup()
-                        .add(154, 154, 154)
-                        .add(jLabel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 191, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                        .add(24, 24, 24)
+                        .add(jButton2))
                     .add(layout.createSequentialGroup()
                         .addContainerGap()
-                        .add(jButton2)))
+                        .add(jLabel1))
+                    .add(layout.createSequentialGroup()
+                        .add(156, 156, 156)
+                        .add(jComboBox1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(layout.createSequentialGroup()
+                        .add(192, 192, 192)
+                        .add(jButton1)))
                 .addContainerGap())
-            .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
-                .add(0, 0, Short.MAX_VALUE)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
-                        .add(jButton1)
-                        .add(179, 179, 179))
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
-                        .add(jLabel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 213, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .add(139, 139, 139))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -156,11 +181,13 @@ public class Welcome extends javax.swing.JFrame {
                 .add(jLabel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 52, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jLabel3)
-                .add(11, 11, 11)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jLabel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 160, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .add(18, 18, 18)
+                .add(jComboBox1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(jButton1)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 85, Short.MAX_VALUE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 73, Short.MAX_VALUE)
                 .add(jButton2)
                 .addContainerGap())
         );
@@ -168,94 +195,13 @@ public class Welcome extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    public boolean isList() {
-		return list;
-	}
+public void popMessage(String msg){
+	JOptionPane.showMessageDialog(this, msg );
+}
+// enter Texas Hold'em    
 
-	public void setList(boolean list) {
-		this.list = list;
-	}
 
-	private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jMenuItem1ActionPerformed
-
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        //when button1 is clicked, start TexasGame
-        this.SetGames=true;
-        this.gametypecode=1;
-        
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jButton1ActionPerformed
-
-    public TexasGame getTexasGame() {
-		return texasGame;
-	}
-
-	public void setTexasGame(TexasGame texasGame) {
-		this.texasGame = texasGame;
-	}
-
-	/**
-     * @param args the command line arguments
-     */
-  public static void main(String args[]) {
-        /*
-         * Set the Nimbus look and feel
-         */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /*
-         * If Nimbus (introduced in Java SE 6) is not available, stay with the
-         * default look and feel. For details see
-         * http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(Welcome.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(Welcome.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(Welcome.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(Welcome.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-
-        /*
-         * Create and display the form
-         */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-
-            public void run() {
-                 Welcome welcome=new Welcome();
-                 welcome.initComponents();
-                 welcome.setVisible(true);
-            	 XmlParser xmlparser=new XmlParser();
-                 SecureClientController SCC = new SecureClientController(xmlparser,null,welcome);
-                 SCC.setWelcome(welcome);
-                 SCC.start();
-            }
-        });
-       
-    }
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
-    private javax.swing.JButton jButton2;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JMenu jMenu1;
-    private javax.swing.JMenu jMenu2;
-    private javax.swing.JMenuBar jMenuBar1;
-    private javax.swing.JMenuItem jMenuItem1;
-    // End of variables declaration//GEN-END:variables
-
+//game selection error
 
 
 

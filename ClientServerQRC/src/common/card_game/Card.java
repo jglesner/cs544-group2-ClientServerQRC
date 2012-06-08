@@ -19,6 +19,7 @@ public class Card {
 	/* set the private variables */
 	private int value;
    private int suite;	
+   private boolean visible;
    public static int NOT_SET = 0;
    /*
 	 * These are the different possible card suits
@@ -61,8 +62,25 @@ public class Card {
 	   if (value >= 0 && value <= NUM_RANKS)
 	   {
 		   this.value = value;
-	   }	   
+	   }	
+		this.visible = true;
    }
+   /**
+   * isVisible - determine whether the card can be seen
+   * @param none
+   * @return boolean
+   */
+   public boolean isVisible() {
+		return visible;
+	}
+	/**
+   * setVisible - set the visible variable for this class
+   * @param boolean visible
+   * @return note
+   */
+	public void setVisible(boolean visible) {
+		this.visible = visible;
+	}
    /**
    * setCardValue - set the card value
    * @param value

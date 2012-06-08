@@ -25,6 +25,9 @@
 package controller;
 
 import client.*;
+import client.card_game.ClientPokerModel;
+import client.view.TexasGame;
+import client.view.Welcome;
 import server.*;
 import common.*;
 
@@ -48,8 +51,11 @@ public class Main {
 
 			if (args[0].equalsIgnoreCase("secureClient"))
 			{
+				Welcome welcomeFrame = new Welcome();
+				ClientPokerModel pokerModel = new ClientPokerModel();
+				TexasGame texasGame = new TexasGame(pokerModel);
 				final LogAndPublish logAndPublish = new LogAndPublish(xmlParser, "client");
-				SecureClientController scc = new SecureClientController(xmlParser, logAndPublish);
+				SecureClientController scc = new SecureClientController(xmlParser, logAndPublish, welcomeFrame, pokerModel, texasGame);
 				scc.start();
 			}
 			else if (args[0].equalsIgnoreCase("secureServer"))
