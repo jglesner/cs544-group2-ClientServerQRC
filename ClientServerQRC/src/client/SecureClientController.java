@@ -227,7 +227,7 @@ public class SecureClientController implements Runnable {
 			}
 		}
 		
-		if (socket != null) {
+		if (c.connected) {
 			
 			/* Log and Publish */
 			logAndPublish.write("Client connected.", true, true);
