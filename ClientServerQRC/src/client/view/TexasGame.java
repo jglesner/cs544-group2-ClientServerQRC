@@ -1,97 +1,138 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ *  @author GROUP 2, CS544-900-SPRING12, DREXEL UNIVERSITY
+ *  Members: Jeremy Glesner, Dustin Overmiller, Yiqi Ju, Lei Yuan
+ *  Project: Advanced Game Message Protocol Implementation
+ *  
+ *  This is the Texas Hold'em game GUI
+ * 
  */
 package client.view;
 
 import client.card_game.ClientPokerModel;
-import client.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
-
 import common.card_game.Card;
-import images.*;
 
 
 /**
- *
- * 
+ *  The TexasGame Class contains Texas Hold'em game GUI.
+ *  
  */
 public class TexasGame extends javax.swing.JFrame {
     
-	  private javax.swing.JButton jButton1;
-	    private javax.swing.JButton jButton2;
-	    private javax.swing.JButton jButton3;
-	    private javax.swing.JButton jButton4;
-	    private javax.swing.JLabel jLabel1;
-	    private javax.swing.JLabel jLabel10;
-	    private javax.swing.JLabel jLabel11;
-	    private javax.swing.JLabel jLabel12;
-	    private javax.swing.JLabel jLabel13;
-	    private javax.swing.JLabel jLabel14;
-	    private javax.swing.JLabel jLabel16;
-	    private javax.swing.JLabel jLabel17;
-	    private javax.swing.JLabel jLabel2;
-	    private javax.swing.JLabel jLabel3;
-	    private javax.swing.JLabel jLabel4;
-	    private javax.swing.JLabel jLabel5;
-	    private javax.swing.JLabel jLabel6;
-	    private javax.swing.JLabel jLabel7;
-	    private javax.swing.JLabel jLabel8;
-	    private javax.swing.JLabel jLabel9;
+	  private javax.swing.JButton jButton1; //"Fold"
+	    private javax.swing.JButton jButton2; //"Bet"
+	    private javax.swing.JButton jButton3; //"Yes"
+	    private javax.swing.JButton jButton4; //"Check"
+	    private javax.swing.JLabel jLabel1; //flop 1
+	    private javax.swing.JLabel jLabel2; //flop 2
+	    private javax.swing.JLabel jLabel3; //flop 3
+	    private javax.swing.JLabel jLabel4; //turn card
+	    private javax.swing.JLabel jLabel5; //river card
+	    private javax.swing.JLabel jLabel6; //"Texas Hold'em"
+	    private javax.swing.JLabel jLabel7; //player card 1
+	    private javax.swing.JLabel jLabel8; //player card 2
+	    private javax.swing.JLabel jLabel9; //displayed message
+	    private javax.swing.JLabel jLabel10; //"Ante"
+	    private javax.swing.JLabel jLabel11; // "Bank Account"
+	    private javax.swing.JLabel jLabel12; //"Pot"
+	    private javax.swing.JLabel jLabel13; //pot amount
+	    private javax.swing.JLabel jLabel14; //bank account
+	    private javax.swing.JLabel jLabel16; //server card 2
+	    private javax.swing.JLabel jLabel17; //server card 1
+	    
+	    /**Panel level*/
 	    private javax.swing.JPanel jPanel1;
 	    private javax.swing.JPanel jPanel2;
 	    private javax.swing.JPanel jPanel3;
 	    private javax.swing.JPanel jPanel4;
-	    private javax.swing.JTextField jTextField1;
+	    
+	    private javax.swing.JTextField jTextField1; //player's ante enter field
    
-    private ClientPokerModel pokerModel;
-    private int userAnte;
-    private int minAnte;
-    private String info;
+        private ClientPokerModel pokerModel;
+        private int userAnte; //player's enter ante
+        private int minAnte; //minimum ante
+        private String info; // information for the user
     
-	private InputState bPlayGames;
-    private InputState follow;
-    
+	    private InputState bPlayGames;
+        private InputState follow; //player's enter ante
+        
+    /**
+     * getFollow - return the current state
+     * @return get current state
+     */
     public int getFollow() {
-    	return follow.getState();
+        return follow.getState();
     }
     
+    /**
+     * setFollow - set the state
+     * @param follow
+     */
     public void setFollow(int follow) {
     	this.follow.setState(follow);
     }
     
+    /**
+     * getbPlayGames - get current state
+     * @return current state
+     */
     public int getbPlayGames() {
     	return bPlayGames.getState();
     }
     
+    /**
+     * setbPlayGames - set current state
+     * @param state
+     */
     public void setbPlayGames(int state) {
     	bPlayGames.setState(state);
     }
 
+    /**
+     * getInfo - get the string info
+     * @return string info
+     */
 	public String getInfo() {
 		return info;
 	}
 
+	/**
+	 * setInfo - set the string info
+	 * @param string info
+	 */
 	public void setInfo(String info) {
 		this.info = info;
 	}
 
+	/**
+	 * call ClientPokerModel 
+	 * @return pokerModel
+	 */
 	public ClientPokerModel getPokerModel() {
 		return pokerModel;
 	}
 
+	/**
+	 * setPokerModel - set the poker model
+	 * @param pokerModel
+	 */
 	public void setPokerModel(ClientPokerModel pokerModel) {
 		this.pokerModel = pokerModel;
 	}
 
+	/**
+	 * getUserAnte - get the player's entered ante
+	 * @return int userAnte
+	 */
 	public int getUserAnte() {
 		return userAnte;
 	}
 
+	/**
+	 * setUserAnte - set the player's ante
+	 * @param userAnte
+	 */
 	public void setUserAnte(int userAnte) {
 		this.userAnte = userAnte;
 	}  
@@ -104,25 +145,37 @@ public class TexasGame extends javax.swing.JFrame {
         follow = new InputState(InputState.NOT_SET);
         init( pokerModel);
     }
+    
     /**
-     * This method is called from within the constructor to initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is always
-     * regenerated by the Form Editor.
+     *getMinAnte - get the minimum ante
+     *@return int
      */
-    @SuppressWarnings("unchecked")
     public int getMinAnte() {
   		return minAnte;
   	}
 
+    /**
+     * setMinAnte - set the minimum ante
+     * @param minAnte
+     */
   	public void setMinAnte(int minAnte) {
   		this.minAnte = minAnte;
   	}
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    
+  	/**
+  	 * init - initialize Texas Hold'em game with parameter from ClientPokerModel class
+  	 * @param pokerModel
+  	 */
     public void init(ClientPokerModel pokerModel){
     	   this.pokerModel=pokerModel;
            bPlayGames.setState(InputState.NOT_SET);
            follow.setState(InputState.NOT_SET);
     }
+    
+    /**
+     * reset - reset pokerModel 
+     * @param pokerModel
+     */
     public void reset(ClientPokerModel pokerModel)
     {
     	this.pokerModel = pokerModel;
@@ -131,6 +184,10 @@ public class TexasGame extends javax.swing.JFrame {
     	
     }
     
+    /**
+     * init - Texas Hold'em initialization method
+     * created by Netbeans 
+     */
     public void init() {
 
         jPanel2 = new javax.swing.JPanel();
@@ -187,8 +244,7 @@ public class TexasGame extends javax.swing.JFrame {
 
         jLabel5.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
-        jLabel9.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-   
+        jLabel9.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);   
      
         jLabel12.setText("Pot:");
 
@@ -372,11 +428,11 @@ public class TexasGame extends javax.swing.JFrame {
                                 .add(jLabel6))
                             .add(layout.createSequentialGroup()
                                 .add(109, 109, 109)
-                                .add(jButton4)
+                                .add(jButton4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 130, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                                 .add(30, 30, 30)
-                                .add(jButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 86, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .add(jButton2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 130, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                                 .add(28, 28, 28)
-                                .add(jButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 86, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                                .add(jButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 130, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
                         .add(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
@@ -408,17 +464,17 @@ public class TexasGame extends javax.swing.JFrame {
                         .add(jPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
                 .add(45, 45, 45))
         );
-
         pack();
-    }// </editor-fold>//GEN-END:initComponents
+    }
 
   
     /**
+     * getCardSource - show initialized icon of cards
      * @param args the command line arguments
      */
     public String getCardSource(Card c){
     	if(!c.isVisible())
-    		return "images/card_back.png";
+    		return "images/card_back.png"; //show card back
     	int value=c.getCardValue();
     	String svalue="";
     	if(value<10)
@@ -437,24 +493,33 @@ public class TexasGame extends javax.swing.JFrame {
         String sDealerCard1=this.getCardSource(this.pokerModel.getoDealerCards()[0]);
         String sDealerCard2=this.getCardSource(this.pokerModel.getoDealerCards()[1]);
         
+        /**set player's cards */
 		jLabel7.setIcon(new javax.swing.ImageIcon(getClass().getClassLoader().getResource(sPlayCard1)));
 		jLabel8.setIcon(new javax.swing.ImageIcon(getClass().getClassLoader().getResource(sPlayCard2)));
 		
+		/**set server's cards */
 		jLabel16.setIcon(new javax.swing.ImageIcon(getClass().getClassLoader().getResource(sDealerCard1)));
 		jLabel17.setIcon(new javax.swing.ImageIcon(getClass().getClassLoader().getResource(sDealerCard2)));
 				
 		jButton1.setVisible(true);
 		jButton2.setVisible(true);
 		jButton4.setVisible(false);
-		
-		jButton3.setVisible(false);
+        jTextField1.setEditable(false);
+        jTextField1.setBorder(javax.swing.BorderFactory.createEmptyBorder());
+
+        jButton3.setText("");
+        jButton3.setBorder(javax.swing.BorderFactory.createEmptyBorder());
+        jButton3.setEnabled(false);
         basicRefresh();
         
+        /**fold button action */
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                follow.setState(InputState.FOLD);
             }
         });
+        
+        /**bet button action */
         jButton2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                follow.setState(InputState.FOLLOW);
@@ -464,15 +529,18 @@ public class TexasGame extends javax.swing.JFrame {
 		
     }
     
+    /**setFlopCards - show flop cards */
     public void setFlopCards(){
         String sFlopCard1=this.getCardSource(this.pokerModel.getoFlopCards()[0]);
         String sFlopCard2=this.getCardSource(this.pokerModel.getoFlopCards()[1]);
         String sFlopCard3=this.getCardSource(this.pokerModel.getoFlopCards()[2]);
         
+        /**set three flop cards icon */
         jLabel1.setIcon(new ImageIcon(getClass().getClassLoader().getResource(sFlopCard1)));
         jLabel2.setIcon(new ImageIcon(getClass().getClassLoader().getResource(sFlopCard2)));
         jLabel3.setIcon(new ImageIcon(getClass().getClassLoader().getResource(sFlopCard3)));
         
+        /** only check button shows on this stage */
     	jButton4.setVisible(true);
     	
 	    jButton4.addActionListener(new java.awt.event.ActionListener() {
@@ -483,23 +551,33 @@ public class TexasGame extends javax.swing.JFrame {
 	      basicRefresh();
       
     }
+    
+    /** setTurnCard - set turn card */
     public void setTurnCard(){
     	  String sTurnCard1=this.getCardSource(this.pokerModel.getoTurnCard());
     	  jLabel4.setIcon(new ImageIcon(getClass().getClassLoader().getResource(sTurnCard1)));
     	  basicRefresh();
     }
     
+    /** setAnte - set ante details */
+    public void setAnte(){
+    	  anteRefresh();
+    }
+    
+    /** setRiverCard - set river card */
     public void setRiverCard(){
     	String sRiverCard1=this.getCardSource(this.pokerModel.getoRiverCard());
     	 String sDealerCard1=this.getCardSource(this.pokerModel.getoDealerCards()[0]);
          String sDealerCard2=this.getCardSource(this.pokerModel.getoDealerCards()[1]);
          
+         /** set river card and show servers' cards */
     	jLabel5.setIcon(new ImageIcon(getClass().getClassLoader().getResource(sRiverCard1)));
 		jLabel16.setIcon(new javax.swing.ImageIcon(getClass().getClassLoader().getResource(sDealerCard1)));
 		jLabel17.setIcon(new javax.swing.ImageIcon(getClass().getClassLoader().getResource(sDealerCard2)));
 		
-		jButton1.setText("go back to game list");
-		jButton2.setText("play again");
+		/** change the text of buttons */
+		jButton1.setText("Go to Game List");
+		jButton2.setText("Play Again");
 		
 		jButton1.setVisible(true);
 		jButton2.setVisible(true);
@@ -518,11 +596,13 @@ public class TexasGame extends javax.swing.JFrame {
 
     	basicRefresh();
     }
+    
+    /** setFold - set the fold action */
     public void setFold(){
 
- 		
- 		jButton1.setText("go back to game list");
-		jButton2.setText("play again");
+ 		jButton4.setVisible(false);
+ 		jButton1.setText("Go to Game List");
+		jButton2.setText("Play Again");
 		
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -537,30 +617,43 @@ public class TexasGame extends javax.swing.JFrame {
         
 		basicRefresh();
     }
-    public void basicRefresh(){
-		
+    /** anteRefresh - update user info, bank amount and pot size*/
+    public void anteRefresh() {
+		jLabel9.setText(this.info);
+	    jLabel14.setText(new Long(this.pokerModel.getlBankAmount()).toString());
+        jLabel13.setText(new Long(this.pokerModel.getlPotSize()).toString());	    
+    }
+    
+    /** basicRefresh - update bet amount, bank amount and pot size*/
+    public void basicRefresh(){		
 		jTextField1.setText(new Long(this.pokerModel.getlBetAmount()).toString());
 		jLabel9.setText(this.info);
 	    jLabel14.setText(new Long(this.pokerModel.getlBankAmount()).toString());
-	    jLabel13.setText(new Long(this.pokerModel.getlPotSize()).toString());
+        jLabel13.setText(new Long(this.pokerModel.getlPotSize()).toString()+ "     Ante: "+new Integer(this.userAnte).toString());
 	    
     }
     
+    /**popMessage - pop out message */
     public void popMessage(String msg){
     	JOptionPane.showMessageDialog(this, msg );
     }
     
+    /**InputState - handle state*/
     public class InputState {
     	
-    	/* private variables */
+    	/**private variables */
     	private int state;
     	
-    	/* public constants */
+    	/**public constants */
     	public static final int NOT_SET = 0;
     	public static final int FOLLOW = 1;
     	public static final int CHECK = 2;
     	public static final int FOLD = 3;
     	 
+    	/**
+    	 * Constructor
+    	 * @param indicator
+    	 */
 		InputState(int indicator)
 		{
 			state = NOT_SET;
@@ -569,9 +662,18 @@ public class TexasGame extends javax.swing.JFrame {
 				state = indicator;
 			}
 		}
+		
+		/**
+		 * getState - return the state
+		 * @return int
+		 */
 		public int getState() {
 			return state;
 		}
+		/**
+		 * setState - set the state
+		 * @param indicator
+		 */
 		public void setState(int indicator) {
 			if (indicator >= 0 && indicator < 4)
 			{

@@ -22,7 +22,7 @@ public class GameState {
 	public static int CLOSED = 5;
    
    /**
-	 * GameState - Contructor used to create the class
+	 * GameState - Constructor used to create the class
 	 * @param none
 	 */
 	public GameState()

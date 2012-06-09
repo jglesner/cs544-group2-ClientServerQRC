@@ -22,7 +22,7 @@ public class GamePlayState {
 	public static int FOLD = 6;
 	private int state;
 	/**
-	 * GamePlayState - Contructor used to create the class
+	 * GamePlayState - Constructor used to create the class
 	 * @param none
 	 */
 	public GamePlayState()
@@ -32,7 +32,7 @@ public class GamePlayState {
 	
 	/**
 	 * getPlayState - simply return the current game state
-	 * @return
+	 * @return int
 	 */
 	public int getPlayState()
 	{

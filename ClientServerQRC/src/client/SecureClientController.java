@@ -134,44 +134,45 @@ public class SecureClientController implements Runnable {
     }    
     
     /**
-     * Accessor method to verify connection state
-	 * 
-     */       
+     * isConnected - Accessor method to see if the client is still connected
+     * @param none
+     * @return boolean
+     */
     public boolean isConnected() {
 		return connected;
     }
 
     /**
-     * Accessor method to get port
-	 * 
-     */    
+     * getPort - Accessor method to get port
+     * @param none    
+     * @return
+     */
     public int getPort(){
             return port;
         }
 
     /**
-     * Mutator method to set port
-     * 
+     * setPort - Mutator method to set port
      * @param int port
-	 * 
+	 * @return none
      */      
     public void setPort(int port){
             this.port = port;
         }
 
     /**
-     * Accessor method to get hostname
-	 * 
-     */      
+     * getHostName - Accessor method to get hostname      
+     * @param none
+     * @return String
+     */
     public String getHostName(){
             return hostName;
         }
 
     /**
-     * Mutator method to set hostname
-     * 
+     * setHostName - Mutator method to set hostname
      * @param String hostName
-	 * 
+     * @return none 
      */       
     public void setHostName(String hostName){
             this.hostName = hostName;
@@ -179,8 +180,9 @@ public class SecureClientController implements Runnable {
     
     
     /**
-     * start method to initiate Secure Client Connection to an AGMP Server
-	 * 
+     * start - start method to initiate Secure Client Connection to an AGMP Server
+	 * @param none
+	 * @return none
      */   
 	public void start()
 	{
@@ -228,8 +230,10 @@ public class SecureClientController implements Runnable {
 	}
 
     /**
-     * run method executes when a new SecureClientController thread, 
+     * run - run method executes when a new SecureClientController thread, 
      * complete with socket is started 
+     * @param none
+     * @return none
      */
     public void run() {
        try 
@@ -292,10 +296,13 @@ public class SecureClientController implements Runnable {
     }
 	
 	/**
-	 * GamePlayGameState method contains all the logic to interface with the server
-	 * during game play
+	 * GamePlayGameState - method contains all the logic to interface with the server
+	 * during game play. It will read the input, transition to the proper state and
+	 * send an output message
+	 * @param none
+	 * @return none
 	 */
-		private void GamePlayGameState() 
+	private void GamePlayGameState() 
 	{
 
 		/* set variables */
@@ -345,28 +352,22 @@ public class SecureClientController implements Runnable {
 									break;
 								}	
 							
-								// print the server response
-								PrintGamePlayMessage(sr);
-								// get the ante from the client
-								logAndPublish.write("Place your bet.", false, false);
 								// make sure the client wants to play
 								this.welcomeFrame.setVisible(false);
 								this.texasFrame.setVisible(false);
 								this.holdemModel.reset();
-							
+								/* update the GUI with the server's response */
 							    this.texasFrame=new TexasGame(holdemModel);
 								this.texasFrame.setMinAnte(min_ante);
 								this.texasFrame.getPokerModel().setlBankAmount(bankAmount);
 								this.texasFrame.init();
-								this.texasFrame.setInfo("The minimum ante is "+min_ante);
-								this.texasFrame.revalidate();
-								this.texasFrame.repaint();
 								this.texasFrame.setVisible(true);
+								this.texasFrame.setInfo("The minimum ante is "+min_ante);
+								this.texasFrame.setAnte();
 								
-								
+								/* wait for client to bet */
 								while(this.texasFrame.getbPlayGames() == InputState.NOT_SET)
 								{
-									logAndPublish.write("waiting for client to bet", false, false);
 									try {
 										Thread.currentThread();
 										Thread.sleep(100);
@@ -375,6 +376,9 @@ public class SecureClientController implements Runnable {
 									}
 								}
 								
+								/* get the user ante and then send the appropriate response and transition to the appropriate
+								 * state
+								 */
 								int userAnte=this.texasFrame.getUserAnte();
 								if(this.texasFrame.getbPlayGames() == InputState.FOLD)
 									command=2;
@@ -382,6 +386,7 @@ public class SecureClientController implements Runnable {
 									command=1;
 								if (command == 2)
 								{
+									/* send the Get Game List message and transition to GAMELIST state */
 									logAndPublish.write("Sending Get GameList message.", true, false);
 									MessageParser.ClientGetGameMessage oMsg1 = this.messageParser.new ClientGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME);
 									this.sendMessage(this.messageParser.CreateClientGetGameMessage(oMsg1));
@@ -406,8 +411,7 @@ public class SecureClientController implements Runnable {
 							
 							if (svrPlayMsg.getGamePlayResponse() == MessageParser.GAME_PLAY_RESPONSE_GET_HOLE_ACK)
 							{
-								/* display server msg */
-//								PrintGamePlayMessage(sr);
+								/* display server msg in the GUI*/
 								getGameInfo(sr);
 								this.bankAmount = svrPlayMsg.getBankAmount();
 								this.texasFrame.setPokerModel(this.holdemModel);
@@ -416,14 +420,9 @@ public class SecureClientController implements Runnable {
 								this.texasFrame.getPokerModel().getoDealerCards()[1].setVisible(false);
 								this.texasFrame.setHoleCards();
 								
-								logAndPublish.write("Do you wish to play this hand or fold?", false, false);
-								logAndPublish.write("To Play, you must bet twice your ante amount.", false, false);
-								/* loop to handle user command line input */
-//								command = UserSelection("Enter 1 to continue, and 2 to fold.", 1, 2);
 								int orig_ante = svrPlayMsg.getAnte();
 					             while(this.texasFrame.getFollow() == InputState.NOT_SET)
 					             {
-					            	 logAndPublish.write("waiting for client to choose", false, false);
 					            	 try {
 											Thread.currentThread();
 											Thread.sleep(100);
@@ -440,6 +439,7 @@ public class SecureClientController implements Runnable {
 								{
 									if ((orig_ante*2) > bankAmount)
 									{
+										// not enough money in the users account send them to the Game List state
 										logAndPublish.write("Bank Account too low sending Game List message.", true, false);
 										this.gameState.setState(GameState.GAMELIST);
 										this.welcomeFrame.popMessage("You do not have enough money to keep playing.  Goodbye.");
@@ -486,15 +486,13 @@ public class SecureClientController implements Runnable {
 								// print the server response
 								this.getGameInfo(sr);
 								// get the ante from the client
-								logAndPublish.write("ERROR: Invalid Ante Bet.", false, false);
 								this.texasFrame.popMessage("ERROR: Invalid Ante Bet.");
 								this.texasFrame.basicRefresh();
 								this.texasFrame.setbPlayGames(InputState.NOT_SET);
-								/* loop to handle user command line input */
+								/* loop to handle user input */
 								
 								while(this.texasFrame.getbPlayGames() == InputState.NOT_SET)
 								{
-									logAndPublish.write("waiting for client to bet", false, false);
 									try {
 										Thread.currentThread();
 										Thread.sleep(100);
@@ -504,7 +502,6 @@ public class SecureClientController implements Runnable {
 								}
 								
 								int userAnte=this.texasFrame.getUserAnte();
-//								command = UserSelection("Enter 1 to play or 2 to go to the list of games", 1, 2);
 								// send GET_HOLE message and transition to the next phase
 								MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_GET_HOLE, (long)userAnte);  
 								this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));	
@@ -512,6 +509,7 @@ public class SecureClientController implements Runnable {
 							}
 							else
 							{
+								/* log the invalid gamplay message */
 								logAndPublish.write("Ignoring invalid gameplay message", true, false);
 							}
 						}
@@ -519,6 +517,7 @@ public class SecureClientController implements Runnable {
 						{
 							if (svrPlayMsg.getGamePlayResponse() == MessageParser.GAME_PLAY_RESPONSE_GET_FLOP_ACK)
 							{
+								// received a flop acknowledgement update the GUI with the data
 								int orig_ante = svrPlayMsg.getAnte();
 								this.bankAmount = svrPlayMsg.getBankAmount();
 								/* display server response */
@@ -528,13 +527,9 @@ public class SecureClientController implements Runnable {
 								this.texasFrame.setFlopCards();
 								this.texasFrame.setFollow(InputState.NOT_SET);
 								
-					            logAndPublish.write("Do you wish to bet, check or fold?", false, false);
-					            logAndPublish.write("To bet, you may only bet the original ante amount.", false, false);
-								/* loop to handle user command line input */
-//								command = UserSelection("Enter 1 to bet, 2 to check, and 3 to fold.", 1, 3);
+								/* loop to handle user input */
 					            while(this.texasFrame.getFollow() == InputState.NOT_SET)
 					            {
-					            	logAndPublish.write("waiting for user to choose", false, false);
 					            	try {
 										Thread.currentThread();
 										Thread.sleep(100);
@@ -553,9 +548,8 @@ public class SecureClientController implements Runnable {
 								{								
 									if ((orig_ante) > bankAmount)
 									{
-										logAndPublish.write("You do not have enough money to bet, checking.", false, false);
 										logAndPublish.write("Sending Get Turn Card message", true, false);
-										/* send GET_TURN message */
+										/* send GET_TURN message with bet set to zero */
 										this.texasFrame.popMessage("You do not have enough money to bet, checking.");
 										this.texasFrame.setFollow(InputState.NOT_SET);
 										MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_GET_TURN, (long)0);
@@ -576,7 +570,7 @@ public class SecureClientController implements Runnable {
 								else if (command == 2) 
 								{	
 									logAndPublish.write("Sending Get Turn Card message", true, false);
-									/* send GET_TURN message */
+									/* send GET_TURN message with the bet set to zero*/
 									this.texasFrame.setFollow(InputState.NOT_SET);
 									MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_GET_TURN, (long)0);
 							        this.sendMessage(this.messageParser.CreateClientPlayGameMessage(msg));						
@@ -600,6 +594,7 @@ public class SecureClientController implements Runnable {
 								this.texasFrame.setPokerModel(holdemModel);
 								this.texasFrame.basicRefresh();
 								this.texasFrame.setFollow(InputState.NOT_SET);
+								/* wait on input from the user */
 								while(this.texasFrame.getFollow() == InputState.NOT_SET)
 								{
 									logAndPublish.write("waiting for user to choose", false, false);
@@ -616,18 +611,13 @@ public class SecureClientController implements Runnable {
 									command=2;
 								
 								this.bankAmount = svrPlayMsg.getBankAmount();
-								logAndPublish.write("ERROR: Invalid Hole Bet", false, false);
-								logAndPublish.write("Do you wish to play this hand or fold?", false, false);
-								logAndPublish.write("To Play, you must bet twice your ante amount.", false, false);
-								/* loop to handle user command line input */
-//								command = UserSelection("Enter 1 to continue, and 2 to return to fold.", 1, 2);
 								int orig_ante = svrPlayMsg.getAnte();
-					
 								/* handle user selection */
 								if (command == 1)
 								{
 									if ((orig_ante*2) > bankAmount)
 									{
+										/* user does not have enough money to play */
 										logAndPublish.write("Bank Account too low to continue, sending GameList Message", true, false);
 										this.welcomeFrame.popMessage("You do not have enough money to keep playing.  Goodbye.");
 										this.texasFrame.setVisible(false);
@@ -666,6 +656,7 @@ public class SecureClientController implements Runnable {
 						{
 							if (svrPlayMsg.getGamePlayResponse() == MessageParser.GAME_PLAY_RESPONSE_GET_TURN_ACK)
 							{
+								// update GUI with Turn ack data
 								int orig_ante = svrPlayMsg.getAnte();
 								this.bankAmount = svrPlayMsg.getBankAmount();
 								/* display server msg */
@@ -675,9 +666,9 @@ public class SecureClientController implements Runnable {
 								this.texasFrame.setTurnCard();
 								this.texasFrame.setFollow(InputState.NOT_SET);
 								
+								/* wait for user input */
 								while(this.texasFrame.getFollow() == InputState.NOT_SET)
 								{
-									logAndPublish.write("wait for user to choose", false, false);
 									try {
 										Thread.currentThread();
 										Thread.sleep(100);
@@ -693,15 +684,12 @@ public class SecureClientController implements Runnable {
 					            else
 					            	command=3;
 									
-					            logAndPublish.write("Do you wish to bet, check or fold?", false, false);
-					            logAndPublish.write("To bet, you may only bet the original ante amount.", false, false);
-								/* loop to handle user command line input */
-//								command = UserSelection("Enter 1 to bet, 2 to check, and 3 to fold.", 1, 3);
 								/* handle user selection */
 								if (command == 1) 
 								{								
 									if ((orig_ante) > bankAmount)
 									{
+										// user does not have enough money, checking
 										logAndPublish.write("You do not have enough money to bet, checking.", false, false);
 										logAndPublish.write("Sending Get River Card message", true, false);
 										this.texasFrame.popMessage("You do not have enough money to bet, checking.");
@@ -739,6 +727,7 @@ public class SecureClientController implements Runnable {
 							}
 							else if (svrPlayMsg.getGamePlayResponse() == MessageParser.GAME_PLAY_RESPONSE_INVALID_FLOP_BET)
 							{
+								// update GUI with invalid flop bet
 								int orig_ante = svrPlayMsg.getAnte();
 								this.bankAmount = svrPlayMsg.getBankAmount();
 								/* display server msg */
@@ -749,9 +738,9 @@ public class SecureClientController implements Runnable {
 								this.texasFrame.basicRefresh();
 								this.texasFrame.setFollow(InputState.NOT_SET);
 								
+								// wait for user input
 								while(this.texasFrame.getFollow() == InputState.NOT_SET)
 								{
-									logAndPublish.write("wait for user to choose", false, false);
 									try {
 										Thread.currentThread();
 										Thread.sleep(100);
@@ -766,19 +755,14 @@ public class SecureClientController implements Runnable {
 					            	command=2;
 					            else
 					            	command=3;
-									
-									
-								logAndPublish.write("ERROR: Invalid Flop Bet.", false, false);
-					            logAndPublish.write("Do you wish to bet, check or fold?", false, false);
-					            logAndPublish.write("To bet, you may only bet the original ante amount.", false, false);
-								/* loop to handle user command line input */
-//								command = UserSelection("Enter 1 to bet, 2 to check, and 3 to fold.", 1, 3);
+					            
 								/* handle user selection */
 								if (command == 1) 
 								{								
 									if ((orig_ante) > bankAmount)
 									{
-										logAndPublish.write("You do not have enough money to bet, checking.", false, false);
+										// Insufficient funds in the bank account so send check command
+										logAndPublish.write("Bank account too low, checking.", true, false);
 										logAndPublish.write("Sending Get Turn Card message", true, false);
 										this.texasFrame.popMessage("You do not have enough money to bet, checking.");
 										/* send GET_TURN message */
@@ -823,6 +807,7 @@ public class SecureClientController implements Runnable {
 						{
 							if (svrPlayMsg.getGamePlayResponse() == MessageParser.GAME_PLAY_RESPONSE_GET_RIVER_ACK)
 							{
+								// Got the River Ack, update the GUI
 								this.bankAmount = svrPlayMsg.getBankAmount();
 								/* print server msg and see if the player wants to play again */
 							    this.getGameInfo(sr);
@@ -839,9 +824,9 @@ public class SecureClientController implements Runnable {
 							    this.texasFrame.getPokerModel().getoDealerCards()[1].setVisible(true);
 							    this.texasFrame.setRiverCard();
 							    this.texasFrame.setFollow(InputState.NOT_SET);
+							    /* wait for user input */
 							    while(this.texasFrame.getFollow() == InputState.NOT_SET)
 							    {
-							    	logAndPublish.write("wait for user to choose", false, false);
 							    	try {
 										Thread.currentThread();
 										Thread.sleep(100);
@@ -851,14 +836,14 @@ public class SecureClientController implements Runnable {
 							    }
 							    
 							    if(this.texasFrame.getFollow() == InputState.FOLLOW)
-							    command=1;
+							    	command=1;
 							    else
-							    command=2;
+							    	command=2;
 							    
-							   logAndPublish.write("Do you want to play again?", false, false);
-//								command = UserSelection("Enter 1 to play again or 2 to go to the game list", 1, 2);
+							    /* handle user input */
 								if (command == 2)
 								{
+									// go to the gamelist state
 									logAndPublish.write("Sending GameList message", true, false);
 									this.gameState.setState(GameState.GAMELIST);
 									this.texasFrame.setVisible(false);
@@ -874,6 +859,7 @@ public class SecureClientController implements Runnable {
 							}
 							else if (svrPlayMsg.getGamePlayResponse() == MessageParser.GAME_PLAY_RESPONSE_INVALID_TURN_BET)
 							{
+								// invalid turn bet, update GUI
 								int orig_ante = svrPlayMsg.getAnte();
 								this.bankAmount = svrPlayMsg.getBankAmount();
 								/* display server msg */
@@ -883,23 +869,30 @@ public class SecureClientController implements Runnable {
 								this.texasFrame.setInfo("To bet, you may only bet the original ante amount.");
 								this.texasFrame.basicRefresh();
 								this.texasFrame.setFollow(InputState.NOT_SET);
+								/* wait for user input */
+							    while(this.texasFrame.getFollow() == InputState.NOT_SET)
+							    {
+							    	try {
+										Thread.currentThread();
+										Thread.sleep(100);
+									} catch (InterruptedException e) {
+										// do nothing
+									}
+							    }
 								 if(this.texasFrame.getFollow() == InputState.FOLLOW)
-						            	command=1;
-						            else if(this.texasFrame.getFollow() == InputState.CHECK)
-						            	command=2;
-						            else
-						            	command=3;
-								logAndPublish.write("ERROR: Invalid Turn Bet.", false, false);
-					            logAndPublish.write("Do you wish to bet, check or fold?", false, false);
-					            logAndPublish.write("To bet, you may only bet the original ante amount.", false, false);
-								/* loop to handle user command line input */
+									 command=1;
+						         else if(this.texasFrame.getFollow() == InputState.CHECK)
+						        	 command=2;
+						         else
+						        	 command=3;
 								
 								/* handle user selection */
 								if (command == 1) 
 								{								
 									if ((orig_ante) > bankAmount)
 									{
-										logAndPublish.write("You do not have enough money to bet, checking.", false, false);
+										// user does not have enough money, sending check command
+										logAndPublish.write("Insufficient funds, checking", true, false);
 										logAndPublish.write("Sending Get River Card message", true, false);
 										this.texasFrame.popMessage("You do not have enough money to bet, checking.");
 										/* send GET_TURN message */
@@ -936,6 +929,7 @@ public class SecureClientController implements Runnable {
 							}
 							else
 							{
+								// logging the invalid gameplay message
 								logAndPublish.write("Ignoring invalid gameplay message", true, false);
 							}
 						}
@@ -943,6 +937,7 @@ public class SecureClientController implements Runnable {
 						{
 							if (svrPlayMsg.getGamePlayResponse() == MessageParser.GAME_PLAY_RESPONSE_FOLD_ACK)
 							{
+								// received a fold acknowledgement from the server, update the GUI
 								this.bankAmount = svrPlayMsg.getBankAmount();
 								/* display server msg and see if player wants to play again */
 								this.getGameInfo(sr);
@@ -950,10 +945,9 @@ public class SecureClientController implements Runnable {
 								this.texasFrame.setInfo("The dealer has won. Do you want to play again?");
 								this.texasFrame.setFold();
 							    this.texasFrame.setFollow(InputState.NOT_SET);
-							    
+							    /* wait for user input */
 							    while(this.texasFrame.getFollow() == InputState.NOT_SET)
 							    {
-							    	logAndPublish.write("wait for user to choose", false, false);
 							    	try {
 										Thread.currentThread();
 										Thread.sleep(100);
@@ -965,10 +959,10 @@ public class SecureClientController implements Runnable {
 							       command=1;
 							    else
 							       command=2;
-								logAndPublish.write("Do you want to play again?", false, false);
-//								command = UserSelection("Enter 1 to play again or 2 to go to the game list", 1, 2);
+							    /* handle user input */
 								if (command == 2)
 								{
+									// go back to the gamelist state
 									logAndPublish.write("Sending GameList message", true, false);
 									this.texasFrame.setVisible(false);
 									this.gameState.setState(GameState.GAMELIST);
@@ -1010,113 +1004,11 @@ public class SecureClientController implements Runnable {
 	}
 					
 	/**
-	 * Format and Print ServerGamePlayMessage to the screen
-	 * @param ServerResponse
+	 * getGameInfo - this function is used to update the client poker model based
+	 * on the input message received from the server
+	 * @param sr
+	 * @return none
 	 */
-	private void PrintGamePlayMessage (ServerResponse sr) 
-	{
-	    try
-	    {
-	        /* verify version number is correct and ignore msg if not */
-	    	if (this.messageParser.GetVersion(sr.getMessage(), sr.getSize()) != this.m_iVersion)
-	    	{
-	    		logAndPublish.write("Ignoring message with incorrect version", true, false);
-	    		return;
-	    	}
-	    	/* verify the message is a Play game message and then print to the screen */
-	        if (this.messageParser.GetTypeIndicator(sr.getMessage(), sr.getSize()) == MessageParser.TYPE_INDICATOR_GAME)
-	        {
-	        	if (this.messageParser.GetGameIndicator(sr.getMessage(), sr.getSize()) == MessageParser.GAME_INDICATOR_PLAY_GAME)
-	        	{
-	        		MessageParser.ServerPlayGameMessage msg = this.messageParser.GetServerPlayGameMessage(sr.getMessage(), sr.getSize());
-	        		// make sure this is a server play game message
-	        		if (msg.getGameIndicator() != MessageParser.GAME_INDICATOR_PLAY_GAME)
-	        		{
-	        			logAndPublish.write("Ignoring Incorrect Play Game Message for displaying", true, false);
-	        			return;
-	        		}
-	        		/* Get all the data so it can be printed to the screen */
-	        		bankAmount = msg.getBankAmount();
-	        	   	betAmount = msg.getBetAmount();
-	        	   	int ante = msg.getAnte();
-	        	   	int potSize = (int)msg.getPotSize();      	   	
-	        	   	Card pcard1 = msg.getPlayerCard1();
-	        	   	Card pcard2 = msg.getPlayerCard2();
-	        	   	Card dcard1 = msg.getDealerCard1();
-	        	   	Card dcard2 = msg.getDealerCard2();	        
-	        	   	Card fcard1 = msg.getFlopCard1();
-	        	   	Card fcard2 = msg.getFlopCard2();
-	        	   	Card fcard3 = msg.getFlopCard3();		          
-	        	   	Card tcard = msg.getTurnCard();
-	        	   	Card rcard = msg.getRiverCard();
-	        	   
-		          
-	        	   	/* format the winner message */
-	        	   	int winner = msg.getWinner();
-	        	   	
-	        	   	String sWinner = "ERROR";
-	        	   	if (winner == 1)
-	        	   	{
-	        	   		sWinner = "DEALER";
-	        	   	}
-	        	   	else if (winner == 2)
-	        	   	{
-	        	   		sWinner = "PLAYER";
-	        	   	}
-	        	   	else if (winner == 3)
-	        	   	{
-	        	   		sWinner = "DRAW";
-	        	   	}
-	        	   	else if (winner == 0)
-	        	   	{
-	        	   		sWinner = "NOT_SET";
-	        	   	}
-	        	   	
-	        	   	/* format the string that will be published */
-	        	   	String message = "";
-	        	   	message += "\n";
-	        	   	message += "Your Bank Amount: " + bankAmount + "\n";
-	        	   	message += "Current Ante: " + ante + "\n";
-	        	   	message += "Current Bet Amount: " + betAmount + "\n";
-	        	   	message += "Current Pot Size: " + potSize + "\n";
-	        	   	message += "\n";
-	        	   	message += "Table Status:----------------------------------------------------------\n";
-	        	   	message += "Player Card 1: " + pcard1.toString() + "\n";
-	        	   	message += "Player Card 2: " + pcard2.toString() + "\n";
-	        	   	message += "\n";
-	        	   	message += "Dealer Card 1: " + dcard1.toString() + "\n";
-	        	   	message += "Dealer Card 2: " + dcard2.toString() + "\n";
-	        	   	message += "\n";	    	 
-	        	   	message += "Flop Card 1: " + fcard1.toString() + "\n";
-	        	   	message += "Flop Card 2: " + fcard2.toString() + "\n";
-	        	   	message += "Flop Card 3: " + fcard3.toString() + "\n";
-	        	   	message += "\n";
-	        	   	message += "Turn Card: " + tcard.toString() + "\n";
-	        	   	message += "River Card: " + rcard.toString() + "\n";
-	        	   	message += "-----------------------------------------------------------------------\n";
-	        	   	message += "Winner: " + sWinner + "\n";
-	        	
-	        	   	/* Write the message to the console */
-	        	   	logAndPublish.write(message, false, false);  
-	        	}
-	        	else
-	        	{
-	        		/* Write to log file the message being ignored */
-	        		logAndPublish.write("Ignoring invalid game message", true, false);
-	        	}
-	        }
-	        else
-	        {
-	        	/* Write to log file the message being ignored */
-	        	logAndPublish.write("Ignoring invalid type message", true, false);
-	        }
-	    } catch (Exception e) {
-	    	logAndPublish.write(e,true,false);
-	    	logAndPublish.write("Closing Connection", true, true);
-	    	this.disconnect();
-	    }
-	    
-	}
 	private void getGameInfo (ServerResponse sr) 
 	{
 	    try
@@ -1179,7 +1071,10 @@ public class SecureClientController implements Runnable {
 	}
 	
 	/**
-	 * GameSetState method simply informs the client which game has been set
+	 * GameSetState - method simply informs the client which game has been set
+	 * and will send an invalid message if the user selected an invalid game
+	 * @param none
+	 * @return none
 	 * @throws IOException
 	 */
 	private void GameSetState() throws IOException 
@@ -1239,8 +1134,10 @@ public class SecureClientController implements Runnable {
 	}
 	
 	/**
-	 * GameListState method enables the user to select which game they 
+	 * GameListState - method enables the user to select which game they 
 	 * would like to play or to exit, disconnect and close the client application.
+	 * @param none
+	 * @return none
 	 * @throws IOException
 	 */
 	private void GameListState() throws IOException 
@@ -1321,8 +1218,10 @@ public class SecureClientController implements Runnable {
         }		
 	} 
 	/**
-	 * GameAuthenticateState client has sent the version message and is waiting for an acknowledgment
+	 * GameAuthenticateState - client has sent the version message and is waiting for an acknowledgment
 	 * If the client gets acknowledged then it will request to get the game list
+	 * @param none
+	 * @return none
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
@@ -1387,7 +1286,10 @@ public class SecureClientController implements Runnable {
 	}	
 	
 	/**
-	 * GameListeningState() client has just connected and needs to send the Client Version Message
+	 * GameListeningState - client has just connected and needs to send the Client Version Message
+	 * If this message is not sent the server will send a version requirement message
+	 * @param none
+	 * @return none
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
@@ -1408,9 +1310,10 @@ public class SecureClientController implements Runnable {
 	}	
     
 	/**
-	 * getSSLSocketFactory method uses the KeyManagers and TrustManagers packaged with
+	 * getSSLSocketFactory - method uses the KeyManagers and TrustManagers packaged with
 	 * this JAR to instantiate a new SSL Context using the TLS protocol.
-	 * @return
+	 * @param none
+	 * @return SSLSocketFactory
 	 * @throws IOException
 	 * @throws GeneralSecurityException
 	 */
@@ -1433,9 +1336,10 @@ public class SecureClientController implements Runnable {
     
 
     /**
-     * getTrustManagers method loads the key manager packaged with this JAR, 
+     * getTrustManagers - method loads the key manager packaged with this JAR, 
      * initializes and returns the TrustManager array
-     * @return
+     * @param none
+     * @return TrustManager[]
      * @throws IOException
      * @throws GeneralSecurityException
      */
@@ -1462,8 +1366,9 @@ public class SecureClientController implements Runnable {
     }  
 
     /**
-     * getKeyManagers method loads the key manager packaged with this JAR, 
+     * getKeyManagers - method loads the key manager packaged with this JAR, 
      * initializes and returns the KeyManager array
+     * @param none
      * @return returns an array of key managers
      * @throws IOException
      * @throws GeneralSecurityException
@@ -1492,10 +1397,11 @@ public class SecureClientController implements Runnable {
     }  
     
 	/**
-	 * connect method forms a connection to the server defined by the configuration
+	 * connect - method forms a connection to the server defined by the configuration
 	 * @param ssf SSL Socket Factory instance
 	 * @param hostName Host name of the Server
 	 * @param port Port of the AGMP Server
+	 * @return none
 	 * @throws IOException
 	 */
     public void connect(SSLSocketFactory ssf, String hostName, int port) throws IOException 
@@ -1528,11 +1434,12 @@ public class SecureClientController implements Runnable {
     }
     
     /**
-     * findConnect method will use the Java InetAddress .isReachable method, 
+     * findConnect - method will use the Java InetAddress .isReachable method, 
      * which uses ICMP if logged in as root in linux or OSX, or uses a TCP RST,ACK 
      * ping to Port 7 Echo Request.  
      * @param ssf SSL Socket Factory instance
      * @param port Port of the AGMP Server
+     * @return none
      * @throws IOException
      */
     public void findConnect(SSLSocketFactory ssf, int port) throws IOException 
@@ -1567,56 +1474,12 @@ public class SecureClientController implements Runnable {
 		        t.start();	
 	        }
         }
-    }
-    
-	/**
-	 * UserSelection method to capture user input from command line to questions
-	 * 
-	 * @param choice String summarizing the choice to be made
-	 * @param greaterThan Integer of a value to be greater than as first number in the choice sequence
-	 * @param lessThan Integer of a value to be less than and equal to the last number in the choice sequence
-	 * @return
-	 */
-	public int UserSelection(String choice, int greaterThan, int lessThan)
-	{
-		int command = -1;
-		
-		reset:
-		while(true) {
-			try {
-				logAndPublish.write(choice, false, true);
-				command = Integer.parseInt(br.readLine());
-			} catch (NumberFormatException e) {
-			
-	    		/* Log and Publish */
-	    		logAndPublish.write(e, true, false);
-	    		logAndPublish.write("Invalid Selection.  Try again.", false, true);
-				continue reset;
-
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				logAndPublish.write(e, true, false);
-				logAndPublish.write("Closing Connection", true, true);
-				this.disconnect();
-			}
-			
-			/* command contains a valid number */
-			if ((command >= greaterThan) && (command <=lessThan))
-				break;
-			else 
-			{
-				logAndPublish.write("Invalid Selection.  Try again.", false, true);
-				continue reset;
-			}
-		}	
-		
-		return command;
-	
-	}    
+    }  
     
     /**
-     * receiveMessage method reads server response from ObjectInputStream 
-     * @return 
+     * receiveMessage - method reads server response from ObjectInputStream 
+     * @param none
+     * @return ServerResponse
      * @throws IOException
      */
     public ServerResponse receiveMessage () throws IOException
@@ -1632,8 +1495,9 @@ public class SecureClientController implements Runnable {
     }    
     
     /**
-     * sendMessage method dispatches messages to the server
+     * sendMessage - method dispatches messages to the server
      * @param msg MessageParser assembled byte message
+     * @return none
      * @throws IOException
      */
     public void sendMessage (byte[] msg) throws IOException
@@ -1645,7 +1509,9 @@ public class SecureClientController implements Runnable {
     }
 
     /**
-     * Disconnect this client from the server
+     * disconnect - disconnect this client from the server
+     * @param none
+     * @return none
      */
     public void disconnect() 
     {
@@ -1689,8 +1555,9 @@ class ServerResponse {
 	}
 	
 	/**
-	 * setMessage method to set byte array
+	 * setMessage - method to set byte array
 	 * @param msg
+	 * @return none
 	 */
 	public void setMessage (byte[] msg) 
 	{
@@ -1698,8 +1565,9 @@ class ServerResponse {
 	}
 
 	/**
-	 * setSize method to set array size
+	 * setSize - method to set array size
 	 * @param size
+	 * @return none
 	 */
 	public void setSize (int size)
 	{
@@ -1707,8 +1575,9 @@ class ServerResponse {
 	}
 	
 	/**
-	 * getSize method returns array size
-	 * @return
+	 * getSize - method returns array size
+	 * @param none
+	 * @return int
 	 */
 	public int getSize ()
 	{
@@ -1716,8 +1585,9 @@ class ServerResponse {
 	}
 	
 	/**
-	 * getMessage method returns byte array
-	 * @return
+	 * getMessage - method returns byte array
+	 * @param none
+	 * @return byte[]
 	 */
 	public byte[] getMessage ()
 	{
