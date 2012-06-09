@@ -500,7 +500,6 @@ public class SecureClientController implements Runnable {
 										// do nothing
 									}
 								}
-								
 								int userAnte=this.texasFrame.getUserAnte();
 								// send GET_HOLE message and transition to the next phase
 								MessageParser.ClientPlayGameMessage msg = this.messageParser.new ClientPlayGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_GET_HOLE, (long)userAnte);  
@@ -1172,8 +1171,7 @@ public class SecureClientController implements Runnable {
         		this.welcomeFrame.setVisible(true);
         		
                 while(this.welcomeFrame.getGameChoice()==null)
-                {
-                	logAndPublish.write("waiting for user choosing game",false,false);
+                {              	
                 	try {
 						Thread.currentThread();
 						Thread.sleep(100);

@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.IOException;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Observable;
 import java.util.Timer;
@@ -157,8 +158,9 @@ public class ClientModel extends Observable implements Runnable {
    {
       try
       {
-         // force the client to send version info
+         // force the client to send version info by setting timeouts
          this.timeoutTimer.schedule(this.m_lVersionOpTimer);
+         this.socket.setSoTimeout((int) (this.m_lVersionOpTimer+2000));
          while (running && !this.socket.isClosed() && this.gameState.getState() != GameState.CLOSED)
          {
             // get the input from the client
@@ -240,13 +242,15 @@ public class ClientModel extends Observable implements Runnable {
 				msg.setVersionType(MessageParser.VERSION_INDICATOR_VERSION_ACK);
 				this.logAndPublish.write(this.uniqueID + ": has finished authenticating!", true, false);
 				try	{
-               // send the message and update the DFA state
-               outputStream.writeByte((byte)this.messageParser.CreateVersionMessage(msg).length);
-               outputStream.write(this.messageParser.CreateVersionMessage(msg)); 
-               outputStream.flush();					
+					// send the message and update the DFA state
+					outputStream.writeByte((byte)this.messageParser.CreateVersionMessage(msg).length);
+					outputStream.write(this.messageParser.CreateVersionMessage(msg)); 
+					outputStream.flush();	
+					// reset the socket timeout to the game because it is longer
+					this.socket.setSoTimeout((int) (this.m_lGameOpTimer+2000));
 					this.gameState.setState(GameState.AUTHENTICATE);
 				} catch (Exception e) {
-               e.printStackTrace();
+					logAndPublish.write(e, true, false);
 					this.timeoutTimer.stop();
 					this.gameState.setState(GameState.CLOSED);
 				}
@@ -269,7 +273,7 @@ public class ClientModel extends Observable implements Runnable {
 					this.timeoutTimer.stop();
 					this.gameState.setState(GameState.CLOSED);
 				} catch (Exception e) {
-					e.printStackTrace();
+					logAndPublish.write(e, true, false);
 					this.timeoutTimer.stop();
 					this.gameState.setState(GameState.CLOSED);
 				}
@@ -289,7 +293,7 @@ public class ClientModel extends Observable implements Runnable {
 			        outputStream.write(this.messageParser.CreateVersionMessage(msg)); 
 			        outputStream.flush();
 				} catch (Exception e) {
-					e.printStackTrace();
+					logAndPublish.write(e, true, false);
 					this.timeoutTimer.stop();
 					this.gameState.setState(GameState.CLOSED);
 				}
@@ -305,7 +309,7 @@ public class ClientModel extends Observable implements Runnable {
             outputStream.write(this.messageParser.CreateVersionMessage(msg)); 
             outputStream.flush();				
 			} catch (Exception e) {
-				e.printStackTrace();
+				logAndPublish.write(e, true, false);
 				this.gameState.setState(GameState.CLOSED);
 			}
 		}
@@ -328,39 +332,42 @@ public class ClientModel extends Observable implements Runnable {
          this.logAndPublish.write(this.uniqueID + ": has sent an invalid version number, Ignoring Msg", true, false);
          return;
       }	
-		if (this.messageParser.GetTypeIndicator(inputBuffer, iByteCount) == MessageParser.TYPE_INDICATOR_GAME)
-		{
-         if (this.messageParser.GetGameIndicator(inputBuffer, iByteCount) == MessageParser.GAME_INDICATOR_GET_GAME)
-         {
-            MessageParser.ClientGetGameMessage msg = this.messageParser.GetClientGetGameMessage(inputBuffer, iByteCount);
-            // make sure this was indeed a client get game message
-            if (msg.getGameIndicator() != MessageParser.GAME_INDICATOR_GET_GAME)
-            {
-               // not a client message, must be a server message. Ignore
-               this.logAndPublish.write(this.uniqueID + ": Received Server Get Game Message, Ignoring", true, false);
-               return;
-            }
-            // send the client the game list and update to the game list state
-            int length = 12 + (int)(Math.ceil((double)this.oGameTypeList.size() / 4) * 4);
-            MessageParser.ServerGetGameMessage svrMsg = this.messageParser.new ServerGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME, length, this.oGameTypeList);
-            this.timeoutTimer.reschedule(this.m_lGameOpTimer);
-				this.logAndPublish.write(this.uniqueID + ": has sent get game message", true, false);
-				try	{
-               outputStream.writeByte((byte)this.messageParser.CreateServerGetGameMessage(svrMsg).length);
-               outputStream.write(this.messageParser.CreateServerGetGameMessage(svrMsg)); 
-               outputStream.flush();					
-					this.gameState.setState(GameState.GAMELIST);
-				} catch (Exception e) {
-               e.printStackTrace();
-					this.timeoutTimer.stop();
-					this.gameState.setState(GameState.CLOSED);
-				}
-			}
-			else
-			{
-				// The game indicator is incorrect
-				this.logAndPublish.write(this.uniqueID + ": Invalid Game Indicator, should be Get Games", true, false);
-			}
+      if (this.messageParser.GetTypeIndicator(inputBuffer, iByteCount) == MessageParser.TYPE_INDICATOR_GAME)
+      {
+    	  if (this.messageParser.GetGameIndicator(inputBuffer, iByteCount) == MessageParser.GAME_INDICATOR_GET_GAME)
+    	  {
+    		  MessageParser.ClientGetGameMessage msg = this.messageParser.GetClientGetGameMessage(inputBuffer, iByteCount);
+    		  // make sure this was indeed a client get game message
+    		  if (msg.getGameIndicator() != MessageParser.GAME_INDICATOR_GET_GAME)
+    		  {
+    			  // not a client message, must be a server message. Ignore
+    			  this.logAndPublish.write(this.uniqueID + ": Received Server Get Game Message, Ignoring", true, false);
+    			  return;
+    		  }
+    		  // send the client the game list and update to the game list state
+    		  int length = 12 + (int)(Math.ceil((double)this.oGameTypeList.size() / 4) * 4);
+    		  MessageParser.ServerGetGameMessage svrMsg = this.messageParser.new ServerGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME, length, this.oGameTypeList);
+    		  // reset the timer
+    		  this.timeoutTimer.reschedule(this.m_lGameOpTimer);
+    		  this.logAndPublish.write(this.uniqueID + ": has sent get game message", true, false);
+    		  try	{
+    			  outputStream.writeByte((byte)this.messageParser.CreateServerGetGameMessage(svrMsg).length);
+    			  outputStream.write(this.messageParser.CreateServerGetGameMessage(svrMsg)); 
+    			  outputStream.flush();					
+    			  this.gameState.setState(GameState.GAMELIST);
+    			  // reset the socket timeout
+    			  this.socket.setSoTimeout((int) (this.m_lGameOpTimer+2000));
+    		  } catch (Exception e) {
+    			 logAndPublish.write(e, true, false);
+    			  this.timeoutTimer.stop();
+    			  this.gameState.setState(GameState.CLOSED);
+    		  }
+    	  }
+    	  else
+    	  {
+    		  // The game indicator is incorrect
+    		  this.logAndPublish.write(this.uniqueID + ": Invalid Game Indicator, should be Get Games", true, false);
+    	  }
       }
       else
       {
@@ -414,6 +421,7 @@ public class ClientModel extends Observable implements Runnable {
             {
 				/* send an ack and switch to the game set state */
                MessageParser.ServerSetGameMessage svrMsg = this.messageParser.new ServerSetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_SET_GAME, msg.getGameTypeCode(), MessageParser.GAME_TYPE_RESPONSE_ACK);
+               // reset the timer
                this.timeoutTimer.reschedule(m_lGameOpTimer);
                this.gameState.setState(GameState.GAMESET);
                this.m_iGameTypeCode = msg.getGameTypeCode();
@@ -422,24 +430,29 @@ public class ClientModel extends Observable implements Runnable {
                   outputStream.writeByte((byte)this.messageParser.CreateServerSetGameMessage(svrMsg).length);
                   outputStream.write(this.messageParser.CreateServerSetGameMessage(svrMsg)); 
                   outputStream.flush();						
+                  // reset the socket timeout
+                  this.socket.setSoTimeout((int) (this.m_lGameOpTimer+2000));
                } catch (Exception e) {
-                  e.printStackTrace();
-                  this.timeoutTimer.stop();
-                  this.gameState.setState(GameState.CLOSED);
+            	   logAndPublish.write(e, true, false);
+            	   this.timeoutTimer.stop();
+            	   this.gameState.setState(GameState.CLOSED);
                }
             }
             else
             {
 				/* invalid request, send an invalid response code and stay in this state */
                MessageParser.ServerSetGameMessage svrMsg = this.messageParser.new ServerSetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_SET_GAME, msg.getGameTypeCode(), MessageParser.GAME_TYPE_RESPONSE_INVALID);
+               // reset the timer
                this.timeoutTimer.reschedule(m_lGameOpTimer);
                this.logAndPublish.write(this.uniqueID + ": has sent an invalid Game Type Indicator", true, false);
                try	{
                   outputStream.writeByte((byte)this.messageParser.CreateServerSetGameMessage(svrMsg).length);
                   outputStream.write(this.messageParser.CreateServerSetGameMessage(svrMsg)); 
-                  outputStream.flush();						
+                  outputStream.flush();		
+                  // reset the socket timeout
+                  this.socket.setSoTimeout((int) (this.m_lGameOpTimer+2000));
                } catch (Exception e) {
-                  e.printStackTrace();
+            	   logAndPublish.write(e, true, false);
                   this.timeoutTimer.stop();
                   this.gameState.setState(GameState.CLOSED);
                }
@@ -447,30 +460,33 @@ public class ClientModel extends Observable implements Runnable {
          }
          else if (this.messageParser.GetGameIndicator(inputBuffer, iByteCount) == MessageParser.GAME_INDICATOR_GET_GAME)
          {
-            MessageParser.ClientGetGameMessage msg = this.messageParser.GetClientGetGameMessage(inputBuffer, iByteCount);
-            // make sure this was indeed a client get game message
-            if (msg.getGameIndicator() != MessageParser.GAME_INDICATOR_GET_GAME)
-            {
-               // not a client message, must be a server message. Ignore
-               this.logAndPublish.write(this.uniqueID + ": Received Server Get Game Message, Ignoring", true, false);
-               return;
-            }
-            // send the client the game list
-            int length = 12 + (int)(Math.ceil((double)this.oGameTypeList.size() / 4) * 4);
-            MessageParser.ServerGetGameMessage svrMsg = this.messageParser.new ServerGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME, length, this.oGameTypeList);
-            this.timeoutTimer.reschedule(this.m_lGameOpTimer);
-				this.logAndPublish.write(this.uniqueID + ": has sent get game message", true, false);
-				try	{
-               outputStream.writeByte((byte)this.messageParser.CreateServerGetGameMessage(svrMsg).length);
-               outputStream.write(this.messageParser.CreateServerGetGameMessage(svrMsg)); 
-               outputStream.flush();					
-					this.gameState.setState(GameState.GAMELIST);
-				} catch (Exception e) {
-               e.printStackTrace();
-					this.timeoutTimer.stop();
-					this.gameState.setState(GameState.CLOSED);
-				}
-			}
+        	 MessageParser.ClientGetGameMessage msg = this.messageParser.GetClientGetGameMessage(inputBuffer, iByteCount);
+        	 // make sure this was indeed a client get game message
+        	 if (msg.getGameIndicator() != MessageParser.GAME_INDICATOR_GET_GAME)
+        	 {
+        		 // not a client message, must be a server message. Ignore
+        		 this.logAndPublish.write(this.uniqueID + ": Received Server Get Game Message, Ignoring", true, false);
+        		 return;
+        	 }
+        	 // send the client the game list
+        	 int length = 12 + (int)(Math.ceil((double)this.oGameTypeList.size() / 4) * 4);
+        	 MessageParser.ServerGetGameMessage svrMsg = this.messageParser.new ServerGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME, length, this.oGameTypeList);
+        	 // reset timeer
+        	 this.timeoutTimer.reschedule(this.m_lGameOpTimer);
+        	 this.logAndPublish.write(this.uniqueID + ": has sent get game message", true, false);
+        	 try	{
+        		 outputStream.writeByte((byte)this.messageParser.CreateServerGetGameMessage(svrMsg).length);
+        		 outputStream.write(this.messageParser.CreateServerGetGameMessage(svrMsg)); 
+        		 outputStream.flush();					
+        		 this.gameState.setState(GameState.GAMELIST);
+        		 // reset socket timeout
+        		 this.socket.setSoTimeout((int) (this.m_lGameOpTimer+2000));
+        	 } catch (Exception e) {
+        		 logAndPublish.write(e, true, false);
+        		 this.timeoutTimer.stop();
+        		 this.gameState.setState(GameState.CLOSED);
+        	 }
+         }
          else
          {
             this.logAndPublish.write(this.uniqueID + ": has sent an invalid Game Indicator, should be Set Game or Get Game", true, false);
@@ -492,7 +508,7 @@ public class ClientModel extends Observable implements Runnable {
                outputStream.write(this.messageParser.CreateConnectionMessage(msg)); 
                outputStream.flush();	
             } catch (Exception e) {
-               e.printStackTrace();
+            	logAndPublish.write(e, true, false);
                this.timeoutTimer.stop();
                this.gameState.setState(GameState.CLOSED);
             }
@@ -556,13 +572,16 @@ public class ClientModel extends Observable implements Runnable {
 						MessageParser.ServerPlayGameMessage svrMsg = oTHModel.updateModel(msg);
 						// update client bank account
 						this.m_lClientBankAmount = svrMsg.getBankAmount();
+						// reset the timer
 						this.timeoutTimer.reschedule(m_lGameOpTimer);
 						try	{
 							outputStream.writeByte((byte)this.messageParser.CreateServerPlayGameMessage(svrMsg).length);
 							outputStream.write(this.messageParser.CreateServerPlayGameMessage(svrMsg)); 
-							outputStream.flush();						
+							outputStream.flush();				
+							// reset the timeout
+							this.socket.setSoTimeout((int) (this.m_lGameOpTimer+2000));
 						} catch (Exception e) {
-							e.printStackTrace();
+							logAndPublish.write(e, true, false);
 							this.timeoutTimer.stop();
 							this.gameState.setState(GameState.CLOSED);
 						}
@@ -636,13 +655,16 @@ public class ClientModel extends Observable implements Runnable {
                MessageParser.ServerPlayGameMessage svrMsg = oTHModel.updateModel(msg);
                // update client bank account
                this.m_lClientBankAmount = svrMsg.getBankAmount();
+               // reset the timer
                this.timeoutTimer.reschedule(m_lGameOpTimer);
                try	{
                   outputStream.writeByte((byte)this.messageParser.CreateServerPlayGameMessage(svrMsg).length);
                   outputStream.write(this.messageParser.CreateServerPlayGameMessage(svrMsg)); 
-                  outputStream.flush();						
+                  outputStream.flush();		
+                  // reset the timeout
+                  this.socket.setSoTimeout((int) (this.m_lGameOpTimer+2000));
                } catch (Exception e) {
-                  e.printStackTrace();
+            	   logAndPublish.write(e, true, false);
                   this.timeoutTimer.stop();
                   this.gameState.setState(GameState.CLOSED);
                }
@@ -655,29 +677,32 @@ public class ClientModel extends Observable implements Runnable {
          }
          else if (this.messageParser.GetGameIndicator(inputBuffer, iByteCount) == MessageParser.GAME_INDICATOR_GET_GAME)
          {
-            MessageParser.ClientGetGameMessage msg = this.messageParser.GetClientGetGameMessage(inputBuffer, iByteCount);
-            // make sure this was indeed a client get game message
-            if (msg.getGameIndicator() != MessageParser.GAME_INDICATOR_GET_GAME)
-            {
-               // not a client message, must be a server message. Ignore
-               this.logAndPublish.write(this.uniqueID + ": Received Server Get Game Message, Ignoring", true, false);
-               return;
-            }
-            // send the client the game list and switch to the GameList state
-            int length = 12 + (int)(Math.ceil((double)this.oGameTypeList.size() / 4) * 4);
-            MessageParser.ServerGetGameMessage svrMsg = this.messageParser.new ServerGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME, length, this.oGameTypeList);
-            this.timeoutTimer.reschedule(this.m_lGameOpTimer);
-				this.logAndPublish.write(this.uniqueID + ": has sent get game message", true, false);
-				try	{
-               outputStream.writeByte((byte)this.messageParser.CreateServerGetGameMessage(svrMsg).length);
-               outputStream.write(this.messageParser.CreateServerGetGameMessage(svrMsg)); 
-               outputStream.flush();					
-					this.gameState.setState(GameState.GAMELIST);
-				} catch (Exception e) {
-               e.printStackTrace();
-					this.timeoutTimer.stop();
-					this.gameState.setState(GameState.CLOSED);
-				}
+        	 MessageParser.ClientGetGameMessage msg = this.messageParser.GetClientGetGameMessage(inputBuffer, iByteCount);
+        	 // make sure this was indeed a client get game message
+        	 if (msg.getGameIndicator() != MessageParser.GAME_INDICATOR_GET_GAME)
+        	 {
+        		 // not a client message, must be a server message. Ignore
+        		 this.logAndPublish.write(this.uniqueID + ": Received Server Get Game Message, Ignoring", true, false);
+        		 return;
+        	 }
+        	 // send the client the game list and switch to the GameList state
+        	 int length = 12 + (int)(Math.ceil((double)this.oGameTypeList.size() / 4) * 4);
+        	 MessageParser.ServerGetGameMessage svrMsg = this.messageParser.new ServerGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME, length, this.oGameTypeList);
+        	 // reset the timeout
+        	 this.timeoutTimer.reschedule(this.m_lGameOpTimer);
+        	 this.logAndPublish.write(this.uniqueID + ": has sent get game message", true, false);
+        	 try	{
+        		 outputStream.writeByte((byte)this.messageParser.CreateServerGetGameMessage(svrMsg).length);
+        		 outputStream.write(this.messageParser.CreateServerGetGameMessage(svrMsg)); 
+        		 outputStream.flush();		
+        		 // reset the socket timeout
+        		 this.socket.setSoTimeout((int) (this.m_lGameOpTimer+2000));
+        		 this.gameState.setState(GameState.GAMELIST);
+        	 } catch (Exception e) {
+        		 logAndPublish.write(e, true, false);
+        		 this.timeoutTimer.stop();
+        		 this.gameState.setState(GameState.CLOSED);
+        	 }
          }
          else
          {
