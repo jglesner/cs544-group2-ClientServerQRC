@@ -161,6 +161,8 @@ public class ClientModel extends Observable implements Runnable {
          // force the client to send version info by setting timeouts
          this.timeoutTimer.schedule(this.m_lVersionOpTimer);
          this.socket.setSoTimeout((int) (this.m_lVersionOpTimer+2000));
+         
+         /* DFA STATE MANAGEMENT */
          while (running && !this.socket.isClosed() && this.gameState.getState() != GameState.CLOSED)
          {
             // get the input from the client
@@ -242,7 +244,7 @@ public class ClientModel extends Observable implements Runnable {
 				msg.setVersionType(MessageParser.VERSION_INDICATOR_VERSION_ACK);
 				this.logAndPublish.write(this.uniqueID + ": has finished authenticating!", true, false);
 				try	{
-					// send the message and update the DFA state
+					/* MESSAGE MANAGEMENT */ 
 					outputStream.writeByte((byte)this.messageParser.CreateVersionMessage(msg).length);
 					outputStream.write(this.messageParser.CreateVersionMessage(msg)); 
 					outputStream.flush();	
@@ -266,10 +268,10 @@ public class ClientModel extends Observable implements Runnable {
 				msg.setVersionType(MessageParser.VERSION_INDICATOR_VERSION_UPGRADE);
 				this.logAndPublish.write(this.uniqueID + ": Invalid Version, closing connection", true, false);
 				try {
-               // send the upgrade required message and close the connection
-               outputStream.writeByte((byte)this.messageParser.CreateVersionMessage(msg).length);
-               outputStream.write(this.messageParser.CreateVersionMessage(msg)); 
-               outputStream.flush();					
+					/* MESSAGE MANAGEMENT */ 
+	                outputStream.writeByte((byte)this.messageParser.CreateVersionMessage(msg).length);
+	                outputStream.write(this.messageParser.CreateVersionMessage(msg)); 
+	                outputStream.flush();					
 					this.timeoutTimer.stop();
 					this.gameState.setState(GameState.CLOSED);
 				} catch (Exception e) {
@@ -288,7 +290,7 @@ public class ClientModel extends Observable implements Runnable {
 				msg.setVersionType(MessageParser.VERSION_INDICATOR_VERSION_REQUIREMENT);
 				this.logAndPublish.write(this.uniqueID + ": Invalid message, need client protocol version", true, false);
 				try {
-					//oOutputStream.write(this.messageParser.CreateVersionMessage(msg));
+					/* MESSAGE MANAGEMENT */ 
 					outputStream.writeByte((byte)this.messageParser.CreateVersionMessage(msg).length);
 			        outputStream.write(this.messageParser.CreateVersionMessage(msg)); 
 			        outputStream.flush();
@@ -305,9 +307,10 @@ public class ClientModel extends Observable implements Runnable {
 			this.logAndPublish.write(this.uniqueID + ": Need to finish authentication of version, got a different message", true, false);
 			MessageParser.VersionMessage msg = this.messageParser.new VersionMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_VERSION, MessageParser.VERSION_INDICATOR_VERSION_REQUIREMENT, this.m_iMinorVersion,(long)0);
 			try {
-            outputStream.writeByte((byte)this.messageParser.CreateVersionMessage(msg).length);
-            outputStream.write(this.messageParser.CreateVersionMessage(msg)); 
-            outputStream.flush();				
+				/* MESSAGE MANAGEMENT */
+	            outputStream.writeByte((byte)this.messageParser.CreateVersionMessage(msg).length);
+	            outputStream.write(this.messageParser.CreateVersionMessage(msg)); 
+	            outputStream.flush();				
 			} catch (Exception e) {
 				logAndPublish.write(e, true, false);
 				this.gameState.setState(GameState.CLOSED);
@@ -323,7 +326,7 @@ public class ClientModel extends Observable implements Runnable {
    * @return none
    */
    private void AuthenticateState(byte[] inputBuffer, int iByteCount) throws IOException {
-		/*
+	  /*
       *  During this state the client has authenticated and the server is waiting for the get games message
       */
       // make sure the version is correct
@@ -351,6 +354,7 @@ public class ClientModel extends Observable implements Runnable {
     		  this.timeoutTimer.reschedule(this.m_lGameOpTimer);
     		  this.logAndPublish.write(this.uniqueID + ": has sent get game message", true, false);
     		  try	{
+    			  /* MESSAGE MANAGEMENT */
     			  outputStream.writeByte((byte)this.messageParser.CreateServerGetGameMessage(svrMsg).length);
     			  outputStream.write(this.messageParser.CreateServerGetGameMessage(svrMsg)); 
     			  outputStream.flush();					
@@ -427,6 +431,7 @@ public class ClientModel extends Observable implements Runnable {
                this.m_iGameTypeCode = msg.getGameTypeCode();
                this.logAndPublish.write(this.uniqueID + ": has sent a valid Game Type Indicator", true, false);
                try	{
+            	   /* MESSAGE MANAGEMENT */
                   outputStream.writeByte((byte)this.messageParser.CreateServerSetGameMessage(svrMsg).length);
                   outputStream.write(this.messageParser.CreateServerSetGameMessage(svrMsg)); 
                   outputStream.flush();						
@@ -446,6 +451,7 @@ public class ClientModel extends Observable implements Runnable {
                this.timeoutTimer.reschedule(m_lGameOpTimer);
                this.logAndPublish.write(this.uniqueID + ": has sent an invalid Game Type Indicator", true, false);
                try	{
+            	   /* MESSAGE MANAGEMENT */
                   outputStream.writeByte((byte)this.messageParser.CreateServerSetGameMessage(svrMsg).length);
                   outputStream.write(this.messageParser.CreateServerSetGameMessage(svrMsg)); 
                   outputStream.flush();		
@@ -475,6 +481,7 @@ public class ClientModel extends Observable implements Runnable {
         	 this.timeoutTimer.reschedule(this.m_lGameOpTimer);
         	 this.logAndPublish.write(this.uniqueID + ": has sent get game message", true, false);
         	 try	{
+        		 /* MESSAGE MANAGEMENT */
         		 outputStream.writeByte((byte)this.messageParser.CreateServerGetGameMessage(svrMsg).length);
         		 outputStream.write(this.messageParser.CreateServerGetGameMessage(svrMsg)); 
         		 outputStream.flush();					
@@ -504,6 +511,7 @@ public class ClientModel extends Observable implements Runnable {
             this.logAndPublish.write(this.uniqueID + ": has sent a request to close the connection", true, false);
             this.gameState.setState(GameState.CLOSED);
             try	{
+            	/* MESSAGE MANAGEMENT */
                outputStream.writeByte((byte)this.messageParser.CreateConnectionMessage(msg).length);
                outputStream.write(this.messageParser.CreateConnectionMessage(msg)); 
                outputStream.flush();	
@@ -575,6 +583,7 @@ public class ClientModel extends Observable implements Runnable {
 						// reset the timer
 						this.timeoutTimer.reschedule(m_lGameOpTimer);
 						try	{
+							/* MESSAGE MANAGEMENT */
 							outputStream.writeByte((byte)this.messageParser.CreateServerPlayGameMessage(svrMsg).length);
 							outputStream.write(this.messageParser.CreateServerPlayGameMessage(svrMsg)); 
 							outputStream.flush();				
@@ -658,6 +667,7 @@ public class ClientModel extends Observable implements Runnable {
                // reset the timer
                this.timeoutTimer.reschedule(m_lGameOpTimer);
                try	{
+            	   /* MESSAGE MANAGEMENT */
                   outputStream.writeByte((byte)this.messageParser.CreateServerPlayGameMessage(svrMsg).length);
                   outputStream.write(this.messageParser.CreateServerPlayGameMessage(svrMsg)); 
                   outputStream.flush();		
@@ -692,6 +702,7 @@ public class ClientModel extends Observable implements Runnable {
         	 this.timeoutTimer.reschedule(this.m_lGameOpTimer);
         	 this.logAndPublish.write(this.uniqueID + ": has sent get game message", true, false);
         	 try	{
+        		 /* MESSAGE MANAGEMENT */
         		 outputStream.writeByte((byte)this.messageParser.CreateServerGetGameMessage(svrMsg).length);
         		 outputStream.write(this.messageParser.CreateServerGetGameMessage(svrMsg)); 
         		 outputStream.flush();		
@@ -723,10 +734,6 @@ public class ClientModel extends Observable implements Runnable {
 	*
 	*	This class is used to create a timeout to avoid looping and provide reliability
 	*	It also handles closing the connection when the timeout occurs
-	* 
-	*  @author GROUP 2, CS544-900-SPRING12, DREXEL UNIVERSITY
-	*  Members: Jeremy Glesner, Dustin Overmiller, Yiqi Ju, Lei Yuan
-	*  Project: Advanced Game Message Protocol Implementation
 	*  
 	*/
 	class TimeoutTask extends TimerTask {
@@ -767,10 +774,6 @@ public class ClientModel extends Observable implements Runnable {
 	*
 	*	This class actually maintains the timer and stores the time for
 	*	it to go off
-	* 
-	*  @author GROUP 2, CS544-900-SPRING12, DREXEL UNIVERSITY
-	*  Members: Jeremy Glesner, Dustin Overmiller, Yiqi Ju, Lei Yuan
-	*  Project: Advanced Game Message Protocol Implementation
 	*  
 	*/
 	class TimeoutTimer extends Timer {

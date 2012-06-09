@@ -214,6 +214,7 @@ public class SecureClientController implements Runnable {
 			logAndPublish.write(e, true, false);
 		}
 		
+		/* EXTRA CREDIT */ 
 		/* find server using ICMP/TCP methods */
 		if (!c.connected) {
 
@@ -248,7 +249,7 @@ public class SecureClientController implements Runnable {
     public void run() {
        try 
        {
-    	   /* Game loop */
+    	   /* DFA STATE MANAGEMENT */
     	   while(connected && this.gameState.getState() != GameState.CLOSED) 
     	   {
     		   if (this.gameState.getState() == GameState.LISTENING)
@@ -1112,6 +1113,8 @@ public class SecureClientController implements Runnable {
         			// Send the game play init message and switch to the game play state
         			logAndPublish.write("Sending Play Game Init Message", true, false);
         			MessageParser.ClientPlayGameMessage playMsg = this.messageParser.new ClientPlayGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_PLAY_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM, MessageParser.GAME_PLAY_REQUEST_INIT,(long)0);
+        			
+        			/* MESSAGE MANAGEMENT */ 
         			this.sendMessage(this.messageParser.CreateClientPlayGameMessage(playMsg));
         			this.gameState.setState(GameState.GAMEPLAY);
         			this.gamePlayState.setPlayState(GamePlayState.INIT);
@@ -1120,6 +1123,8 @@ public class SecureClientController implements Runnable {
         		{
         			// need to resend the get games message and transition to games list state
         			MessageParser.ClientGetGameMessage oMsg1 = this.messageParser.new ClientGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME);
+        			
+        			/* MESSAGE MANAGEMENT */ 
         			this.sendMessage(this.messageParser.CreateClientGetGameMessage(oMsg1));
         			this.gameState.setState(GameState.GAMELIST); 
         		}
@@ -1201,6 +1206,8 @@ public class SecureClientController implements Runnable {
         			/* inform server that user has selected Texas Hold'em */
         			logAndPublish.write("Sending Game Selection Message", true, false);
         			MessageParser.ClientSetGameMessage msg = this.messageParser.new ClientSetGameMessage(1, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_SET_GAME, MessageParser.GAME_TYPE_TEXAS_HOLDEM);  
+        			
+        			/* MESSAGE MANAGEMENT */ 
         			this.sendMessage(this.messageParser.CreateClientSetGameMessage(msg));
         			this.gameState.setState(GameState.GAMESET);
         		} 
@@ -1209,6 +1216,8 @@ public class SecureClientController implements Runnable {
         			// send a close connection message and close the connection
         			logAndPublish.write("Sending Close Connection Message", true, false);
         			MessageParser.ConnectionMessage msg = this.messageParser.new ConnectionMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_CLOSE_CONNECTION, MessageParser.CONNECTION_INDICATOR_CLOSE_CONNECTION);
+        			
+        			/* MESSAGE MANAGEMENT */ 
         			this.sendMessage(this.messageParser.CreateConnectionMessage(msg));
         			this.gameState.setState(GameState.CLOSED);
         		}
@@ -1259,6 +1268,8 @@ public class SecureClientController implements Runnable {
         			logAndPublish.write(iMsg.toString(), false, false); 
         			// get the list of games and transition to the game listed state
         			MessageParser.ClientGetGameMessage oMsg1 = this.messageParser.new ClientGetGameMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_GAME, MessageParser.GAME_INDICATOR_GET_GAME);
+        			
+        			/* MESSAGE MANAGEMENT */ 
         			this.sendMessage(this.messageParser.CreateClientGetGameMessage(oMsg1));
         			this.gameState.setState(GameState.GAMELIST); 
         		}
@@ -1311,6 +1322,8 @@ public class SecureClientController implements Runnable {
 		 * Send the client version message and then transition to the authentication state
 		 */
         MessageParser.VersionMessage oMsg1 = this.messageParser.new VersionMessage(this.m_iVersion, MessageParser.TYPE_INDICATOR_VERSION, MessageParser.VERSION_INDICATOR_CLIENT_VERSION, (short)this.m_iMinorVersion, (long)0);
+        
+        /* MESSAGE MANAGEMENT */ 
         this.sendMessage(this.messageParser.CreateVersionMessage(oMsg1));
         
         this.gameState.setState(GameState.AUTHENTICATE);
@@ -1480,6 +1493,7 @@ public class SecureClientController implements Runnable {
     		/* set variables */
         	this.port = port;
         	
+        	/* EXTRA CREDIT */ 
         	/* open secure socket */
         	EchoFinder ef = new EchoFinder(ssf, port);
 	        socket = ef.findAGMPServer(port);
@@ -1510,6 +1524,7 @@ public class SecureClientController implements Runnable {
      */
     public ServerResponse receiveMessage () throws IOException
     {
+    	/* MESSAGE MANAGEMENT */
     	/* get the message from the server */
 		byte iByteCount = inputstream.readByte();
 		byte [] inputBuffer = new byte[iByteCount];
@@ -1528,6 +1543,7 @@ public class SecureClientController implements Runnable {
      */
     public void sendMessage (byte[] msg) throws IOException
     {
+    	/* MESSAGE MANAGEMENT */
     	/* write the response to the server */
 		outputStream.writeByte((byte)msg.length);
         outputStream.write(msg); 

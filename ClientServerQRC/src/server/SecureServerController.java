@@ -177,6 +177,7 @@ public class SecureServerController implements Observer {
 	     * Constructs a SimpleHandshakeListener with the given
 	     * identifier.
 	     * @param ident Used to identify output from this Listener.
+	     * @param logAndPublish Used to manage log and console publishing
 	     */
 	    public SimpleHandshakeListener(String ident, LogAndPublish logAndPublish)
 	    {
@@ -184,7 +185,10 @@ public class SecureServerController implements Observer {
 	      this.logAndPublish = logAndPublish;
 	    }
 
-	    /** Invoked upon SSL handshake completion. */
+
+	    /**
+	     * Used to capture and publish X509 certificate information 
+	     */
 	    public void handshakeCompleted(HandshakeCompletedEvent event)
 	    {
 	      // Display the peer specified in the certificate.
@@ -200,8 +204,9 @@ public class SecureServerController implements Observer {
 	  }
 
 	/** This inner class will keep listening to incoming connections,
-	 *  and initiating a ClientModel object for each connection. */
-	
+	 *  and initiating a ClientModel object for each connection. 
+	 *  
+	 */
 	private class StartSecureServerControllerThread extends Thread {
 		private boolean listen;
 		
@@ -223,14 +228,11 @@ public class SecureServerController implements Observer {
 	        try 
 	        {
 
-	/**The following constructor provides a default number of
-	* connections -- 50, according to Java's documentation.
-	* An overloaded constructor is available for providing a 
-	* specific number, more or less, about connections. */
-
 	        	SecureServerController.this.ssocket = (SSLServerSocket)SecureServerController.this.ssf.createServerSocket(SecureServerController.this.port);
 	        	ssocket.setNeedClientAuth(true);
 	        	
+	        	
+	        	/* CLIENT MANAGEMENT */
 	            while (this.listen) {
 				//wait for client to connect//
 
