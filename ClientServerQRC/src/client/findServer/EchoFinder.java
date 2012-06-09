@@ -75,6 +75,7 @@ public class EchoFinder {
 			for(int i=1; i<255; i++) {
 				String addr = first + "." + second + "." + third + "." + i;
 				byte[] remoteAddress = new byte[]{(byte)first, (byte)second, (byte)third, (byte)i};
+				System.out.println(addr);
 				if (InetAddress.getByAddress(remoteAddress).isReachable(100)) {
 					try{
 						socket = bs.connect(ssf, remoteAddress, port);

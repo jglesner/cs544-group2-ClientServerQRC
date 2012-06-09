@@ -24,6 +24,9 @@
 package client;
 
 import java.io.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.security.*;
 import java.util.ArrayList;
 
@@ -224,8 +227,15 @@ public class SecureClientController implements Runnable {
 			}
 		}
 		
-		/* Log and Publish */
-		logAndPublish.write("Client connected.", true, true);
+		if (socket != null) {
+			
+			/* Log and Publish */
+			logAndPublish.write("Client connected.", true, true);
+		} else {
+			/* Log and Publish */
+			logAndPublish.write("Server Not Found", true, true);
+			System.exit(0);
+		}
 
 	}
 
@@ -1413,9 +1423,27 @@ public class SecureClientController implements Runnable {
     		/* set variables */
         	this.hostName = hostName;
             this.port = port;
-            
-            /* open secure socket */
-            socket = (SSLSocket)ssf.createSocket(hostName, port); 
+        
+			/* get the first three numbers of the ip address */
+			String[] strArray = hostName.toString().split("\\.");
+			int first = Integer.parseInt(strArray[0]);
+			int second = Integer.parseInt(strArray[1]);
+			int third = Integer.parseInt(strArray[2]);
+			int fourth = Integer.parseInt(strArray[3]);
+			
+			/* open secure socket */
+			String addr = first + "." + second + "." + third + "." + fourth;
+			byte[] remoteAddress = new byte[]{(byte)first, (byte)second, (byte)third, (byte)fourth};
+			if (InetAddress.getByAddress(remoteAddress).isReachable(100)) {
+				
+			    InetAddress rAddress = InetAddress.getByAddress(remoteAddress);          
+			    SocketAddress sAddress = new InetSocketAddress(rAddress, port);
+			    socket = (SSLSocket)ssf.createSocket();
+			    socket.connect(sAddress, 100);
+			    
+				System.out.println("Connected to IP: " + addr);
+			}
+  
             
             /* get input and output screens */            
             oInputStream = socket.getInputStream();
