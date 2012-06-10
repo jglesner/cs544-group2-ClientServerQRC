@@ -1447,15 +1447,13 @@ public class SecureClientController implements Runnable {
 			/* open secure socket */
 			String addr = first + "." + second + "." + third + "." + fourth;
 			byte[] remoteAddress = new byte[]{(byte)first, (byte)second, (byte)third, (byte)fourth};
-			if (InetAddress.getByAddress(remoteAddress).isReachable(100)) {
-				
-			    InetAddress rAddress = InetAddress.getByAddress(remoteAddress);          
-			    SocketAddress sAddress = new InetSocketAddress(rAddress, port);
-			    socket = (SSLSocket)ssf.createSocket();
-			    socket.connect(sAddress, 100);
+			
+			InetAddress rAddress = InetAddress.getByAddress(remoteAddress);          
+			SocketAddress sAddress = new InetSocketAddress(rAddress, port);
+			socket = (SSLSocket)ssf.createSocket();
+			socket.connect(sAddress, 100);
 			    
-				System.out.println("Connected to IP: " + addr);
-			}
+			System.out.println("Connected to IP: " + addr);
   
             
             /* get input and output screens */            
